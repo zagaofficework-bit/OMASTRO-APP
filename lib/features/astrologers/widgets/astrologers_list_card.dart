@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/features/call/screens/live_call_page.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../astrologers/screen/astrologer_page.dart';
 
 class AstrologerListCard extends StatelessWidget {
   final String name;
@@ -31,7 +33,8 @@ class AstrologerListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String detailsSubtitle = '${specialties.join(" · ")} · $experienceYears+ yrs';
+    final String detailsSubtitle =
+        '${specialties.join(" · ")} · $experienceYears+ yrs';
     final String languageString = languages.join(", ");
 
     return Container(
@@ -80,7 +83,10 @@ class AstrologerListCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFF00BFA5),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.surface, width: 2.5),
+                        border: Border.all(
+                          color: AppColors.surface,
+                          width: 2.5,
+                        ),
                       ),
                     ),
                   ),
@@ -109,14 +115,21 @@ class AstrologerListCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xffFDF6EC),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xffE4A834), size: 16),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Color(0xffE4A834),
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               rating.toStringAsFixed(1),
@@ -158,7 +171,7 @@ class AstrologerListCard extends StatelessWidget {
                   // --- Lower Row (With layout fix) ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.center, 
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
                         '₹$pricePerMin/min',
@@ -189,7 +202,7 @@ class AstrologerListCard extends StatelessWidget {
                             onTap: onVideoTap,
                           ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ],
@@ -226,7 +239,9 @@ class _ActionIconButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isPrimary ? const Color(0xffD4A437) : Colors.transparent,
-            border: isPrimary ? null : Border.all(color: const Color(0xffEFEAE2), width: 1.2),
+            border: isPrimary
+                ? null
+                : Border.all(color: const Color(0xffEFEAE2), width: 1.2),
           ),
           child: Icon(
             icon,

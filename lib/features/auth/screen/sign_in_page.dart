@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:omastro/core/auth/auth_provider.dart';
 
 class SignInPage extends StatefulWidget {
@@ -16,7 +17,6 @@ class _SignInPageState extends State<SignInPage> {
     // Exact color hex definitions matching the UI mockup layout precisely
     const primaryGold = Color(0xFFE5C693);
     const softCreamBg = Color(0xFFFFFBF2);
-    const textGrey = Color(0xFF7A7A7A);
 
     return Scaffold(
       backgroundColor: softCreamBg,
@@ -38,7 +38,7 @@ class _SignInPageState extends State<SignInPage> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha: 0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -95,7 +95,7 @@ class _SignInPageState extends State<SignInPage> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -216,7 +216,8 @@ class _SignInPageState extends State<SignInPage> {
                         child: OutlinedButton(
                           onPressed: () {
                             // 2. Change state natively!
-                            globalAuthProvider.signInUser();
+                            globalAuthProvider
+                                .signInUser(); // Close the SignInPage after initiating sign-in
 
                             // NOTE: You do NOT write context.go('/home') here!
                             // The refreshListenable detects notifyListeners() above, fires the
@@ -234,9 +235,10 @@ class _SignInPageState extends State<SignInPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Image.network(
-                                'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/24px-Google_%22G%22_logo.svg.png',
-                                height: 18,
+                              SvgPicture.asset(
+                                'assets/icons/google.svg',
+                                height: 20,
+                                width: 20,
                               ),
                               const SizedBox(width: 12),
                               const Text(

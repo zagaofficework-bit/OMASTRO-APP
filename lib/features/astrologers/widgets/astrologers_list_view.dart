@@ -23,17 +23,14 @@ class AstrologersListView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       itemCount: astrologers.length,
       itemBuilder: (context, index) {
+        // 🌟 1. Grab the current item using the current loop index
         final currentItem = astrologers[index];
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
-          // 👈 2. Wrap with InkWell to make the whole card interactive
           child: InkWell(
-            borderRadius: BorderRadius.circular(
-              16.0,
-            ), // Adjust to match your card's outer radius
+            borderRadius: BorderRadius.circular(16.0),
             onTap: () {
-              // 🚀 3. Convert dynamic map entries to strict String values for the destination profile page
               context.push(
                 '/astrologer-profile',
                 extra: {
@@ -61,13 +58,14 @@ class AstrologersListView extends StatelessWidget {
               pricePerMin: currentItem['price'],
               isOnline: currentItem['isOnline'],
               onChatTap: () {
-                // If you want separate logic for tapping the chat icon specifically
+                // Separate logic for chatting if needed
               },
               onCallTap: () {
-                // If you want separate logic for tapping the call icon specifically
+                // 🚀 FIXED: 'currentItem' is now fully recognized here!
+                context.push('/live-call', extra: currentItem);
               },
               onVideoTap: () {
-                // If you want separate logic for tapping the video icon specifically
+                // Separate logic for video if needed
               },
             ),
           ),
