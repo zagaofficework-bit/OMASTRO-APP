@@ -1,0 +1,78 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // 👈 1. Added GoRouter import
+import 'astrologers_list_card.dart';
+
+class AstrologersListView extends StatelessWidget {
+  final List<Map<String, dynamic>> astrologers;
+
+  const AstrologersListView({super.key, required this.astrologers});
+
+  @override
+  Widget build(BuildContext context) {
+    if (astrologers.isEmpty) {
+      return const Center(
+        child: Text(
+          'No astrologers available in this category.',
+          style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      itemCount: astrologers.length,
+      itemBuilder: (context, index) {
+        final currentItem = astrologers[index];
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          // 👈 2. Wrap with InkWell to make the whole card interactive
+          child: InkWell(
+            borderRadius: BorderRadius.circular(
+              16.0,
+            ), // Adjust to match your card's outer radius
+            onTap: () {
+              // 🚀 3. Convert dynamic map entries to strict String values for the destination profile page
+              context.push(
+                '/astrologer-profile',
+                extra: {
+                  'name': currentItem['name']?.toString() ?? '',
+                  'imageUrl': currentItem['image']?.toString() ?? '',
+                  'specialties': (currentItem['specialties'] as List? ?? [])
+                      .join(', '),
+                  'languages': (currentItem['languages'] as List? ?? []).join(
+                    ', ',
+                  ),
+                  'experience': '${currentItem['experience'] ?? 0} Years',
+                  'rate': currentItem['price']?.toString() ?? '0',
+                  'bio':
+                      'Verified expert specializing in ${(currentItem['specialties'] as List? ?? []).first ?? 'Astrology'}.',
+                },
+              );
+            },
+            child: AstrologerListCard(
+              name: currentItem['name'],
+              imageUrl: currentItem['image'],
+              specialties: List<String>.from(currentItem['specialties']),
+              experienceYears: currentItem['experience'],
+              languages: List<String>.from(currentItem['languages']),
+              rating: currentItem['rating'],
+              pricePerMin: currentItem['price'],
+              isOnline: currentItem['isOnline'],
+              onChatTap: () {
+                // If you want separate logic for tapping the chat icon specifically
+              },
+              onCallTap: () {
+                // If you want separate logic for tapping the call icon specifically
+              },
+              onVideoTap: () {
+                // If you want separate logic for tapping the video icon specifically
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

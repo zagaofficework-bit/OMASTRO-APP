@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Profile System</title>
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-cream: #FAF6F0;
+            --primary-gold: #C5A880;
+            --text-dark: #2D2D2D;
+            --text-muted: #7E7E7E;
+            --card-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
+            --radius-md: 14px;
+            --radius-lg: 24px;
+            --divider-color: #F4EFEA;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-cream);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Mobile Device Frame Simulation */
+        .phone-container {
+            width: 100%;
+            max-width: 410px;
+            height: 840px;
+            background-color: var(--bg-cream);
+            border: 8px solid #2d2d2d;
+            border-radius: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+            overflow-y: auto;
+            position: relative;
+            scrollbar-width: none;
+        }
+
+        .phone-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .app-page {
+            padding: 24px 20px 100px 20px;
+            display: none; /* Controlled via JS switching mechanism */
+        }
+
+        .app-page.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* CARD ARCHITECTURE */
+        .premium-card {
+            background: #FFFFFF;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+        }
+
+        /* VIEW SCREEN EXCLUSIVE STYLING */
+        .top-action-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .edit-profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--divider-color);
+            padding: 8px 14px;
+            border-radius: 20px;
+            color: var(--primary-gold);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .edit-profile-btn:hover {
+            background-color: var(--primary-gold);
+            color: #FFFFFF;
+        }
+
+        .premium-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .avatar-frame {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background-color: #FFFFFF;
+            border: 3px solid #FFFFFF;
+            box-shadow: 0 4px 14px rgba(197, 168, 128, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary-gold);
+            margin-bottom: 14px;
+        }
+
+        .info-tile {
+            display: flex;
+            align-items: center;
+            padding: 18px 0;
+        }
+
+        .info-tile:not(:last-child) {
+            border-bottom: 1px solid var(--divider-color);
+        }
+
+        .tile-icon-box {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background-color: rgba(197, 168, 128, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 14px;
+            color: var(--primary-gold);
+        }
+
+        .tile-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .tile-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .tile-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .verified-badge {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-logout-premium {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #FFFFFF;
+            border: 1px solid rgba(255, 82, 82, 0.15);
+            color: #FF5252;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--card-shadow);
+            transition: all 0.2s ease;
+            margin: 24px auto 0 auto;
+        }
+
+        .btn-logout-premium:hover {
+            background-color: #FF5252;
+            color: #FFFFFF;
+        }
+
+        /* EDIT SCREEN EXCLUSIVE STYLING */
+        .top-nav-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .btn-back {
+            background: #FFFFFF;
+            border: 1px solid var(--divider-color);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: var(--text-dark);
+        }
+
+        .nav-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .edit-avatar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 28px;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+        }
+
+        .edit-badge {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 30px;
+            height: 30px;
+            background-color: var(--primary-gold);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #FFFFFF;
+            color: #FFFFFF;
+        }
+
+        .upload-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-gold);
+            margin-top: 10px;
+        }
+
+        .field-box {
+            margin-bottom: 18px;
+        }
+
+        .field-box label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper .material-icons-outlined {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 20px;
+        }
+
+        .input-wrapper .suffix-lock {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 18px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border: 1px solid #E4E4E4;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-gold);
+        }
+
+        .form-input.disabled {
+            background-color: #F8F9FA;
+            border-color: #EAEAEA;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .chips-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .choice-chip {
+            padding: 10px 20px;
+            border: 1px solid #E0E0E0;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            background: none;
+            cursor: pointer;
+        }
+
+        .choice-chip.selected {
+            background-color: var(--primary-gold);
+            border-color: var(--primary-gold);
+            color: #FFFFFF;
+        }
+
+        .btn-submit-save {
+            width: 100%;
+            padding: 16px;
+            background-color: var(--primary-gold);
+            border: none;
+            border-radius: var(--radius-md);
+            color: #FFFFFF;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(197, 168, 128, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="phone-container">
+
+        <!-- ==========================================
+             PAGE 1: PREMIUM PROFILE DISPLAY DASHBOARD
+             ========================================== -->
+        <div id="viewPage" class="app-page active">
+            <div class="top-action-bar">
+                <button class="edit-profile-btn" onclick="navigateTo('editPage')">
+                    <span class="material-icons-outlined" style="font-size: 16px;">edit</span>
+                    Edit Profile
+                </button>
+            </div>
+
+            <div class="premium-header">
+                <div class="avatar-frame" id="viewAvatar">U</div>
+                <span style="font-size: 14px; color: var(--text-muted);">Welcome back,</span>
+                <h1 class="user-name" id="viewGreetingName">User</h1>
+            </div>
+
+            <div class="premium-card">
+                <div class="info-tile">
+                    <div class="tile-icon-box"><span class="material-icons-outlined">person_outline</span></div>
+                    <div class="tile-content">
+                        <span class="tile-label">Full Name</span>
+                        <span class="tile-value" id="viewNameVal">User</span>
+                    </div>
+                </div>
+
+                <div class="info-tile">
+                    <div class="tile-icon-box"><span class="material-icons-outlined">mail_outline</span></div>
+                    <div class="tile-content">
+                        <span class="tile-label">Email Address</span>
+                        <span class="tile-value" id="viewEmailVal">loading...</span>
+                    </div>
+                </div>
+
+                <div class="info-tile">
+                    <div class="tile-icon-box"><span class="material-icons-outlined">cake</span></div>
+                    <div class="tile-content">
+                        <span class="tile-label">Date of Birth</span>
+                        <span class="tile-value" id="viewDobVal">15 August 2002</span>
+                    </div>
+                </div>
+
+                <div class="info-tile">
+                    <div class="tile-icon-box"><span class="material-icons-outlined">wc</span></div>
+                    <div class="tile-content">
+                        <span class="tile-label">Gender</span>
+                        <span class="tile-value" id="viewGenderVal">Male</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="premium-card">
+                <div class="info-tile">
+                    <div class="tile-icon-box"><span class="material-icons-outlined">smartphone</span></div>
+                    <div class="tile-content">
+                        <span class="tile-label">Phone Number</span>
+                        <span class="tile-value">+91 9812345678</span>
+                    </div>
+                    <div class="verified-badge">
+                        <span class="material-icons-outlined" style="font-size: 12px; font-weight: bold;">check</span>
+                        Verified
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-logout-premium">
+                <span class="material-icons-outlined" style="font-size: 18px;">logout</span>
+                Sign Out Account
+            </button>
+        </div>
+
+
+        <!-- ==========================================
+             PAGE 2: PREMIUM EDIT ROUTE VIEW LAYER
+             ========================================== -->
+        <div id="editPage" class="app-page">
+            <div class="top-nav-bar">
+                <button class="btn-back" onclick="navigateTo('viewPage')">
+                    <span class="material-icons-outlined" style="font-size: 18px;">arrow_back</span>
+                </button>
+                <span class="nav-title">Edit Profile</span>
+                <div style="width: 38px;"></div>
+            </div>
+
+            <div class="edit-avatar-container">
+                <div class="avatar-wrapper">
+                    <div class="avatar-frame" id="editAvatar" style="width: 100px; height: 100px; font-size: 38px;">U</div>
+                    <div class="edit-badge"><span class="material-icons-outlined" style="font-size: 16px;">camera_alt</span></div>
+                </div>
+                <span class="upload-label">Change Profile Photo</span>
+            </div>
+
+            <div class="premium-card" style="padding: 24px 20px;">
+                <div class="field-box">
+                    <label>Full Name</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-outlined">person_outline</span>
+                        <input type="text" id="inputName" class="form-input">
+                    </div>
+                </div>
+
+                <div class="field-box">
+                    <label>Email Address</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-outlined">mail_outline</span>
+                        <input type="email" id="inputEmail" class="form-input disabled" readonly>
+                        <span class="material-icons-outlined suffix-lock">lock_outline</span>
+                    </div>
+                </div>
+
+                <div class="field-box">
+                    <label>Date of Birth</label>
+                    <div class="input-wrapper">
+                        <span class="material-icons-outlined">cake</span>
+                        <input type="text" id="inputDob" class="form-input" value="15-08-2002">
+                    </div>
+                </div>
+
+                <div class="field-box">
+                    <label>Gender</label>
+                    <div class="chips-row">
+                        <button class="choice-chip selected" onclick="selectGender(this, 'Male')">Male</button>
+                        <button class="choice-chip" onclick="selectGender(this, 'Female')">Female</button>
+                        <button class="choice-chip" onclick="selectGender(this, 'Other')">Other</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-submit-save" onclick="saveProfileChanges()">Save Changes</button>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         APPLICATION STATE ENGINE (JAVASCRIPT)
+         ========================================== -->
+    <script>
+        // 1. Simulating initial registration fallback data (Only email known)
+        let appState = {
+            email: "satvik.it.dev@gmail.com",
+            name: "", // Starts empty to test string processing
+            dob: "15-08-2002",
+            gender: "Male"
+        };
+
+        // Helper: Format name elegantly out of email strings
+        function cleanNameFromEmail(email) {
+            if (!email || !email.includes('@')) return 'User';
+            let localPart = email.split('@')[0];
+            let cleaned = localPart.replace(/[._-]/g, ' ').replace(/\d/g, ''); 
+            return cleaned.trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        }
+
+        // 2. Initialize App and Sync UI data layers
+        function initApp() {
+            // Process fallback logic if name field is unassigned
+            if(!appState.name) {
+                appState.name = cleanNameFromEmail(appState.email);
+            }
+            syncStateToUi();
+        }
+
+        function syncStateToUi() {
+            // Sync Display Elements
+            document.getElementById('viewGreetingName').innerText = appState.name;
+            document.getElementById('viewNameVal').innerText = appState.name;
+            document.getElementById('viewEmailVal').innerText = appState.email;
+            document.getElementById('viewDobVal').innerText = appState.dob;
+            document.getElementById('viewGenderVal').innerText = appState.gender;
+            document.getElementById('viewAvatar').innerText = appState.name.charAt(0);
+
+            // Sync Form Elements
+            document.getElementById('inputName').value = appState.name;
+            document.getElementById('inputEmail').value = appState.email;
+            document.getElementById('inputDob').value = appState.dob;
+            document.getElementById('editAvatar').innerText = appState.name.charAt(0);
+        }
+
+        // 3. Navigation Controls
+        function navigateTo(pageId) {
+            document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // 4. Form Modifiers Data Commits
+        function selectGender(element, targetGender) {
+            document.querySelectorAll('.choice-chip').forEach(c => c.classList.remove('selected'));
+            element.classList.add('selected');
+            appState.gender = targetGender;
+        }
+
+        function saveProfileChanges() {
+            // Assign input modifications to state block
+            appState.name = document.getElementById('inputName').value;
+            appState.dob = document.getElementById('inputDob').value;
+            
+            // Sync UI tracking views and bounce back route context
+            syncStateToUi();
+            navigateTo('viewPage');
+        }
+
+        // Run application setup context on boot
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
