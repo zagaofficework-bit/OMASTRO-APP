@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:omastro/features/call/screens/live_call_page.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../astrologers/screen/astrologer_page.dart';
 
 class AstrologerListCard extends StatelessWidget {
   final String name;

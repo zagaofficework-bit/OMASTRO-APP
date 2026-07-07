@@ -24,8 +24,9 @@ class MainShell extends StatelessWidget {
           location.startsWith('/hub-list')) {
         return 2; // Index of your Astrologers Bottom Navigation Tab icon slot
       }
-      if (location.startsWith('/hub-list'))
+      if (location.startsWith('/hub-list')) {
         return 2; // 👈 Keeps the Astrologers tab highlighted when looking at the list!
+      }
       if (location == '/live') return 3;
       if (location == '/profile') return 4;
       return 0;

@@ -68,7 +68,7 @@ class ProfileInfoTile extends StatelessWidget {
           ),
 
           // Optional trailing anchor elements (like status badges)
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

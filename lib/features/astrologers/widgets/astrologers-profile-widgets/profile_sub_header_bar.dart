@@ -41,7 +41,7 @@ class ProfileSubHeaderBar extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.20),
+                        color: Colors.white.withValues(alpha: .20),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
