@@ -36,7 +36,9 @@ class LiveAvatarGlowFrame extends StatelessWidget {
             ),
             image: imageUrl.isNotEmpty
                 ? DecorationImage(
-                    image: NetworkImage(imageUrl),
+                    image: imageUrl.startsWith('assets/')
+                        ? AssetImage(imageUrl) as ImageProvider
+                        : NetworkImage(imageUrl),
                     fit: BoxFit.cover,
                   )
                 : null,

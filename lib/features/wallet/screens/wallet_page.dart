@@ -9,6 +9,8 @@ import '../widgets/recharge_grid.dart';
 import '../widgets/custom_amount_input.dart';
 import '../widgets/recent_transactions_block.dart';
 
+import '../wallet_provider.dart';
+
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
 
@@ -17,7 +19,6 @@ class WalletPage extends StatefulWidget {
 }
 
 class _WalletPageState extends State<WalletPage> {
-  final double _currentBalance = 0.00;
   int _selectedAmount = 500;
   late final TextEditingController _amountController;
 
@@ -68,8 +69,13 @@ class _WalletPageState extends State<WalletPage> {
             children: [
               const SizedBox(height: AppSpacing.md),
 
-              // 1. Gold Available Balance Banner Box
-              BalanceBanner(balance: _currentBalance),
+              // 1. Gold Available Balance Banner Box (Listenable to WalletProvider)
+              ListenableBuilder(
+                listenable: globalWalletProvider,
+                builder: (context, _) {
+                  return BalanceBanner(balance: globalWalletProvider.balance);
+                },
+              ),
               const SizedBox(height: AppSpacing.lg),
 
               // 2. Preset Matrix Title & Grid List Selection Block
@@ -101,7 +107,13 @@ class _WalletPageState extends State<WalletPage> {
                 child: ElevatedButton(
                   onPressed: _selectedAmount > 0
                       ? () {
-                          // TODO: Connect gateway trigger using Cashfree SDK setup blocks here
+                          globalWalletProvider.addMoney(_selectedAmount.toDouble());
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('₹$_selectedAmount added to your wallet!'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

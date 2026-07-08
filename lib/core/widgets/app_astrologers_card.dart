@@ -53,7 +53,9 @@ class FeaturedAstrologerCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: AppColors.background,
-                    backgroundImage: NetworkImage(imageUrl),
+                    backgroundImage: imageUrl.startsWith('assets/')
+                        ? AssetImage(imageUrl) as ImageProvider
+                        : NetworkImage(imageUrl),
                   ),
                   if (isOnline)
                     Positioned(

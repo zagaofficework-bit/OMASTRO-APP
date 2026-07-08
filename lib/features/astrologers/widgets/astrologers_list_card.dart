@@ -68,7 +68,9 @@ class AstrologerListCard extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 36,
                     backgroundColor: AppColors.background,
-                    backgroundImage: NetworkImage(imageUrl),
+                    backgroundImage: imageUrl.startsWith('assets/')
+                        ? AssetImage(imageUrl) as ImageProvider
+                        : NetworkImage(imageUrl),
                   ),
                 ),
                 if (isOnline)

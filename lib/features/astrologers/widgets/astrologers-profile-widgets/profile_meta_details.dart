@@ -8,6 +8,7 @@ class ProfileMetaDetails extends StatelessWidget {
   final String languages;
   final String experience;
   final String ratePerMinute;
+  final bool isFollowing;
   final VoidCallback onFollowTap;
 
   const ProfileMetaDetails({
@@ -17,6 +18,7 @@ class ProfileMetaDetails extends StatelessWidget {
     required this.languages,
     required this.experience,
     required this.ratePerMinute,
+    required this.isFollowing,
     required this.onFollowTap,
   });
 
@@ -29,14 +31,19 @@ class ProfileMetaDetails extends StatelessWidget {
         // --- 1. NAME & + FOLLOW ROW ---
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              name,
-              style: const TextStyle(
-                fontFamily: 'PlayfairDisplay',
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+            Flexible(
+              child: Text(
+                name,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontFamily: 'PlayfairDisplay',
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             const SizedBox(width: 8.0),
@@ -51,17 +58,23 @@ class ProfileMetaDetails extends StatelessWidget {
                   vertical: 4.0,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xffE4A834), // Golden brand primary color
+                  color: isFollowing
+                      ? const Color(0xff10B981) // Active Green
+                      : const Color(0xffE4A834), // Brand Gold
                   borderRadius: BorderRadius.circular(20.0),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add, color: Colors.white, size: 12),
-                    SizedBox(width: 2.0),
+                    Icon(
+                      isFollowing ? Icons.check : Icons.add,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 2.0),
                     Text(
-                      'Follow',
-                      style: TextStyle(
+                      isFollowing ? 'Following' : 'Follow',
+                      style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 11,
                         fontWeight: FontWeight.bold,

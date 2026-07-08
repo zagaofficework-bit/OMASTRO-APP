@@ -17,7 +17,7 @@ class MainShell extends StatelessWidget {
     final location = GoRouterState.of(context).uri.path;
 
     int calculateIndex() {
-      if (location == '/') return 0;
+      if (location == '/home') return 0;
       if (location == '/estore') return 1;
       // 🚀 Check if the route is the categories page, the list page, OR the profile page!
       if (location.startsWith('/astrologer') ||
@@ -45,12 +45,14 @@ class MainShell extends StatelessWidget {
             left: 0,
             right: 0,
             bottom: 0,
-            child: AppBottomNavigation(
-              currentIndex: currentIndex,
-              onTap: (index) {
-                final selectedItem = navigationItems[index];
-                context.go(selectedItem.route);
-              },
+            child: SafeArea(
+              child: AppBottomNavigation(
+                currentIndex: currentIndex,
+                onTap: (index) {
+                  final selectedItem = navigationItems[index];
+                  context.go(selectedItem.route);
+                },
+              ),
             ),
           ),
         ],

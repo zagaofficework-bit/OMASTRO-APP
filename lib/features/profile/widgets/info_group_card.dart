@@ -12,7 +12,6 @@ class InfoGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: [
           BoxShadow(
@@ -22,11 +21,18 @@ class InfoGroupCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        clipBehavior: Clip.antiAlias, // Ensures ink splashes respect card corners
+        child: Padding(
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: children,
+          ),
+        ),
       ),
     );
   }

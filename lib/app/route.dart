@@ -13,6 +13,13 @@ import '../features/estore/screen/estore_page.dart';
 import '../features/live/screen/live_page.dart';
 import '../features/profile/screen/profile_page.dart';
 import '../features/astrologers/screen/astrologer_page.dart';
+import '../features/profile/screen/settings_page.dart';
+import '../features/profile/screen/consultation_history_page.dart';
+import '../features/profile/screen/support_page.dart';
+import '../features/chat/screens/chat_room_page.dart';
+import '../features/call/screens/video_call_page.dart';
+import '../features/profile/screen/edit_profile_page.dart';
+import '../features/profile/screen/my_details_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -43,6 +50,32 @@ final appRouter = GoRouter(
         return LiveCallPage(astrologer: astrologerData);
       },
     ),
+    GoRoute(
+      path: '/video-call',
+      builder: (context, state) {
+        final astrologerData = state.extra as Map<String, dynamic>;
+        return VideoCallPage(astrologer: astrologerData);
+      },
+    ),
+    GoRoute(
+      path: '/chat-room',
+      builder: (context, state) {
+        final params = state.extra as Map<String, dynamic>;
+        return ChatRoomPage(id: params['id']!, name: params['name']!);
+      },
+    ),
+    GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
+    GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfilePage()),
+    GoRoute(path: '/my-details', builder: (context, state) => const MyDetailsPage()),
+    GoRoute(path: '/history', builder: (context, state) => const ConsultationHistoryPage()),
+    GoRoute(path: '/support', builder: (context, state) => const SupportPage()),
+    GoRoute(
+      path: '/astrologer-profile',
+      builder: (context, state) {
+        final astrologerData = state.extra as Map<String, String>;
+        return AstrologerProfilePage(astrologerData: astrologerData);
+      },
+    ),
     GoRoute(path: '/login', builder: (context, state) => const SignInPage()),
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
@@ -50,7 +83,7 @@ final appRouter = GoRouter(
         return MainShell(child: child);
       },
       routes: [
-        GoRoute(path: '/', builder: (_, _) => const HomePage()),
+        GoRoute(path: '/home', builder: (_, _) => const HomePage()),
         GoRoute(path: '/estore', builder: (_, _) => const EStorePage()),
 
         GoRoute(
@@ -71,13 +104,6 @@ final appRouter = GoRouter(
           },
         ),
 
-        GoRoute(
-          path: '/astrologer-profile',
-          builder: (context, state) {
-            final astrologerData = state.extra as Map<String, String>;
-            return AstrologerProfilePage(astrologerData: astrologerData);
-          },
-        ),
 
         // 🌟 2. ADDED THE LIVE-CALL ROUTE ENTRY HERE
         GoRoute(path: '/live', builder: (_, _) => const LivePage()),

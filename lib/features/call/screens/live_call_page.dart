@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omastro/features/call/widgets/live_avatar_glow_frame.dart';
 import 'package:omastro/features/call/widgets/live_call_action_card.dart';
 import 'package:omastro/features/call/widgets/live_call_back_button.dart';
@@ -44,7 +45,15 @@ class _LiveCallPageState extends State<LiveCallPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    LiveCallBackButton(onTap: () => Navigator.pop(context)),
+                    LiveCallBackButton(
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
+                    ),
                     const LiveCallTimerBadge(duration: '00:21'),
                     // Transparent structural spacer matching back button layout proportions
                     const SizedBox(width: 68),
@@ -94,7 +103,13 @@ class _LiveCallPageState extends State<LiveCallPage> {
                       ),
                       const SizedBox(width: 20),
                       LiveCallDisconnectButton(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/home');
+                          }
+                        },
                       ),
                     ],
                   ),

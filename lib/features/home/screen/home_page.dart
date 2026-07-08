@@ -19,69 +19,66 @@ class HomePage extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppSpacing.heightXl,
-                AppSpacing.heightXl,
-                // --- 1. Hero Text Layout Block ---
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: 8.0,
-                    left: 10.0,
-                    right: 8.0,
-                  ),
-                  child: Text(
-                    'Find your guide',
-                    style: AppTextStyles.displayLarge02.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
-                      color: AppColors.textPrimary,
-                    ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppSpacing.heightXl,
+              AppSpacing.heightXl,
+              // --- 1. Hero Text Layout Block ---
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 8.0,
+                  left: 10.0,
+                  right: 8.0,
+                ),
+                child: Text(
+                  'Find your guide',
+                  style: AppTextStyles.displayLarge02.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'serif',
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 4.0),
-                Padding(
-                  padding: const EdgeInsets.only(left: 10.0, right: 8.0),
-                  child: Text(
-                    'Verified astrologers, on call or chat.',
-                    style: AppTextStyles.bodyMedium,
-                  ),
+              ),
+              const SizedBox(height: 4.0),
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0, right: 8.0),
+                child: Text(
+                  'Verified astrologers, on call or chat.',
+                  style: AppTextStyles.bodyMedium,
                 ),
-                AppSpacing.heightMd,
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: AppSearchBar(),
-                ),
-                AppSpacing.heightMd,
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: HomeActionButtons(),
-                ),
-                AppSpacing.heightMd,
-                HomeBannerSlider(),
-                AppSpacing.heightMd,
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: const HomeCategoryGrid(),
-                ),
-                AppSpacing.heightMd,
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: const OnlineAstrologersSection(),
-                ),
-                AppSpacing.heightMd,
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0, right: 8.0),
-                  child: const TopAstrologersSection(),
-                ),
-                AppSpacing.heightXl,
-                AppSpacing.heightXl,
-                AppSpacing.heightXl,
-              ],
-            ),
+              ),
+              AppSpacing.heightMd,
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: AppSearchBar(),
+              ),
+              AppSpacing.heightMd,
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: HomeActionButtons(),
+              ),
+              AppSpacing.heightMd,
+              HomeBannerSlider(),
+              AppSpacing.heightMd,
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: const HomeCategoryGrid(),
+              ),
+              AppSpacing.heightMd,
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: const OnlineAstrologersSection(),
+              ),
+              AppSpacing.heightMd,
+              Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8.0),
+                child: const TopAstrologersSection(),
+              ),
+              AppSpacing.heightXl,
+              AppSpacing.heightXl,
+              AppSpacing.heightXl,
+            ],
           ),
         ),
       ),

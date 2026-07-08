@@ -5,6 +5,8 @@ import 'package:omastro/core/theme/app_text_styles.dart';
 import 'package:omastro/core/widgets/search_bar.dart';
 import '../widgets/astrologers_list_view.dart';
 import '../widgets/category_filter_chips.dart';
+import 'package:go_router/go_router.dart';
+import '../astrologers_data.dart';
 
 class AstrologerPage extends StatefulWidget {
   final String? initialCategory;
@@ -23,53 +25,8 @@ class _AstrologerPageState extends State<AstrologerPage> {
     _selectedCategory = widget.initialCategory ?? 'All';
   }
 
-  // --- Master Testing Dataset Local Track with high-res Unsplash portrait assets ---
-  final List<Map<String, dynamic>> _allAstrologers = [
-    {
-      'name': 'Yogini Meera',
-      'image':
-          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop',
-      'specialties': ['Palmistry', 'Crystal Healing', 'Love'],
-      'experience': 12,
-      'languages': ['English'],
-      'rating': 5.0,
-      'price': 30,
-      'isOnline': true,
-    },
-    {
-      'name': 'Astro Priya',
-      'image':
-          'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=400&auto=format&fit=crop',
-      'specialties': ['Tarot Reading', 'Numerology', 'Tarot', 'Career'],
-      'experience': 8,
-      'languages': ['English', 'Hindi', 'Tamil'],
-      'rating': 4.9,
-      'price': 25,
-      'isOnline': true,
-    },
-    {
-      'name': 'Acharya Shivam',
-      'image':
-          'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop',
-      'specialties': ['Vedic Astrology', 'Vastu', 'Kundli', 'Marriage'],
-      'experience': 15,
-      'languages': ['English', 'Hindi'],
-      'rating': 4.8,
-      'price': 20,
-      'isOnline': true,
-    },
-    {
-      'name': 'Swami Anand',
-      'image':
-          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop',
-      'specialties': ['Vedic', 'Gemology', 'Kundli'],
-      'experience': 20,
-      'languages': ['Hindi', 'Marathi'],
-      'rating': 4.7,
-      'price': 35,
-      'isOnline': false,
-    },
-  ];
+  // --- Master Testing Dataset Local Track with downloaded asset images ---
+  final List<Map<String, dynamic>> _allAstrologers = masterAstrologers;
 
   List<Map<String, dynamic>> _getFilteredAstrologers() {
     if (_selectedCategory == 'All') {
@@ -92,69 +49,90 @@ class _AstrologerPageState extends State<AstrologerPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: NestedScrollView(
-          physics: const BouncingScrollPhysics(),
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.xs,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 76),
+                  Row(
                     children: [
-                      AppSpacing.heightXl,
-                      AppSpacing.heightXl,
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          top: 8.0,
-                          left: 14.0,
-                          right: 8.0,
-                        ),
-                        child: Text(
-                          'Discover Your Astrologer',
-                          style: AppTextStyles.displayLarge02,
-                        ),
-                      ),
-                      AppSpacing.heightMd,
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: AppSearchBar(),
-                      ),
-                      const SizedBox(height: 16.0),
-                      CategoryFilterChips(
-                        selectedCategory: _selectedCategory,
-                        onCategorySelected: (category) {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
+                      IconButton(
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/home'); // Fallback if no page to pop
+                          }
                         },
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.surface,
+                          padding: const EdgeInsets.all(10.0),
+                        ),
                       ),
-                      const SizedBox(height: 8.0),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Astrologers',
+                        style: AppTextStyles.displayLarge02.copyWith(
+                          fontFamily: 'PlayfairDisplay',
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 20),
+                ],
               ),
-            ];
-          },
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: AstrologersListView(
-                  astrologers: filteredList,
-                ), // Passes the clean list down
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: AppSearchBar(),
+                  ),
+                  const SizedBox(height: 16.0),
+                  CategoryFilterChips(
+                    selectedCategory: _selectedCategory,
+                    onCategorySelected: (category) {
+                      setState(() {
+                        _selectedCategory = category;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 8.0),
+                ],
               ),
-              const Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: SizedBox(height: 120),
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: AstrologersListView(
+                      astrologers: filteredList,
+                    ),
+                  ),
+                  const Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: SizedBox(height: 120),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
+          ],
+    ),
+    ),
     );
   }
 }

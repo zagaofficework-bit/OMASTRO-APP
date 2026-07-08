@@ -11,28 +11,25 @@ class OnlineAstrologersSection extends StatelessWidget {
     // Temporary mock list simulating live database entries for Phase 1
     final List<Map<String, dynamic>> onlineList = [
       {
-        'name': 'Astral Rohan',
-        'image':
-            'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop',
-        'specialty': 'Vedic, Kundli',
-        'rating': 4.8,
+        'name': 'Astro Priya',
+        'image': 'assets/images/priya.jpg',
+        'specialty': 'Tarot, Palmistry',
+        'rating': 4.9,
         'price': 25,
       },
       {
-        'name': 'Ananya Shastri',
-        'image':
-            'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop',
-        'specialty': 'Tarot, Palmistry',
-        'rating': 4.9,
+        'name': 'Yogini Meera',
+        'image': 'assets/images/meera.jpg',
+        'specialty': 'Vedic, Kundli',
+        'rating': 5.0,
         'price': 30,
       },
       {
-        'name': 'Guru Mahesh',
-        'image':
-            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
+        'name': 'Swami Anand',
+        'image': 'assets/images/anand.jpg',
         'specialty': 'Vastu, Numerology',
         'rating': 4.7,
-        'price': 20,
+        'price': 35,
       },
     ];
 

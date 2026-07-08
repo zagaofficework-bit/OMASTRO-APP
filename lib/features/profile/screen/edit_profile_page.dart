@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omastro/features/profile/widgets/edit_text_field.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -7,6 +8,7 @@ import '../widgets/edit_avatar_picker.dart';
 import '../widgets/info_group_card.dart';
 import '../widgets/gender_choice_chips.dart';
 import '../widgets/primary_submit_button.dart';
+import '../profile_provider.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -25,10 +27,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Pre-filling with user session parameters matching our core dashboard context
-    _nameController = TextEditingController(text: 'Satvik Dev');
-    _emailController = TextEditingController(text: 'satvik.it.dev@gmail.com');
-    _dobController = TextEditingController(text: '15-08-2002');
+    // Pre-filling with user session parameters from globalProfileProvider
+    _nameController = TextEditingController(text: globalProfileProvider.name);
+    _emailController = TextEditingController(text: globalProfileProvider.email);
+    _dobController = TextEditingController(text: globalProfileProvider.dob);
+    _selectedGender = globalProfileProvider.gender;
   }
 
   @override
@@ -70,10 +73,110 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  bool _hasChanges() {
+    return _nameController.text != globalProfileProvider.name ||
+        _dobController.text != globalProfileProvider.dob ||
+        _selectedGender != globalProfileProvider.gender;
+  }
+
+  Future<int?> _showSaveOrDiscardDialog(BuildContext context) async {
+    return await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Save changes?',
+            style: AppTextStyles.headingMedium,
+          ),
+          content: Text(
+            'You have unsaved changes. Do you really want to exit? Save changes first then exit, or discard them.',
+            style: AppTextStyles.bodyMedium,
+          ),
+          actionsAlignment: MainAxisAlignment.spaceBetween,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(0),
+              child: Text(
+                'Cancel',
+                style: AppTextStyles.buttonText.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(2),
+                  child: Text(
+                    'Discard',
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(1),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'Save & Exit',
+                    style: AppTextStyles.buttonText.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleBack() async {
+    if (_hasChanges()) {
+      final choice = await _showSaveOrDiscardDialog(context);
+      if (choice == 1) {
+        _saveChanges();
+        _performPop();
+      } else if (choice == 2) {
+        _performPop();
+      }
+    } else {
+      _performPop();
+    }
+  }
+
+  void _saveChanges() {
+    globalProfileProvider.updateProfile(
+      name: _nameController.text,
+      dob: _dobController.text,
+      gender: _selectedGender,
+    );
+  }
+
+  void _performPop() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/profile');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F0), // Premium cream tone base tint
+      backgroundColor: AppColors.background, // Premium cream tone base tint
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -82,7 +185,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           padding: const EdgeInsets.only(left: AppSpacing.sm),
           child: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
+            onPressed: _handleBack,
             style: IconButton.styleFrom(
               backgroundColor: Colors.white,
               shape: const CircleBorder(),
@@ -91,13 +194,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         title: Text(
           'Edit Profile',
-          style: AppTextStyles.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+          style: AppTextStyles.displayMedium.copyWith(
+            color: AppColors.textPrimary,
           ),
         ),
       ),
-      body: SafeArea(
+      body: PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) async {
+          if (didPop) return;
+          _handleBack();
+        },
+        child: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -122,9 +230,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 children: [
                   Text(
                     'Personal Information',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: AppTextStyles.headingMedium,
                   ),
                   const SizedBox(height: AppSpacing.md),
 
@@ -171,8 +277,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
               PrimarySubmitButton(
                 label: 'Save Changes',
                 onPressed: () {
-                  // TODO: Push mutated form details data contexts back to your remote data blocks
-                  Navigator.pop(context);
+                  _saveChanges();
+                  _performPop();
                 },
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -185,6 +291,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ),
       ),
+    ),
     );
   }
 }

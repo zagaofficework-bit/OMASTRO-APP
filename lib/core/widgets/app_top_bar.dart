@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:omastro/features/wallet/screens/wallet_page.dart';
+import 'package:go_router/go_router.dart';
+import '../../features/wallet/wallet_provider.dart';
 import '../theme/app_colors.dart';
 import '../../features/chat/screens/chat_page.dart';
 
@@ -97,30 +98,31 @@ class AppTopBar extends StatelessWidget {
                     },
                   ),
                   const SizedBox(width: 12),
-                  OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const WalletPage(),
+                  ListenableBuilder(
+                    listenable: globalWalletProvider,
+                    builder: (context, _) {
+                      return OutlinedButton(
+                        onPressed: () {
+                          context.push('/wallet');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(72, 38),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          side: const BorderSide(color: Color(0x40D4A437)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                        ),
+                        child: Text(
+                          "₹ ${globalWalletProvider.balance.toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       );
                     },
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(72, 38),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      side: const BorderSide(color: Color(0x40D4A437)),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                    ),
-                    child: const Text(
-                      "₹ 0.00",
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                   ),
                 ],
               ),

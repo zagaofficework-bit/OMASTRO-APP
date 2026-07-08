@@ -6,7 +6,7 @@ final navigationItems = [
     label: 'Home',
     icon: Icons.home_outlined,
     selectedIcon: Icons.home,
-    route: '/',
+    route: '/home',
   ),
   NavigationItem(
     label: 'E-Store',

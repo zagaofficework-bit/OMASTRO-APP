@@ -38,7 +38,7 @@ class AppBottomNavigation extends StatelessWidget {
     }
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
+      margin: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 0),
       height: barHeight,
       decoration: BoxDecoration(
         borderRadius: AppRadius.radiusRound,

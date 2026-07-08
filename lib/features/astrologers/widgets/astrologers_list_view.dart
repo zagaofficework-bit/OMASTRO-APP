@@ -58,14 +58,20 @@ class AstrologersListView extends StatelessWidget {
               pricePerMin: currentItem['price'],
               isOnline: currentItem['isOnline'],
               onChatTap: () {
-                // Separate logic for chatting if needed
+                context.push(
+                  '/chat-room',
+                  extra: {
+                    'id': 'chat_${currentItem['name'].toString().toLowerCase().replaceAll(' ', '_')}',
+                    'name': currentItem['name'],
+                  },
+                );
               },
               onCallTap: () {
                 // 🚀 FIXED: 'currentItem' is now fully recognized here!
                 context.push('/live-call', extra: currentItem);
               },
               onVideoTap: () {
-                // Separate logic for video if needed
+                context.push('/video-call', extra: currentItem);
               },
             ),
           ),
