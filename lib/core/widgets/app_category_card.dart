@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 
@@ -18,6 +19,8 @@ class AppCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.radiusMd,
@@ -40,30 +43,38 @@ class AppCategoryCard extends StatelessWidget {
           children: [
             // Decorative background capsule for the saffron icons
             Container(
-              padding: const EdgeInsets.all(5.0),
+              padding: EdgeInsets.all(responsive.scale(5, min: 4, max: 7)),
               decoration: BoxDecoration(
                 color: AppColors.background,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.primary, size: 24),
+              child: Icon(
+                icon,
+                color: AppColors.primary,
+                size: responsive.scale(24, min: 20, max: 28),
+              ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: responsive.scale(10, min: 6, max: 12)),
             Text(
               label,
-              style: const TextStyle(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 12,
+                fontSize: responsive.font(12, min: 11, max: 14),
                 fontWeight: FontWeight.w500,
                 color: AppColors.textPrimary,
               ),
             ),
             if (subtitle.isNotEmpty) ...[
-              const SizedBox(height: 4), // Small gap between label and subtitle
+              SizedBox(height: responsive.scale(4, min: 3, max: 5)),
               Text(
                 subtitle,
-                style: const TextStyle(
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 8,
+                  fontSize: responsive.font(8, min: 7, max: 10),
                   fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
                 ),

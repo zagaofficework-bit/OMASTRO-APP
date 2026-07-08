@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class LiveAstrologerCard extends StatelessWidget {
@@ -21,8 +22,10 @@ class LiveAstrologerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
+      margin: EdgeInsets.only(bottom: responsive.scale(16, min: 12, max: 20)),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.0),
@@ -155,38 +158,38 @@ class LiveAstrologerCard extends StatelessWidget {
 
               // --- 2. Information Deck Meta Labels ---
               Padding(
-                padding: const EdgeInsets.all(14.0),
+                padding: EdgeInsets.all(responsive.scale(14, min: 12, max: 18)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       category.toUpperCase(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 10,
+                        fontSize: responsive.font(10, min: 9, max: 12),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textSecondary,
                         letterSpacing: 1.0,
                       ),
                     ),
-                    const SizedBox(height: 4.0),
+                    SizedBox(height: responsive.scale(4, min: 4, max: 6)),
                     Text(
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'PlayfairDisplay',
-                        fontSize: 16.5,
+                        fontSize: responsive.font(16.5, min: 15, max: 20),
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2.0),
+                    SizedBox(height: responsive.scale(2, min: 2, max: 4)),
                     Text(
                       hostName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 12,
+                        fontSize: responsive.font(12, min: 11, max: 14),
                         color: AppColors.textSecondary,
                       ),
                     ),

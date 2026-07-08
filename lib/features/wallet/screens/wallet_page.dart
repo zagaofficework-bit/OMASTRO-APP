@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/widgets/app_top_bar.dart';
+
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../widgets/balance_banner.dart';
-import '../widgets/recharge_grid.dart';
-import '../widgets/custom_amount_input.dart';
-import '../widgets/recent_transactions_block.dart';
-
 import '../wallet_provider.dart';
+import '../widgets/balance_banner.dart';
+import '../widgets/custom_amount_input.dart';
+import '../widgets/recharge_grid.dart';
+import '../widgets/recent_transactions_block.dart';
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key});
@@ -42,111 +43,114 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   void _handleCustomAmountChanged(String val) {
-    final parsed = int.tryParse(val) ?? 0;
     setState(() {
-      _selectedAmount = parsed;
+      _selectedAmount = int.tryParse(val) ?? 0;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     return Scaffold(
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: AppTopBar(),
+        preferredSize: Size.fromHeight(responsive.topBarHeight),
+        child: const AppTopBar(),
       ),
-      backgroundColor: const Color(
-        0xFFFAF6F0,
-      ), // Matching cream background tone
+      backgroundColor: const Color(0xFFFAF6F0),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.md),
-
-              // 1. Gold Available Balance Banner Box (Listenable to WalletProvider)
-              ListenableBuilder(
-                listenable: globalWalletProvider,
-                builder: (context, _) {
-                  return BalanceBanner(balance: globalWalletProvider.balance);
-                },
-              ),
-              const SizedBox(height: AppSpacing.lg),
-
-              // 2. Preset Matrix Title & Grid List Selection Block
-              Text(
-                'Quick recharge',
-                style: AppTextStyles.headingMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 12),
-              RechargeGrid(
-                selectedAmount: _selectedAmount,
-                onAmountSelected: _handlePresetSelected,
-              ),
-              const SizedBox(height: 12),
-
-              // 3. Custom Manual Amount Text Box Field Input
-              CustomAmountInput(
-                controller: _amountController,
-                onChanged: _handleCustomAmountChanged,
-              ),
-              const SizedBox(height: 16),
-
-              // 4. Primary Interactive Dynamic Elevated Submission Action Block
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _selectedAmount > 0
-                      ? () {
-                          globalWalletProvider.addMoney(_selectedAmount.toDouble());
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('₹$_selectedAmount added to your wallet!'),
-                              backgroundColor: AppColors.primary,
-                            ),
-                          );
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
+          padding: responsive.pagePadding(vertical: AppSpacing.md),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: responsive.pageConstraints(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: responsive.scale(12, min: 8, max: 18)),
+                  ListenableBuilder(
+                    listenable: globalWalletProvider,
+                    builder: (context, _) {
+                      return BalanceBanner(
+                        balance: globalWalletProvider.balance,
+                      );
+                    },
                   ),
-                  child: Text(
-                    '+ Add ₹$_selectedAmount',
-                    style: AppTextStyles.displayLarge.copyWith(
-                      color: Colors.white,
+                  SizedBox(
+                    height: responsive.scale(AppSpacing.lg, min: 18, max: 28),
+                  ),
+                  Text(
+                    'Quick recharge',
+                    style: AppTextStyles.headingMedium.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                ),
+                  SizedBox(height: responsive.scale(12, min: 10, max: 16)),
+                  RechargeGrid(
+                    selectedAmount: _selectedAmount,
+                    onAmountSelected: _handlePresetSelected,
+                  ),
+                  SizedBox(height: responsive.scale(12, min: 10, max: 16)),
+                  CustomAmountInput(
+                    controller: _amountController,
+                    onChanged: _handleCustomAmountChanged,
+                  ),
+                  SizedBox(height: responsive.scale(16, min: 12, max: 20)),
+                  SizedBox(
+                    width: double.infinity,
+                    height: responsive.scale(50, min: 46, max: 56),
+                    child: ElevatedButton(
+                      onPressed: _selectedAmount > 0
+                          ? () {
+                              globalWalletProvider.addMoney(
+                                _selectedAmount.toDouble(),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Rs $_selectedAmount added to your wallet!',
+                                  ),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                      ),
+                      child: Text(
+                        '+ Add Rs $_selectedAmount',
+                        style: AppTextStyles.displayLarge.copyWith(
+                          color: Colors.white,
+                          fontSize: responsive.font(16, min: 14, max: 18),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: responsive.scale(8, min: 6, max: 10)),
+                  Center(
+                    child: Text(
+                      'Secure payments via Cashfree',
+                      style: TextStyle(
+                        fontSize: responsive.font(11, min: 10, max: 12),
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: responsive.scale(AppSpacing.xl, min: 24, max: 36),
+                  ),
+                  const RecentTransactionsBlock(),
+                  SizedBox(height: responsive.bottomInset),
+                ],
               ),
-              const SizedBox(height: 8),
-
-              // Payment Gateway Assurance Footer Caption
-              Center(
-                child: Text(
-                  'Secure payments via Cashfree',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // 5. Historical Empty State Transaction Log Frame Layout
-              const RecentTransactionsBlock(),
-              const SizedBox(height: AppSpacing.xl),
-            ],
+            ),
           ),
         ),
       ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart'; // 👈 1. Added GoRouter import
+import 'package:go_router/go_router.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
+
 import 'astrologers_list_card.dart';
 
 class AstrologersListView extends StatelessWidget {
@@ -9,6 +11,8 @@ class AstrologersListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     if (astrologers.isEmpty) {
       return const Center(
         child: Text(
@@ -20,16 +24,20 @@ class AstrologersListView extends StatelessWidget {
 
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive.horizontalPadding,
+        vertical: responsive.scale(12, min: 10, max: 16),
+      ),
       itemCount: astrologers.length,
       itemBuilder: (context, index) {
-        // 🌟 1. Grab the current item using the current loop index
         final currentItem = astrologers[index];
 
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
+          padding: EdgeInsets.only(
+            bottom: responsive.scale(16, min: 12, max: 20),
+          ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(16.0),
+            borderRadius: BorderRadius.circular(16),
             onTap: () {
               context.push(
                 '/astrologer-profile',
@@ -61,18 +69,14 @@ class AstrologersListView extends StatelessWidget {
                 context.push(
                   '/chat-room',
                   extra: {
-                    'id': 'chat_${currentItem['name'].toString().toLowerCase().replaceAll(' ', '_')}',
+                    'id':
+                        'chat_${currentItem['name'].toString().toLowerCase().replaceAll(' ', '_')}',
                     'name': currentItem['name'],
                   },
                 );
               },
-              onCallTap: () {
-                // 🚀 FIXED: 'currentItem' is now fully recognized here!
-                context.push('/live-call', extra: currentItem);
-              },
-              onVideoTap: () {
-                context.push('/video-call', extra: currentItem);
-              },
+              onCallTap: () => context.push('/live-call', extra: currentItem),
+              onVideoTap: () => context.push('/video-call', extra: currentItem),
             ),
           ),
         );

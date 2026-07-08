@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:omastro/core/theme/app_spacing.dart';
 import 'package:omastro/core/theme/app_text_styles.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/consultation_action_dock.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_avatar_frame.dart';
-import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_bio_and_reviews_header.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_meta_details.dart';
-import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_sub_header_bar.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_stats_card.dart'; // 👈 1. Added import statement
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';

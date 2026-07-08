@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_colors.dart';
-import 'package:omastro/core/theme/app_spacing.dart';
 import 'package:omastro/core/theme/app_text_styles.dart';
 import 'package:omastro/core/widgets/search_bar.dart';
 import '../widgets/astrologers_list_view.dart';
@@ -45,94 +45,105 @@ class _AstrologerPageState extends State<AstrologerPage> {
   @override
   Widget build(BuildContext context) {
     final filteredList = _getFilteredAstrologers();
+    final responsive = ResponsiveProvider.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 76),
-                  Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: responsive.pageConstraints(),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: responsive.horizontalPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/home'); // Fallback if no page to pop
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: AppColors.textPrimary,
-                        ),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.surface,
-                          padding: const EdgeInsets.all(10.0),
-                        ),
+                      SizedBox(height: responsive.heroTopGap),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go(
+                                  '/home',
+                                ); // Fallback if no page to pop
+                              }
+                            },
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              color: AppColors.textPrimary,
+                            ),
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.surface,
+                              padding: EdgeInsets.all(
+                                responsive.scale(10, min: 8, max: 12),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: responsive.scale(12, min: 8, max: 16),
+                          ),
+                          Text(
+                            'Astrologers',
+                            style: AppTextStyles.displayLarge02.copyWith(
+                              fontFamily: 'PlayfairDisplay',
+                              fontSize: responsive.font(24, min: 22, max: 30),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Astrologers',
-                        style: AppTextStyles.displayLarge02.copyWith(
-                          fontFamily: 'PlayfairDisplay',
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      SizedBox(height: responsive.scale(20, min: 14, max: 24)),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: responsive.horizontalPadding,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const AppSearchBar(),
+                      SizedBox(height: responsive.scale(16, min: 12, max: 20)),
+                      CategoryFilterChips(
+                        selectedCategory: _selectedCategory,
+                        onCategorySelected: (category) {
+                          setState(() {
+                            _selectedCategory = category;
+                          });
+                        },
+                      ),
+                      SizedBox(height: responsive.scale(8, min: 6, max: 12)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: AstrologersListView(astrologers: filteredList),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: SizedBox(height: responsive.bottomInset),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+                ),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: AppSearchBar(),
-                  ),
-                  const SizedBox(height: 16.0),
-                  CategoryFilterChips(
-                    selectedCategory: _selectedCategory,
-                    onCategorySelected: (category) {
-                      setState(() {
-                        _selectedCategory = category;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8.0),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: AstrologersListView(
-                      astrologers: filteredList,
-                    ),
-                  ),
-                  const Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: SizedBox(height: 120),
-                  ),
-                ],
-              ),
-            ),
-          ],
-    ),
-    ),
+          ),
+        ),
+      ),
     );
   }
 }

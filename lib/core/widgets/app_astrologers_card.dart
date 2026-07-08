@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 
@@ -24,11 +25,14 @@ class FeaturedAstrologerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+    final avatarRadius = responsive.scale(30, min: 26, max: 38);
+
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.radiusMd,
       child: Container(
-        width: 150, // Fixed horizontal track column block width
+        width: responsive.featuredCardWidth,
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: AppRadius.radiusMd,
@@ -42,7 +46,7 @@ class FeaturedAstrologerCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: EdgeInsets.all(responsive.scale(12, min: 10, max: 16)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -51,7 +55,7 @@ class FeaturedAstrologerCard extends StatelessWidget {
               Stack(
                 children: [
                   CircleAvatar(
-                    radius: 30,
+                    radius: avatarRadius,
                     backgroundColor: AppColors.background,
                     backgroundImage: imageUrl.startsWith('assets/')
                         ? AssetImage(imageUrl) as ImageProvider
@@ -62,71 +66,80 @@ class FeaturedAstrologerCard extends StatelessWidget {
                       right: 2,
                       bottom: 2,
                       child: Container(
-                        width: 12,
-                        height: 12,
+                        width: responsive.scale(12, min: 10, max: 14),
+                        height: responsive.scale(12, min: 10, max: 14),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50), // Emerald presence green color
+                          color: const Color(
+                            0xFF4CAF50,
+                          ), // Emerald presence green color
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.surface, width: 2.0),
+                          border: Border.all(
+                            color: AppColors.surface,
+                            width: 2.0,
+                          ),
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: responsive.scale(8, min: 6, max: 10)),
 
               // --- Astrologer Identity Name ---
               Text(
                 name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: responsive.font(13, min: 12, max: 15),
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),
               ),
-              
+
               // --- Specialty Subtitle Label ---
               Text(
                 specialty,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 10,
+                  fontSize: responsive.font(10, min: 9, max: 12),
                   fontWeight: FontWeight.w400,
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: responsive.scale(6, min: 4, max: 8)),
 
               // --- Ratings / Star Layout Row ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.star_rounded, color: AppColors.primary, size: 14),
+                  Icon(
+                    Icons.star_rounded,
+                    color: AppColors.primary,
+                    size: responsive.scale(14, min: 12, max: 16),
+                  ),
                   const SizedBox(width: 2),
                   Text(
                     rating.toStringAsFixed(1),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 11,
+                      fontSize: responsive.font(11, min: 10, max: 13),
                       fontWeight: FontWeight.w500,
                       color: AppColors.textPrimary,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: responsive.scale(8, min: 6, max: 10)),
 
               // --- Fee Pricing Tag Block ---
               Text(
                 '₹$pricePerMin/min',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 12,
+                  fontSize: responsive.font(12, min: 11, max: 14),
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                 ),

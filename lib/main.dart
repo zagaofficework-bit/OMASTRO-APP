@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_theme.dart';
 import 'app/route.dart';
 
@@ -38,6 +39,9 @@ class _MyAppState extends State<MyApp> {
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
+      builder: (context, child) {
+        return ResponsiveBuilder(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

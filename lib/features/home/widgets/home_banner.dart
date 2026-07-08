@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 
@@ -38,18 +39,22 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     return Column(
       children: [
         // --- 1. Horizontal PageView Slider ---
         SizedBox(
-          height: 140,
+          height: responsive.bannerHeight,
           child: PageView.builder(
             controller: _pageController,
             itemCount: _bannerImages.length,
             physics: const BouncingScrollPhysics(),
             itemBuilder: (context, index) {
               return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                margin: EdgeInsets.symmetric(
+                  horizontal: responsive.horizontalPadding,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: AppRadius.radiusMd,
                   border: Border.all(color: AppColors.border, width: 1.0),
@@ -63,14 +68,16 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
                     borderRadius: AppRadius.radiusMd,
                     gradient: LinearGradient(
                       colors: [
-                        Colors.black.withValues(alpha:0.6),
+                        Colors.black.withValues(alpha: 0.6),
                         Colors.transparent,
                       ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
                   ),
-                  padding: const EdgeInsets.all(20.0),
+                  padding: EdgeInsets.all(
+                    responsive.scale(20, min: 16, max: 28),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -81,14 +88,14 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
                             : index == 1
                             ? 'Daily Horoscopes'
                             : 'Connect with Guides',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'PlayfairDisplay',
-                          fontSize: 18,
+                          fontSize: responsive.font(18, min: 16, max: 24),
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: responsive.scale(4, min: 4, max: 8)),
                       Text(
                         index == 0
                             ? 'First chat free'
@@ -97,9 +104,9 @@ class _HomeBannerSliderState extends State<HomeBannerSlider> {
                             : 'Available 24/7 on call',
                         style: TextStyle(
                           fontFamily: 'Poppins',
-                          fontSize: 11,
+                          fontSize: responsive.font(11, min: 10, max: 14),
                           fontWeight: FontWeight.w400,
-                          color: Colors.white.withValues(alpha:0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
                     ],

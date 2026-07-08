@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/features/astrologers/screen/astrologer_page.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_category_card.dart';
@@ -8,6 +9,7 @@ class HomeCategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
     // Definitive list configuration matching the design items
     final List<Map<String, dynamic>> categories = [
       {'label': 'Love', 'icon': Icons.favorite_border_rounded},
@@ -19,21 +21,23 @@ class HomeCategoryGrid extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: EdgeInsets.symmetric(
+        vertical: responsive.scale(8, min: 6, max: 12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section Header Text
-          const Text(
+          Text(
             'Explore Categories',
             style: TextStyle(
               fontFamily: 'Poppins',
-              fontSize: 16,
+              fontSize: responsive.font(16, min: 14, max: 18),
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 12.0),
+          SizedBox(height: responsive.scale(12, min: 10, max: 16)),
 
           // Grid Container Track
           GridView.builder(
@@ -41,11 +45,11 @@ class HomeCategoryGrid extends StatelessWidget {
                 true, // Allows the grid to sit cleanly inside the parent Column layout
             physics:
                 const NeverScrollableScrollPhysics(), // Disables inner grid fight with overall page scroll
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3, // 3 items per row matching visual layout
-              crossAxisSpacing: 12.0,
-              mainAxisSpacing: 12.0,
-              childAspectRatio: 0.95, // Maintains balanced square layout bounds
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: responsive.categoryColumns,
+              crossAxisSpacing: responsive.scale(12, min: 8, max: 16),
+              mainAxisSpacing: responsive.scale(12, min: 8, max: 16),
+              childAspectRatio: responsive.isMobile ? 0.95 : 1.05,
             ),
             itemCount: categories.length,
             itemBuilder: (context, index) {

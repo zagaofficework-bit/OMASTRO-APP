@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/widgets/app_astrologers_card.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -8,6 +9,7 @@ class TopAstrologersSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
     // Temporary mock list simulating live database entries for Phase 1
     final List<Map<String, dynamic>> onlineList = [
       {
@@ -40,11 +42,11 @@ class TopAstrologersSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Top Astrologers',
               style: TextStyle(
                 fontFamily: 'Poppins',
-                fontSize: 16,
+                fontSize: responsive.font(16, min: 14, max: 18),
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
@@ -53,11 +55,11 @@ class TopAstrologersSection extends StatelessWidget {
               onPressed: () {
                 context.push('/hub-list');
               },
-              child: const Text(
+              child: Text(
                 'See all',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: 13,
+                  fontSize: responsive.font(13, min: 12, max: 15),
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                 ),
@@ -65,11 +67,11 @@ class TopAstrologersSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8.0),
+        SizedBox(height: responsive.scale(8, min: 6, max: 12)),
 
         // --- Horizontal Scrolling List Layout ---
         SizedBox(
-          height: 175,
+          height: responsive.featuredListHeight,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -78,7 +80,9 @@ class TopAstrologersSection extends StatelessWidget {
               final currentAstrologer = onlineList[index];
 
               return Padding(
-                padding: const EdgeInsets.only(right: 12.0),
+                padding: EdgeInsets.only(
+                  right: responsive.scale(12, min: 8, max: 16),
+                ),
                 child: FeaturedAstrologerCard(
                   name: currentAstrologer['name'],
                   imageUrl: currentAstrologer['image'],

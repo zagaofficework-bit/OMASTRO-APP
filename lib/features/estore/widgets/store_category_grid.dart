@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omastro/core/responsive/responsive_provider.dart';
 import '../../../core/theme/app_colors.dart';
 
 class StoreCategoryGrid extends StatelessWidget {
@@ -8,6 +9,7 @@ class StoreCategoryGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
     // Local data configuration array representing your store catalog categories
     final List<Map<String, dynamic>> categories = [
       {
@@ -55,19 +57,18 @@ class StoreCategoryGrid extends StatelessWidget {
     ];
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: EdgeInsets.symmetric(horizontal: responsive.horizontalPadding),
       child: GridView.builder(
         shrinkWrap:
             true, // Crucial: Allows the grid to size itself to content inside SingleChildScrollView
         physics:
             const NeverScrollableScrollPhysics(), // Disables inner scrolling so it scrolls with parent column smoothly
         itemCount: categories.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12.0,
-          mainAxisSpacing: 12.0,
-          childAspectRatio:
-              0.82, // Tailored aspect balance matching the card dimensions in E-store page.jpg
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: responsive.storeColumns,
+          crossAxisSpacing: responsive.scale(12, min: 10, max: 16),
+          mainAxisSpacing: responsive.scale(12, min: 10, max: 16),
+          childAspectRatio: responsive.isMobile ? 0.82 : 0.88,
         ),
         itemBuilder: (context, index) {
           final item = categories[index];
@@ -98,6 +99,8 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = ResponsiveProvider.of(context);
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -133,7 +136,7 @@ class _CategoryCard extends StatelessWidget {
 
               // 2. Info Footer Label Deck
               Padding(
-                padding: const EdgeInsets.all(10.0),
+                padding: EdgeInsets.all(responsive.scale(10, min: 8, max: 12)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -142,19 +145,19 @@ class _CategoryCard extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 12.5,
+                        fontSize: responsive.font(12.5, min: 11.5, max: 14),
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 2.0),
+                    SizedBox(height: responsive.scale(2, min: 2, max: 4)),
                     Text(
                       count,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 10.5,
+                        fontSize: responsive.font(10.5, min: 9.5, max: 12),
                         color: AppColors.textSecondary,
                       ),
                     ),
