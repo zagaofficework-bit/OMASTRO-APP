@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_theme.dart';
 import 'app/route.dart';
@@ -9,7 +10,7 @@ void main() {
   // 1. Lock the screen on cold boot
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
