@@ -28,7 +28,7 @@ class HomePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: responsive.heroTopGap),
+                  SizedBox(height: 66),
                   // --- 1. Hero Text Layout Block ---
                   Padding(
                     padding: EdgeInsets.symmetric(

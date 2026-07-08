@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:omastro/core/responsive/responsive_provider.dart';
+import 'package:omastro/core/theme/app_colors.dart';
 import 'package:omastro/core/widgets/app_astrologers_card.dart';
-import '../../../core/theme/app_colors.dart';
 
 class OnlineAstrologersSection extends StatelessWidget {
   const OnlineAstrologersSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final responsive = ResponsiveProvider.of(context);
-    // Temporary mock list simulating live database entries for Phase 1
+    final responsive = context.responsive;
+
     final List<Map<String, dynamic>> onlineList = [
       {
         'name': 'Astro Priya',
@@ -38,20 +39,31 @@ class OnlineAstrologersSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // --- Section Header Title Block ---
+        /// Header
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Online now',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: responsive.font(16, min: 14, max: 18),
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+            Expanded(
+              child: Text(
+                'Online now',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: responsive.font(16, min: 14, max: 18),
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
             TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive.scale(10),
+                  vertical: responsive.scale(6),
+                ),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: () {
                 context.push('/hub-list');
               },
@@ -59,7 +71,7 @@ class OnlineAstrologersSection extends StatelessWidget {
                 'See all',
                 style: TextStyle(
                   fontFamily: 'Poppins',
-                  fontSize: responsive.font(13, min: 12, max: 15),
+                  fontSize: responsive.font(13),
                   fontWeight: FontWeight.w600,
                   color: AppColors.primary,
                 ),
@@ -67,49 +79,43 @@ class OnlineAstrologersSection extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: responsive.scale(8, min: 6, max: 12)),
 
-        // --- Horizontal Scrolling List Layout ---
+        SizedBox(height: responsive.scale(8)),
+
         SizedBox(
-          height: responsive.featuredListHeight,
-          child: ListView.builder(
+          height: responsive.featuredCardHeight,
+          child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none,
+            padding: EdgeInsets.symmetric(horizontal: responsive.scale(2)),
             itemCount: onlineList.length,
+            separatorBuilder: (_, __) => SizedBox(width: responsive.scale(12)),
             itemBuilder: (context, index) {
-              final currentAstrologer = onlineList[index];
+              final astrologer = onlineList[index];
 
-              return Padding(
-                padding: EdgeInsets.only(
-                  right: responsive.scale(12, min: 8, max: 16),
-                ),
-                child: FeaturedAstrologerCard(
-                  name: currentAstrologer['name'],
-                  imageUrl: currentAstrologer['image'],
-                  specialty: currentAstrologer['specialty'],
-                  rating: currentAstrologer['rating'],
-                  pricePerMin: currentAstrologer['price'],
-                  isOnline: true,
-                  onTap: () {
-                    context.push(
-                      '/astrologer-profile',
-                      extra: {
-                        'name': currentAstrologer['name']?.toString() ?? '',
-                        'imageUrl':
-                            currentAstrologer['image']?.toString() ?? '',
-                        'specialties':
-                            currentAstrologer['specialty']?.toString() ?? '',
-                        'languages': 'English, Hindi',
-                        'experience': '5 Years',
-                        'rate':
-                            currentAstrologer['price']?.toString() ??
-                            '0', // 👈 .toString() ensures it's a String, not an int
-                        'bio':
-                            'Live advisor available to guide your consultation right now.',
-                      },
-                    );
-                  },
-                ),
+              return FeaturedAstrologerCard(
+                name: astrologer['name'],
+                imageUrl: astrologer['image'],
+                specialty: astrologer['specialty'],
+                rating: astrologer['rating'],
+                pricePerMin: astrologer['price'],
+                isOnline: true,
+                onTap: () {
+                  context.push(
+                    '/astrologer-profile',
+                    extra: {
+                      'name': astrologer['name'],
+                      'imageUrl': astrologer['image'],
+                      'specialties': astrologer['specialty'],
+                      'languages': 'English, Hindi',
+                      'experience': '5 Years',
+                      'rate': astrologer['price'].toString(),
+                      'bio':
+                          'Live advisor available to guide your consultation right now.',
+                    },
+                  );
+                },
               );
             },
           ),

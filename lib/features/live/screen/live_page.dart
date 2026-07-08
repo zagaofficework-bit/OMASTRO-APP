@@ -53,7 +53,7 @@ class LivePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(height: responsive.heroTopGap),
+                    SizedBox(height: 66),
                     // --- 1. Header & Live Indicator Badge Track ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

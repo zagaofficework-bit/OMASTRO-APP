@@ -40,7 +40,7 @@ class EStorePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: responsive.heroTopGap),
+                  SizedBox(height: 66),
 
                   const StoreHeader(),
                   SizedBox(height: responsive.scale(16, min: 12, max: 20)),

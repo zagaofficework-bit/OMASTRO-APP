@@ -29,7 +29,7 @@ class ProfilePage extends StatelessWidget {
             child: ConstrainedBox(
               constraints: responsive.pageConstraints(),
               child: Padding(
-                padding: EdgeInsets.only(top: responsive.heroTopGap),
+                padding: EdgeInsets.only(top: 66),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

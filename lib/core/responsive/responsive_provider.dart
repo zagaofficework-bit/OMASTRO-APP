@@ -16,12 +16,14 @@ class ResponsiveProvider extends InheritedWidget {
   static ResponsiveData of(BuildContext context) {
     final provider = context
         .dependOnInheritedWidgetOfExactType<ResponsiveProvider>();
+
     return provider?.data ?? ResponsiveData.fromContext(context);
   }
 
   @override
-  bool updateShouldNotify(ResponsiveProvider oldWidget) =>
-      data != oldWidget.data;
+  bool updateShouldNotify(ResponsiveProvider oldWidget) {
+    return data != oldWidget.data;
+  }
 }
 
 class ResponsiveBuilder extends StatelessWidget {
@@ -60,7 +62,9 @@ class ResponsiveData {
 
   factory ResponsiveData.fromContext(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+
     final width = mediaQuery.size.width;
+
     final baseScale = width / 390;
 
     return ResponsiveData(
@@ -71,10 +75,18 @@ class ResponsiveData {
     );
   }
 
+  //---------------------------------------
+  // Screen Info
+  //---------------------------------------
+
   double get width => size.width;
+
   double get height => size.height;
+
   bool get isMobile => width < 600;
+
   bool get isTablet => width >= 600 && width < 1024;
+
   bool get isDesktop => width >= 1024;
 
   AppDeviceType get deviceType {
@@ -83,22 +95,50 @@ class ResponsiveData {
     return AppDeviceType.mobile;
   }
 
+  //---------------------------------------
+  // Common Layout
+  //---------------------------------------
+
   double get horizontalPadding {
     if (isDesktop) return 40;
     if (isTablet) return 28;
     return width < 360 ? 12 : 16;
   }
 
-  double get pageMaxWidth => isDesktop
-      ? 980
-      : isTablet
-      ? 760
-      : double.infinity;
+  EdgeInsets pagePadding({double vertical = 16}) {
+    return EdgeInsets.symmetric(
+      horizontal: horizontalPadding,
+      vertical: vertical,
+    );
+  }
+
+  BoxConstraints pageConstraints() {
+    return BoxConstraints(maxWidth: pageMaxWidth);
+  }
+
+  double get pageMaxWidth {
+    if (isDesktop) return 980;
+    if (isTablet) return 760;
+    return double.infinity;
+  }
+
+  //---------------------------------------
+  // App Shell
+  //---------------------------------------
+
   double get topBarContentHeight => isMobile ? 64 : 72;
+
   double get topBarHeight => topBarContentHeight + viewPadding.top;
+
   double get bottomNavHeight => isMobile ? 72 : 80;
+
   double get bottomInset => bottomNavHeight + viewPadding.bottom + 24;
+
   double get heroTopGap => topBarHeight + (isMobile ? 12 : 20);
+
+  //---------------------------------------
+  // Grid Counts
+  //---------------------------------------
 
   int get categoryColumns {
     if (isDesktop) return 6;
@@ -112,37 +152,51 @@ class ResponsiveData {
     return 2;
   }
 
+  //---------------------------------------
+  // Featured Astrologer Card
+  //---------------------------------------
+
   double get featuredCardWidth {
-    if (isDesktop) return 190;
-    if (isTablet) return 172;
-    return math.max(138, math.min(158, width * 0.39));
+    if (isDesktop) return 210;
+    if (isTablet) return 190;
+
+    return math.max(150, math.min(170, width * 0.42));
   }
 
-  double get featuredListHeight => isMobile ? 176 : 206;
-  double get bannerHeight => isDesktop
-      ? 220
-      : isTablet
-      ? 180
-      : 140;
+  double get featuredCardHeight {
+    if (isDesktop) return 250;
+    if (isTablet) return 225;
+
+    return 205;
+  }
+
+  //---------------------------------------
+  // Banner
+  //---------------------------------------
+
+  double get bannerHeight {
+    if (isDesktop) return 220;
+    if (isTablet) return 180;
+    return 140;
+  }
+
+  //---------------------------------------
+  // Scaling Helpers
+  //---------------------------------------
 
   double scale(double value, {double min = 0, double? max}) {
-    final scaled = value * (width / 390).clamp(0.88, 1.18);
-    return scaled.clamp(min, max ?? double.infinity).toDouble();
+    final scaled = value * (width / 390).clamp(0.90, 1.20);
+
+    return scaled.clamp(min, max ?? double.infinity);
   }
 
   double font(double value, {double min = 10, double? max}) {
     final scaled = value * textScale;
-    return scaled.clamp(min, max ?? value + 3).toDouble();
+
+    return scaled.clamp(min, max ?? value + 3);
   }
 
-  EdgeInsets pagePadding({double vertical = 16}) {
-    return EdgeInsets.symmetric(
-      horizontal: horizontalPadding,
-      vertical: vertical,
-    );
-  }
-
-  BoxConstraints pageConstraints() => BoxConstraints(maxWidth: pageMaxWidth);
+  //---------------------------------------
 
   @override
   bool operator ==(Object other) {
@@ -154,7 +208,9 @@ class ResponsiveData {
   }
 
   @override
-  int get hashCode => Object.hash(size, viewPadding, orientation, textScale);
+  int get hashCode {
+    return Object.hash(size, viewPadding, orientation, textScale);
+  }
 }
 
 extension ResponsiveContext on BuildContext {
