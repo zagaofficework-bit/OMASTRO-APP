@@ -33,7 +33,7 @@ class ProfileMenuTile extends StatelessWidget {
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (iconColor ?? AppColors.primary).withOpacity(0.1),
+              color: (iconColor ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -64,7 +64,7 @@ class ProfileMenuTile extends StatelessWidget {
         ),
         if (!isLast)
           Divider(
-            color: AppColors.border.withOpacity(0.5),
+            color: AppColors.border.withValues(alpha: 0.5),
             height: 1,
             indent: 64,
             endIndent: AppSpacing.md,

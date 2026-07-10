@@ -1,10 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/features/chat/screens/chat_page.dart';
-import 'package:omastro/features/wallet/wallet_provider.dart';
+import 'package:omastro/features/wallet/bloc/wallet_bloc.dart';
+import 'package:omastro/features/wallet/bloc/wallet_state.dart';
 
 import '../theme/app_colors.dart';
 
@@ -101,9 +103,13 @@ class AppTopBar extends StatelessWidget {
                     },
                   ),
                   SizedBox(width: responsive.scale(10, min: 8, max: 12)),
-                  ListenableBuilder(
-                    listenable: globalWalletProvider,
-                    builder: (context, _) {
+                  BlocBuilder<WalletBloc, WalletState>(
+                    builder: (context, state) {
+                      double balance = 0.0;
+                      if (state is WalletBalanceUpdated) {
+                        balance = state.balance;
+                      }
+                      
                       return ConstrainedBox(
                         constraints: BoxConstraints(
                           maxWidth: responsive.scale(112, min: 88, max: 128),
@@ -125,7 +131,7 @@ class AppTopBar extends StatelessWidget {
                             ),
                           ),
                           child: Text(
-                            'Rs ${globalWalletProvider.balance.toStringAsFixed(2)}',
+                            'Rs ${balance.toStringAsFixed(2)}',
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: 'Poppins',

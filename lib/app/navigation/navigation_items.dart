@@ -9,12 +9,6 @@ final navigationItems = [
     route: '/home',
   ),
   NavigationItem(
-    label: 'E-Store',
-    icon: Icons.shopping_cart_outlined,
-    selectedIcon: Icons.shopping_cart,
-    route: '/estore',
-  ),
-  NavigationItem(
     label: 'Astrologers',
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
@@ -25,6 +19,12 @@ final navigationItems = [
     icon: Icons.live_tv_outlined,
     selectedIcon: Icons.live_tv,
     route: '/live',
+  ),
+  NavigationItem(
+    label: 'E-Store',
+    icon: Icons.shopping_cart_outlined,
+    selectedIcon: Icons.shopping_cart,
+    route: '/estore',
   ),
   NavigationItem(
     label: 'Profile',

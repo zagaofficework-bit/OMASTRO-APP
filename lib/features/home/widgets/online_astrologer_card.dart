@@ -90,7 +90,7 @@ class OnlineAstrologersSection extends StatelessWidget {
             clipBehavior: Clip.none,
             padding: EdgeInsets.symmetric(horizontal: responsive.scale(2)),
             itemCount: onlineList.length,
-            separatorBuilder: (_, __) => SizedBox(width: responsive.scale(12)),
+            separatorBuilder: (_, _) => SizedBox(width: responsive.scale(12)),
             itemBuilder: (context, index) {
               final astrologer = onlineList[index];
 

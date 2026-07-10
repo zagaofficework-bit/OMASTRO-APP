@@ -1,0 +1,28 @@
+import 'package:equatable/equatable.dart';
+
+abstract class ProfileState extends Equatable {
+  const ProfileState();
+  
+  @override
+  List<Object> get props => [];
+}
+
+class ProfileLoaded extends ProfileState {
+  final String name;
+  final String email;
+  final String dob;
+  final String gender;
+  final String phone;
+
+  const ProfileLoaded({
+    required this.name,
+    required this.email,
+    required this.dob,
+    required this.gender,
+    required this.phone,
+  });
+
+  @override
+  List<Object> get props => [name, email, dob, gender, phone];
+}
+

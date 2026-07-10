@@ -18,16 +18,13 @@ class MainShell extends StatelessWidget {
 
     int calculateIndex() {
       if (location == '/home') return 0;
-      if (location == '/estore') return 1;
       // 🚀 Check if the route is the categories page, the list page, OR the profile page!
       if (location.startsWith('/astrologer') ||
           location.startsWith('/hub-list')) {
-        return 2; // Index of your Astrologers Bottom Navigation Tab icon slot
+        return 1; // Index of your Astrologers Bottom Navigation Tab icon slot
       }
-      if (location.startsWith('/hub-list')) {
-        return 2; // 👈 Keeps the Astrologers tab highlighted when looking at the list!
-      }
-      if (location == '/live') return 3;
+      if (location == '/live') return 2;
+      if (location == '/estore') return 3;
       if (location == '/profile') return 4;
       return 0;
     }
