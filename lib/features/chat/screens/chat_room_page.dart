@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../chat_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/chat_bloc.dart';
+import '../bloc/chat_event.dart';
+import '../bloc/chat_state.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final String id;
@@ -34,7 +37,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    globalChatProvider.sendMessage(widget.id, widget.name, text);
+    context.read<ChatBloc>().add(SendMessageEvent(
+      chatId: widget.id,
+      astrologerName: widget.name,
+      text: text,
+    ));
     _messageController.clear();
 
     // Scroll to bottom
@@ -57,10 +64,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: globalChatProvider,
-      builder: (context, _) {
-        final messages = globalChatProvider.getMessagesForChat(widget.id);
+    return BlocBuilder<ChatBloc, ChatState>(
+      builder: (context, state) {
+        List<ChatMessage> messages = [];
+        if (state is ChatUpdatedState) {
+          messages = state.messages[widget.id] ?? [];
+        }
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -259,7 +268,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           maxWidth: MediaQuery.of(context).size.width * 0.75,
         ),
         decoration: BoxDecoration(
-          color: isMe ? const Color(0xffD4A437).withOpacity(0.85) : Colors.white,
+          color: isMe ? const Color(0xffD4A437).withValues(alpha: 0.85) : Colors.white,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -268,7 +277,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.015),
+              color: Colors.black.withValues(alpha: 0.015),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

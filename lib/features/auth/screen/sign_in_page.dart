@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:omastro/core/auth/auth_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_event.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -216,11 +218,10 @@ class _SignInPageState extends State<SignInPage> {
                         child: OutlinedButton(
                           onPressed: () {
                             // 2. Change state natively!
-                            globalAuthProvider
-                                .signInUser(); // Close the SignInPage after initiating sign-in
+                            globalAuthBloc.add(SignInRequested());
 
                             // NOTE: You do NOT write context.go('/home') here!
-                            // The refreshListenable detects notifyListeners() above, fires the
+                            // The refreshListenable detects the state change, fires the
                             // redirect guard rule, and smoothly slides the home screen into view.
                           },
                           style: OutlinedButton.styleFrom(

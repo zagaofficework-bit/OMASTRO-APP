@@ -4,7 +4,10 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../widgets/chat_tile.dart';
 
-import '../chat_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/chat_bloc.dart';
+import '../bloc/chat_state.dart';
+import '../models/chat_conversation.dart';
 
 class ChatsPage extends StatefulWidget {
   const ChatsPage({super.key});
@@ -16,10 +19,12 @@ class ChatsPage extends StatefulWidget {
 class _ChatsPageState extends State<ChatsPage> {
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: globalChatProvider,
-      builder: (context, _) {
-        final activeChats = globalChatProvider.activeConversations;
+    return BlocBuilder<ChatBloc, ChatState>(
+      builder: (context, state) {
+        List<ChatConversation> activeChats = [];
+        if (state is ChatUpdatedState) {
+          activeChats = state.activeConversations;
+        }
 
         return Scaffold(
           appBar: AppBar(

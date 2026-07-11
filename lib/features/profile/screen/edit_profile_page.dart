@@ -8,7 +8,10 @@ import '../widgets/edit_avatar_picker.dart';
 import '../widgets/info_group_card.dart';
 import '../widgets/gender_choice_chips.dart';
 import '../widgets/primary_submit_button.dart';
-import '../profile_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/profile_bloc.dart';
+import '../bloc/profile_event.dart';
+import '../bloc/profile_state.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -27,11 +30,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Pre-filling with user session parameters from globalProfileProvider
-    _nameController = TextEditingController(text: globalProfileProvider.name);
-    _emailController = TextEditingController(text: globalProfileProvider.email);
-    _dobController = TextEditingController(text: globalProfileProvider.dob);
-    _selectedGender = globalProfileProvider.gender;
+    // Pre-filling with user session parameters from ProfileBloc
+    final state = context.read<ProfileBloc>().state;
+    String initialName = '';
+    String initialEmail = '';
+    String initialDob = '';
+    String initialGender = 'Male';
+    
+    if (state is ProfileLoaded) {
+      initialName = state.name;
+      initialEmail = state.email;
+      initialDob = state.dob;
+      initialGender = state.gender;
+    }
+
+    _nameController = TextEditingController(text: initialName);
+    _emailController = TextEditingController(text: initialEmail);
+    _dobController = TextEditingController(text: initialDob);
+    _selectedGender = initialGender;
   }
 
   @override
@@ -74,9 +90,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   bool _hasChanges() {
-    return _nameController.text != globalProfileProvider.name ||
-        _dobController.text != globalProfileProvider.dob ||
-        _selectedGender != globalProfileProvider.gender;
+    final state = context.read<ProfileBloc>().state;
+    if (state is ProfileLoaded) {
+      return _nameController.text != state.name ||
+          _dobController.text != state.dob ||
+          _selectedGender != state.gender;
+    }
+    return false;
   }
 
   Future<int?> _showSaveOrDiscardDialog(BuildContext context) async {
@@ -158,11 +178,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _saveChanges() {
-    globalProfileProvider.updateProfile(
+    context.read<ProfileBloc>().add(UpdateProfileEvent(
       name: _nameController.text,
       dob: _dobController.text,
       gender: _selectedGender,
-    );
+    ));
   }
 
   void _performPop() {

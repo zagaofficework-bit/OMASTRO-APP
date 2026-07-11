@@ -6,7 +6,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../wallet_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/wallet_bloc.dart';
+import '../bloc/wallet_event.dart';
+import '../bloc/wallet_state.dart';
 import '../widgets/balance_banner.dart';
 import '../widgets/custom_amount_input.dart';
 import '../widgets/recharge_grid.dart';
@@ -68,11 +71,14 @@ class _WalletPageState extends State<WalletPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: responsive.scale(12, min: 8, max: 18)),
-                  ListenableBuilder(
-                    listenable: globalWalletProvider,
-                    builder: (context, _) {
+                  BlocBuilder<WalletBloc, WalletState>(
+                    builder: (context, state) {
+                      double balance = 0.0;
+                      if (state is WalletBalanceUpdated) {
+                        balance = state.balance;
+                      }
                       return BalanceBanner(
-                        balance: globalWalletProvider.balance,
+                        balance: balance,
                       );
                     },
                   ),
@@ -103,8 +109,8 @@ class _WalletPageState extends State<WalletPage> {
                     child: ElevatedButton(
                       onPressed: _selectedAmount > 0
                           ? () {
-                              globalWalletProvider.addMoney(
-                                _selectedAmount.toDouble(),
+                              context.read<WalletBloc>().add(
+                                AddMoney(_selectedAmount.toDouble()),
                               );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

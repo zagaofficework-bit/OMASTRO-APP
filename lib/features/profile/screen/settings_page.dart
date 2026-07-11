@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/auth/auth_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_event.dart';
 import '../widgets/info_group_card.dart';
 import '../widgets/profile_menu_tile.dart';
 
@@ -53,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 if (context.canPop()) {
                   context.pop(); // Back to profile
                 }
-                globalAuthProvider.signOutUser(); // Trigger auth logout routing redirect
+                globalAuthBloc.add(SignOutRequested()); // Trigger auth logout routing redirect
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.error,
@@ -123,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 padding: EdgeInsets.zero,
                 children: [
                   SwitchListTile(
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     title: Text('Push Notifications', style: AppTextStyles.headingSmall),
                     subtitle: Text('Get live calls and alerts', style: AppTextStyles.bodySecondary),
@@ -134,9 +136,9 @@ class _SettingsPageState extends State<SettingsPage> {
                       });
                     },
                   ),
-                  Divider(color: AppColors.border.withOpacity(0.5), height: 1),
+                  Divider(color: AppColors.border.withValues(alpha: 0.5), height: 1),
                   SwitchListTile(
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                     title: Text('Email Updates', style: AppTextStyles.headingSmall),
                     subtitle: Text('Receive newsletter and offers', style: AppTextStyles.bodySecondary),

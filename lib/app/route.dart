@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:omastro/core/auth/auth_provider.dart';
+import 'package:omastro/features/auth/bloc/auth_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_state.dart';
+import 'package:omastro/core/bloc/go_router_refresh_stream.dart';
 import 'package:omastro/features/astrologers/screen/astrologer_category_page.dart';
 import 'package:omastro/features/astrologers/screen/astrologers_profile.dart';
 import 'package:omastro/features/auth/screen/sign_in_page.dart';
@@ -27,9 +29,9 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/home',
-  refreshListenable: globalAuthProvider,
+  refreshListenable: GoRouterRefreshStream(globalAuthBloc.stream),
   redirect: (context, state) {
-    final bool loggedIn = globalAuthProvider.isLoggedIn;
+    final bool loggedIn = globalAuthBloc.state is Authenticated;
     final bool goingToLogin = state.matchedLocation == '/login';
 
     if (!loggedIn && !goingToLogin) {

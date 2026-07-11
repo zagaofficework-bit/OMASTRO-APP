@@ -6,7 +6,13 @@ import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_stats_card.dart'; // 👈 1. Added import statement
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
-import '../following_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/astrologers_bloc.dart';
+import '../bloc/astrologers_event.dart';
+import '../bloc/astrologers_state.dart';
+import '../../reviews/bloc/reviews_bloc.dart';
+import '../../reviews/bloc/reviews_state.dart';
+import '../../reviews/widgets/write_review_bottom_sheet.dart';
 
 class AstrologerProfilePage extends StatelessWidget {
   final Map<String, String> astrologerData;
@@ -134,11 +140,12 @@ class AstrologerProfilePage extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         // Meta Details (Name, Rating, Specialties, rate, Follow button)
-                        ListenableBuilder(
-                          listenable: globalFollowingProvider,
-                          builder: (context, _) {
-                            final bool isFollowing = globalFollowingProvider
-                                .isFollowing(profileName);
+                        BlocBuilder<AstrologersBloc, AstrologersState>(
+                          builder: (context, state) {
+                            bool isFollowing = false;
+                            if (state is AstrologersFollowingState) {
+                              isFollowing = state.followedAstrologers.contains(profileName);
+                            }
                             return ProfileMetaDetails(
                               name: profileName,
                               specialties: specialties,
@@ -147,8 +154,8 @@ class AstrologerProfilePage extends StatelessWidget {
                               ratePerMinute: hourlyRate,
                               isFollowing: isFollowing,
                               onFollowTap: () {
-                                globalFollowingProvider.toggleFollow(
-                                  profileName,
+                                context.read<AstrologersBloc>().add(
+                                  ToggleFollowAstrologer(profileName),
                                 );
                               },
                             );
@@ -307,10 +314,20 @@ class AstrologerProfilePage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            'View All',
+                        TextButton.icon(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                              ),
+                              builder: (context) => WriteReviewBottomSheet(astrologerName: profileName),
+                            );
+                          },
+                          icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xffE4A834)),
+                          label: const Text(
+                            'Write Review',
                             style: TextStyle(
                               color: Color(0xffE4A834),
                               fontWeight: FontWeight.bold,
@@ -320,18 +337,48 @@ class AstrologerProfilePage extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildReviewItem(
-                      'Rohan K.',
-                      5.0,
-                      'Very accurate prediction! Highly recommended.',
-                      '2 hours ago',
-                    ),
-                    const Divider(height: 24),
-                    _buildReviewItem(
-                      'Neha S.',
-                      5.0,
-                      'Felt so peaceful talking to her. Clean explanations and remediation guides.',
-                      '1 day ago',
+                    BlocBuilder<ReviewsBloc, ReviewsState>(
+                      builder: (context, state) {
+                        if (state is ReviewsUpdatedState) {
+                          // Try getting specific reviews, fallback to generic DEFAULT reviews
+                          final reviews = state.reviews[profileName] ?? state.reviews['DEFAULT'] ?? [];
+                          
+                          if (reviews.isEmpty) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              child: Text('No reviews yet. Be the first to review!', style: TextStyle(color: Colors.grey[600])),
+                            );
+                          }
+
+                          return ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: reviews.length,
+                            separatorBuilder: (context, index) => const Divider(height: 24),
+                            itemBuilder: (context, index) {
+                              final review = reviews[index];
+                              
+                              String formattedTime;
+                              final difference = DateTime.now().difference(review.timestamp);
+                              if (difference.inMinutes < 60) {
+                                formattedTime = '${difference.inMinutes} mins ago';
+                              } else if (difference.inHours < 24) {
+                                formattedTime = '${difference.inHours} hours ago';
+                              } else {
+                                formattedTime = '${difference.inDays} days ago';
+                              }
+
+                              return _buildReviewItem(
+                                review.userName,
+                                review.rating,
+                                review.comment,
+                                formattedTime,
+                              );
+                            },
+                          );
+                        }
+                        return const CircularProgressIndicator();
+                      },
                     ),
                   ],
                 ),

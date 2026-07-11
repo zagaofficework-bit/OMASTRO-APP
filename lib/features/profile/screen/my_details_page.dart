@@ -4,16 +4,30 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../widgets/info_group_card.dart';
-import '../profile_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../bloc/profile_bloc.dart';
+import '../bloc/profile_state.dart';
 
 class MyDetailsPage extends StatelessWidget {
   const MyDetailsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: globalProfileProvider,
-      builder: (context, _) {
+    return BlocBuilder<ProfileBloc, ProfileState>(
+      builder: (context, state) {
+        String name = '';
+        String email = '';
+        String dob = '';
+        String gender = '';
+        String phone = '';
+
+        if (state is ProfileLoaded) {
+          name = state.name;
+          email = state.email;
+          dob = state.dob;
+          gender = state.gender;
+          phone = state.phone;
+        }
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
@@ -65,8 +79,8 @@ class MyDetailsPage extends StatelessWidget {
                       radius: 50,
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       child: Text(
-                        globalProfileProvider.name.isNotEmpty
-                            ? globalProfileProvider.name[0].toUpperCase()
+                        name.isNotEmpty
+                            ? name[0].toUpperCase()
                             : 'U',
                         style: const TextStyle(
                           fontSize: 32,
@@ -81,15 +95,15 @@ class MyDetailsPage extends StatelessWidget {
                   InfoGroupCard(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
-                      _buildDetailRow('Full Name', globalProfileProvider.name, Icons.person_outline),
+                      _buildDetailRow('Full Name', name, Icons.person_outline),
                       const Divider(),
-                      _buildDetailRow('Email Address', globalProfileProvider.email, Icons.mail_outline),
+                      _buildDetailRow('Email Address', email, Icons.mail_outline),
                       const Divider(),
-                      _buildDetailRow('Date of Birth', globalProfileProvider.dob, Icons.cake_outlined),
+                      _buildDetailRow('Date of Birth', dob, Icons.cake_outlined),
                       const Divider(),
-                      _buildDetailRow('Gender', globalProfileProvider.gender, Icons.wc_outlined),
+                      _buildDetailRow('Gender', gender, Icons.wc_outlined),
                       const Divider(),
-                      _buildDetailRow('Phone Number', globalProfileProvider.phone, Icons.phone_android_outlined),
+                      _buildDetailRow('Phone Number', phone, Icons.phone_android_outlined),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
