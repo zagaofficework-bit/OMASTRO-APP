@@ -6,7 +6,9 @@ import 'package:omastro/core/widgets/search_bar.dart';
 import '../widgets/astrologers_list_view.dart';
 import '../widgets/category_filter_chips.dart';
 import 'package:go_router/go_router.dart';
-import '../astrologers_data.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omastro/features/astrologers/bloc/astrologers_bloc.dart';
+import 'package:omastro/features/astrologers/bloc/astrologers_state.dart';
 
 class AstrologerPage extends StatefulWidget {
   final String? initialCategory;
@@ -25,16 +27,13 @@ class _AstrologerPageState extends State<AstrologerPage> {
     _selectedCategory = widget.initialCategory ?? 'All';
   }
 
-  // --- Master Testing Dataset Local Track with downloaded asset images ---
-  final List<Map<String, dynamic>> _allAstrologers = masterAstrologers;
-
-  List<Map<String, dynamic>> _getFilteredAstrologers() {
+  List<Map<String, dynamic>> _getFilteredAstrologers(List<Map<String, dynamic>> allAstrologers) {
     if (_selectedCategory == 'All') {
-      return _allAstrologers;
+      return allAstrologers;
     }
-    return _allAstrologers.where((astrologer) {
+    return allAstrologers.where((astrologer) {
       final List<String> specialties = List<String>.from(
-        astrologer['specialties'],
+        astrologer['categories'] ?? [],
       );
       return specialties.any(
         (s) => s.toLowerCase() == _selectedCategory.toLowerCase(),
@@ -44,8 +43,15 @@ class _AstrologerPageState extends State<AstrologerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredList = _getFilteredAstrologers();
-    final responsive = ResponsiveProvider.of(context);
+    return BlocBuilder<AstrologersBloc, AstrologersState>(
+      builder: (context, state) {
+        List<Map<String, dynamic>> allAstrologers = [];
+        if (state is AstrologersFollowingState) {
+          allAstrologers = state.astrologers;
+        }
+
+        final filteredList = _getFilteredAstrologers(allAstrologers);
+        final responsive = ResponsiveProvider.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -144,6 +150,8 @@ class _AstrologerPageState extends State<AstrologerPage> {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }

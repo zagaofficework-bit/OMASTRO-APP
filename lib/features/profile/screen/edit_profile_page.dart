@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart' as image_picker;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:omastro/features/profile/widgets/edit_text_field.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -21,11 +24,13 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  // 1. Text Controllers tracking form state changes
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _dobController;
+  late final TextEditingController _phoneController;
   String _selectedGender = 'Male';
+  String? _avatarUrl;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -35,18 +40,22 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String initialName = '';
     String initialEmail = '';
     String initialDob = '';
+    String initialPhone = '';
     String initialGender = 'Male';
     
     if (state is ProfileLoaded) {
       initialName = state.name;
       initialEmail = state.email;
       initialDob = state.dob;
+      initialPhone = state.phone;
       initialGender = state.gender;
+      _avatarUrl = state.avatarUrl;
     }
 
     _nameController = TextEditingController(text: initialName);
     _emailController = TextEditingController(text: initialEmail);
     _dobController = TextEditingController(text: initialDob);
+    _phoneController = TextEditingController(text: initialPhone);
     _selectedGender = initialGender;
   }
 
@@ -55,7 +64,44 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController.dispose();
     _emailController.dispose();
     _dobController.dispose();
+    _phoneController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = image_picker.ImagePicker();
+    final pickedFile = await picker.pickImage(source: image_picker.ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _isUploading = true;
+      });
+
+      try {
+        final file = File(pickedFile.path);
+        final fileExt = pickedFile.path.split('.').last;
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+        
+        final supabase = Supabase.instance.client;
+        
+        await supabase.storage.from('avatars').upload(fileName, file);
+        final url = supabase.storage.from('avatars').getPublicUrl(fileName);
+        
+        setState(() {
+          _avatarUrl = url;
+          _isUploading = false;
+        });
+      } catch (e) {
+        setState(() {
+          _isUploading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload image: $e')),
+          );
+        }
+      }
+    }
   }
 
   /// Launches native themed DatePicker flow to eliminate manual text inputs
@@ -84,7 +130,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         // Formats picked parameters elegantly back into the form display layer
         _dobController.text =
-            "${picked.day.toString().padLeft(2, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.year}";
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -94,6 +140,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (state is ProfileLoaded) {
       return _nameController.text != state.name ||
           _dobController.text != state.dob ||
+          _phoneController.text != state.phone ||
           _selectedGender != state.gender;
     }
     return false;
@@ -182,6 +229,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       name: _nameController.text,
       dob: _dobController.text,
       gender: _selectedGender,
+      phone: _phoneController.text,
+      avatarUrl: _avatarUrl,
     ));
   }
 
@@ -238,9 +287,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: AppSpacing.sm),
               EditAvatarPicker(
                 name: _nameController.text,
-                onTap: () {
-                  // TODO: Trigger bottom sheet layout choices for image source picker context
-                },
+                avatarUrl: _avatarUrl,
+                isUploading: _isUploading,
+                onTap: _pickAndUploadImage,
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -276,9 +325,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     controller: _dobController,
                     label: 'Date of Birth',
                     prefixIcon: Icons.cake_outlined,
-                    readOnly:
-                        true, // Forces touch interaction directly to the DatePicker modal
+                    readOnly: true, // Forces touch interaction directly to the DatePicker modal
                     onTap: () => _selectDate(context),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // Phone Number Field
+                  EditTextField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    prefixIcon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: AppSpacing.md),
 

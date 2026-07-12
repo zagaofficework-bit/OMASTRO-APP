@@ -4,7 +4,7 @@ abstract class ProfileState extends Equatable {
   const ProfileState();
   
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class ProfileLoaded extends ProfileState {
@@ -13,6 +13,7 @@ class ProfileLoaded extends ProfileState {
   final String dob;
   final String gender;
   final String phone;
+  final String? avatarUrl;
 
   const ProfileLoaded({
     required this.name,
@@ -20,9 +21,12 @@ class ProfileLoaded extends ProfileState {
     required this.dob,
     required this.gender,
     required this.phone,
+    this.avatarUrl,
   });
 
+  bool get isProfileIncomplete => dob.isEmpty || gender.isEmpty || phone.isEmpty;
+
   @override
-  List<Object> get props => [name, email, dob, gender, phone];
+  List<Object?> get props => [name, email, dob, gender, phone, avatarUrl];
 }
 

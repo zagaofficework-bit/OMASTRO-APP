@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_event.dart';
 import '../widgets/info_group_card.dart';
@@ -74,6 +73,53 @@ class _SettingsPageState extends State<SettingsPage> {
           ],
         );
       },
+    );
+  }
+
+  void _showAccountSecurityDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Account Security', style: AppTextStyles.headingMedium),
+        content: Text('This feature is coming soon!', style: AppTextStyles.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK', style: AppTextStyles.buttonText.copyWith(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text('Delete Account', style: AppTextStyles.headingMedium),
+        content: Text('Are you sure you want to delete your account? This action cannot be undone.', style: AppTextStyles.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel', style: AppTextStyles.buttonText.copyWith(color: AppColors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Account deletion requested.')),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Delete', style: AppTextStyles.buttonText.copyWith(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -162,11 +208,12 @@ class _SettingsPageState extends State<SettingsPage> {
               InfoGroupCard(
                 padding: EdgeInsets.zero,
                 children: [
+
                   ProfileMenuTile(
                     icon: Icons.security_rounded,
                     title: 'Account Security',
                     subtitle: 'Manage passwords and verification',
-                    onTap: () {},
+                    onTap: () => _showAccountSecurityDialog(context),
                   ),
                   ProfileMenuTile(
                     icon: Icons.delete_outline_rounded,
@@ -174,7 +221,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     subtitle: 'Permanently remove your account data',
                     iconColor: AppColors.error,
                     isLast: true,
-                    onTap: () {},
+                    onTap: () => _showDeleteAccountDialog(context),
                   ),
                 ],
               ),

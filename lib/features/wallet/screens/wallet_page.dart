@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/widgets/app_top_bar.dart';
 
@@ -30,6 +31,7 @@ class _WalletPageState extends State<WalletPage> {
   void initState() {
     super.initState();
     _amountController = TextEditingController(text: _selectedAmount.toString());
+    context.read<WalletBloc>().add(LoadWallet());
   }
 
   @override
@@ -56,13 +58,45 @@ class _WalletPageState extends State<WalletPage> {
     final responsive = ResponsiveProvider.of(context);
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(responsive.topBarHeight),
-        child: const AppTopBar(),
-      ),
       backgroundColor: const Color(0xFFFAF6F0),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Custom Top Bar with Back Button
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: responsive.scale(16),
+                vertical: responsive.scale(8),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.black87),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    },
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: const CircleBorder(),
+                    ),
+                  ),
+                  SizedBox(width: responsive.scale(16)),
+                  Text(
+                    'Wallet',
+                    style: AppTextStyles.displayMedium.copyWith(
+                      fontSize: responsive.font(20, min: 18, max: 24),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
           padding: responsive.pagePadding(vertical: AppSpacing.md),
           child: Center(
             child: ConstrainedBox(
@@ -158,6 +192,9 @@ class _WalletPageState extends State<WalletPage> {
               ),
             ),
           ),
+        ),
+            ),
+          ],
         ),
       ),
     );

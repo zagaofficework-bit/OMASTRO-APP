@@ -218,7 +218,7 @@ class _SignInPageState extends State<SignInPage> {
                         child: OutlinedButton(
                           onPressed: () {
                             // 2. Change state natively!
-                            globalAuthBloc.add(SignInRequested());
+                            globalAuthBloc.add(GoogleSignInRequested());
 
                             // NOTE: You do NOT write context.go('/home') here!
                             // The refreshListenable detects the state change, fires the

@@ -16,7 +16,7 @@ import '../../wallet/bloc/wallet_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../astrologers/bloc/astrologers_bloc.dart';
 import '../../astrologers/bloc/astrologers_state.dart';
-import '../../astrologers/astrologers_data.dart';
+
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -24,8 +24,6 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final responsive = ResponsiveProvider.of(context);
-    // Mock user email context (Simulating initial registration state)
-    const String userEmail = 'satvik.it.dev@gmail.com';
     return Scaffold(
       backgroundColor: AppColors.background, // Cream tone base background
         body: SafeArea(
@@ -42,18 +40,21 @@ class ProfilePage extends StatelessWidget {
                       // 1. Header with Edit Button
                       BlocBuilder<ProfileBloc, ProfileState>(
                         builder: (context, state) {
-                          String name = 'User';
-                          String email = userEmail;
-                          if (state is ProfileLoaded) {
-                            name = state.name;
-                            email = state.email;
-                          }
-                          return Stack(
-                            children: [
-                              DynamicGreetingHeader(
-                                email: email,
-                                explicitName: name,
-                              ),
+                          String name = '';
+                          String email = '';
+                              String avatarUrl = '';
+                              if (state is ProfileLoaded) {
+                                name = state.name;
+                                email = state.email;
+                                avatarUrl = state.avatarUrl ?? '';
+                              }
+                              return Stack(
+                                children: [
+                                  DynamicGreetingHeader(
+                                    email: email,
+                                    explicitName: name,
+                                    avatarUrl: avatarUrl,
+                                  ),
                               Positioned(
                                 top: 0,
                                 right: 0,
@@ -242,19 +243,18 @@ class ProfilePage extends StatelessWidget {
                                           itemBuilder: (context, index) {
                                             final name = followedNames[index];
                                             // Look up full astrologer details
-                                            final details = masterAstrologers
-                                                .firstWhere(
-                                                  (element) =>
-                                                      element['name'] == name,
-                                                  orElse: () =>
-                                                      <String, dynamic>{},
-                                                );
+                                            final details = (state is AstrologersFollowingState) 
+                                                ? state.astrologers.firstWhere(
+                                                    (element) => element['name'] == name,
+                                                    orElse: () => <String, dynamic>{},
+                                                  )
+                                                : <String, dynamic>{};
+
                                             if (details.isEmpty) {
                                               return const SizedBox.shrink();
                                             }
 
-                                            final String img =
-                                                details['image'] ?? '';
+                                            final String img = details['avatar_url'] ?? '';
                                             return Padding(
                                               padding: const EdgeInsets.only(
                                                 right: 16.0,
@@ -371,6 +371,14 @@ class ProfilePage extends StatelessWidget {
                             subtitle: 'Past calls & chats',
                             onTap: () {
                               context.push('/history');
+                            },
+                          ),
+                          ProfileMenuTile(
+                            icon: Icons.account_balance_wallet_outlined,
+                            title: 'Transaction History',
+                            subtitle: 'Deposits & payments',
+                            onTap: () {
+                              context.push('/transaction-history');
                             },
                           ),
                           ProfileMenuTile(

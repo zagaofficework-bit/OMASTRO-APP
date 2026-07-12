@@ -9,10 +9,16 @@ abstract class AstrologersState extends Equatable {
 
 class AstrologersFollowingState extends AstrologersState {
   final List<String> followedAstrologers;
+  final List<Map<String, dynamic>> astrologers;
+  final bool isLoading;
 
-  const AstrologersFollowingState({this.followedAstrologers = const []});
+  const AstrologersFollowingState({
+    this.followedAstrologers = const [],
+    this.astrologers = const [],
+    this.isLoading = false,
+  });
 
   @override
-  List<Object> get props => [followedAstrologers];
+  List<Object> get props => [followedAstrologers, astrologers, isLoading];
 }
 

@@ -7,6 +7,8 @@ abstract class AstrologersEvent extends Equatable {
   List<Object> get props => [];
 }
 
+class LoadAstrologers extends AstrologersEvent {}
+
 class ToggleFollowAstrologer extends AstrologersEvent {
   final String name;
 

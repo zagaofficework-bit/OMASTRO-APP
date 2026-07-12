@@ -5,11 +5,13 @@ import '../../../core/theme/app_text_styles.dart';
 class DynamicGreetingHeader extends StatelessWidget {
   final String email;
   final String? explicitName;
+  final String? avatarUrl;
 
   const DynamicGreetingHeader({
     super.key,
     required this.email,
     this.explicitName,
+    this.avatarUrl,
   });
 
   /// Extracts a clean, capitalized name from the email handle for smooth UX
@@ -70,14 +72,20 @@ class DynamicGreetingHeader extends StatelessWidget {
               ],
             ),
             alignment: Alignment.center,
-            child: Text(
-              initialLetter,
-              style: AppTextStyles.displayLarge.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 36,
-              ),
-            ),
+            child: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                ? CircleAvatar(
+                    radius: 44,
+                    backgroundImage: NetworkImage(avatarUrl!),
+                    backgroundColor: Colors.transparent,
+                  )
+                : Text(
+                    initialLetter,
+                    style: AppTextStyles.displayLarge.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 36,
+                    ),
+                  ),
           ),
           const SizedBox(height: 12),
 

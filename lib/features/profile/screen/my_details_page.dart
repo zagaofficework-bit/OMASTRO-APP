@@ -20,6 +20,7 @@ class MyDetailsPage extends StatelessWidget {
         String dob = '';
         String gender = '';
         String phone = '';
+        String avatarUrl = '';
 
         if (state is ProfileLoaded) {
           name = state.name;
@@ -27,6 +28,7 @@ class MyDetailsPage extends StatelessWidget {
           dob = state.dob;
           gender = state.gender;
           phone = state.phone;
+          avatarUrl = state.avatarUrl ?? '';
         }
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -77,17 +79,24 @@ class MyDetailsPage extends StatelessWidget {
                   Center(
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      child: Text(
-                        name.isNotEmpty
-                            ? name[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
+                      backgroundColor: avatarUrl.isNotEmpty 
+                          ? Colors.transparent 
+                          : AppColors.primary.withValues(alpha: 0.1),
+                      backgroundImage: avatarUrl.isNotEmpty 
+                          ? NetworkImage(avatarUrl) 
+                          : null,
+                      child: avatarUrl.isEmpty 
+                          ? Text(
+                              name.isNotEmpty
+                                  ? name[0].toUpperCase()
+                                  : 'U',
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),

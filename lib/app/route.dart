@@ -16,6 +16,7 @@ import '../features/live/screen/live_page.dart';
 import '../features/profile/screen/profile_page.dart';
 import '../features/astrologers/screen/astrologer_page.dart';
 import '../features/profile/screen/settings_page.dart';
+import '../features/wallet/screen/transaction_history_page.dart';
 import '../features/profile/screen/consultation_history_page.dart';
 import '../features/profile/screen/support_page.dart';
 import '../features/chat/screens/chat_room_page.dart';
@@ -67,6 +68,10 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),
+    GoRoute(
+      path: '/transaction-history',
+      builder: (context, state) => const TransactionHistoryPage(),
+    ),
     GoRoute(path: '/edit-profile', builder: (context, state) => const EditProfilePage()),
     GoRoute(path: '/my-details', builder: (context, state) => const MyDetailsPage()),
     GoRoute(path: '/history', builder: (context, state) => const ConsultationHistoryPage()),
@@ -74,7 +79,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/astrologer-profile',
       builder: (context, state) {
-        final astrologerData = state.extra as Map<String, String>;
+        final extra = state.extra as Map;
+        final Map<String, String> astrologerData = {};
+        for (final key in extra.keys) {
+          astrologerData[key.toString()] = extra[key].toString();
+        }
         return AstrologerProfilePage(astrologerData: astrologerData);
       },
     ),
@@ -107,11 +116,10 @@ final appRouter = GoRouter(
         ),
 
 
-        // 🌟 2. ADDED THE LIVE-CALL ROUTE ENTRY HERE
         GoRoute(path: '/live', builder: (_, _) => const LivePage()),
         GoRoute(path: '/profile', builder: (_, _) => const ProfilePage()),
-        GoRoute(path: '/wallet', builder: (_, _) => const WalletPage()),
       ],
     ),
+    GoRoute(path: '/wallet', builder: (_, _) => const WalletPage()),
   ],
 );

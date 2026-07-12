@@ -10,6 +10,8 @@ import 'package:omastro/features/home/widgets/home_page_buttons.dart';
 import 'package:omastro/features/home/widgets/online_astrologer_card.dart';
 import 'package:omastro/features/home/widgets/top_astrologer_card.dart';
 
+import 'package:omastro/features/home/widgets/profile_completion_banner.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -29,6 +31,15 @@ class HomePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 66),
+                  
+                  // --- Profile Completion Banner ---
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive.horizontalPadding,
+                    ),
+                    child: const ProfileCompletionBanner(),
+                  ),
+
                   // --- 1. Hero Text Layout Block ---
                   Padding(
                     padding: EdgeInsets.symmetric(

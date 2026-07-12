@@ -43,28 +43,27 @@ class AstrologersListView extends StatelessWidget {
                 '/astrologer-profile',
                 extra: {
                   'name': currentItem['name']?.toString() ?? '',
-                  'imageUrl': currentItem['image']?.toString() ?? '',
-                  'specialties': (currentItem['specialties'] as List? ?? [])
+                  'imageUrl': currentItem['avatar_url']?.toString() ?? '',
+                  'specialties': (currentItem['categories'] as List? ?? [])
                       .join(', '),
                   'languages': (currentItem['languages'] as List? ?? []).join(
                     ', ',
                   ),
-                  'experience': '${currentItem['experience'] ?? 0} Years',
-                  'rate': currentItem['price']?.toString() ?? '0',
-                  'bio':
-                      'Verified expert specializing in ${(currentItem['specialties'] as List? ?? []).first ?? 'Astrology'}.',
+                  'experience': '${currentItem['experience_years'] ?? 0} Years',
+                  'rate': currentItem['price_per_minute']?.toString() ?? '0',
+                  'bio': currentItem['bio']?.toString() ?? 'Verified expert specializing in Astrology.',
                 },
               );
             },
             child: AstrologerListCard(
-              name: currentItem['name'],
-              imageUrl: currentItem['image'],
-              specialties: List<String>.from(currentItem['specialties']),
-              experienceYears: currentItem['experience'],
-              languages: List<String>.from(currentItem['languages']),
-              rating: currentItem['rating'],
-              pricePerMin: currentItem['price'],
-              isOnline: currentItem['isOnline'],
+              name: currentItem['name'] ?? 'Unknown',
+              imageUrl: currentItem['avatar_url'] ?? '',
+              specialties: List<String>.from(currentItem['categories'] ?? []),
+              experienceYears: currentItem['experience_years'] ?? 0,
+              languages: List<String>.from(currentItem['languages'] ?? []),
+              rating: (currentItem['rating'] ?? 5.0).toDouble(),
+              pricePerMin: (currentItem['price_per_minute'] ?? 0).toInt(),
+              isOnline: currentItem['is_online'] ?? false,
               onChatTap: () {
                 context.push(
                   '/chat-room',

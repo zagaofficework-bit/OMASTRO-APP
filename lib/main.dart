@@ -7,15 +7,42 @@ import 'package:omastro/core/theme/app_theme.dart';
 import 'app/route.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/wallet/bloc/wallet_bloc.dart';
+import 'features/wallet/bloc/wallet_event.dart';
 import 'features/profile/bloc/profile_bloc.dart';
 import 'features/chat/bloc/chat_bloc.dart';
 import 'features/astrologers/bloc/astrologers_bloc.dart';
+import 'features/astrologers/bloc/astrologers_event.dart';
 import 'features/reviews/bloc/reviews_bloc.dart';
 
-void main() {
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:google_sign_in/google_sign_in.dart' as google_sign_in;
+import 'package:flutter/foundation.dart';
+import 'firebase_options.dart';
+
+Future<void> main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   // 1. Lock the screen on cold boot
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Initialize dotenv and Supabase
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
+  );
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Initialize Google Sign-In with Web Client ID for Supabase validation
+  await google_sign_in.GoogleSignIn.instance.initialize(
+    clientId: dotenv.env['GOOGLE_WEB_CLIENT_ID']!,
+    serverClientId: kIsWeb ? null : dotenv.env['GOOGLE_WEB_CLIENT_ID']!,
+  );
 
   // Initialize the global BlocObserver for tracking state changes
   Bloc.observer = AppBlocObserver();
@@ -49,10 +76,10 @@ class _MyAppState extends State<MyApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => AuthBloc()),
-        BlocProvider(create: (_) => WalletBloc()),
+        BlocProvider(create: (_) => WalletBloc()..add(LoadWallet())),
         BlocProvider(create: (_) => ProfileBloc()),
         BlocProvider(create: (_) => ChatBloc()),
-        BlocProvider(create: (_) => AstrologersBloc()),
+        BlocProvider(create: (_) => AstrologersBloc()..add(LoadAstrologers())),
         BlocProvider(create: (_) => ReviewsBloc()),
       ],
       child: MaterialApp.router(

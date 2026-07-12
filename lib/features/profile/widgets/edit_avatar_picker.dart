@@ -3,9 +3,17 @@ import '../../../core/theme/app_colors.dart';
 
 class EditAvatarPicker extends StatelessWidget {
   final String name;
+  final String? avatarUrl;
   final VoidCallback onTap;
+  final bool isUploading;
 
-  const EditAvatarPicker({super.key, required this.name, required this.onTap});
+  const EditAvatarPicker({
+    super.key,
+    required this.name,
+    this.avatarUrl,
+    required this.onTap,
+    this.isUploading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +22,7 @@ class EditAvatarPicker extends StatelessWidget {
         : 'U';
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: isUploading ? null : onTap,
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -37,19 +45,41 @@ class EditAvatarPicker extends StatelessWidget {
                         offset: const Offset(0, 4),
                       ),
                     ],
+                    image: avatarUrl != null && avatarUrl!.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(avatarUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
                   alignment: Alignment.center,
-                  child: Text(
-                    initialLetter,
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 38,
-                    ),
-                  ),
+                  child: avatarUrl == null || avatarUrl!.isEmpty
+                      ? Text(
+                          initialLetter,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 38,
+                          ),
+                        )
+                      : null,
                 ),
 
                 // Camera/Edit Action Accent Badge Overlay
+                if (isUploading)
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: const BoxDecoration(
+                      color: Colors.black45,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    ),
+                  ),
+                
+                if (!isUploading)
                 Container(
                   width: 30,
                   height: 30,

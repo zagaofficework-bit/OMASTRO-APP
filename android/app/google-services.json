@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "24968482924",
+    "firebase_url": "https://omastro-42ea9-default-rtdb.firebaseio.com",
+    "project_id": "omastro-42ea9",
+    "storage_bucket": "omastro-42ea9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:24968482924:android:ed18a3ec6fd16423d3c849",
+        "android_client_info": {
+          "package_name": "com.example.omastro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "24968482924-jsjjnrtvjeig3vcqrjau7g6pv659q29h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABys7lFHDfQ5eCs5rh9wZeXhM3KzZCHdM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "24968482924-jsjjnrtvjeig3vcqrjau7g6pv659q29h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
