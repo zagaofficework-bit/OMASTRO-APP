@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'astrologers_event.dart';
 import 'astrologers_state.dart';
 
@@ -24,6 +25,11 @@ class AstrologersBloc extends Bloc<AstrologersEvent, AstrologersState> {
         final response = await _supabase.from('astrologers').select();
         final List<Map<String, dynamic>> astrologers = List<Map<String, dynamic>>.from(response);
         
+        if (astrologers.isNotEmpty) {
+          debugPrint('[AstrologersBloc] Fetched ${astrologers.length} astrologers.');
+          debugPrint('[AstrologersBloc] Sample astrologer data: ${astrologers.first}');
+        }
+
         if (state is AstrologersFollowingState) {
           emit(AstrologersFollowingState(
             followedAstrologers: (state as AstrologersFollowingState).followedAstrologers,

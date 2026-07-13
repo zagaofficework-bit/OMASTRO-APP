@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omastro/core/bloc/app_bloc_observer.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_theme.dart';
+import 'package:omastro/core/services/notification_service.dart';
+import 'package:omastro/core/services/permission_service.dart';
 import 'app/route.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/wallet/bloc/wallet_bloc.dart';
@@ -46,6 +48,12 @@ Future<void> main() async {
 
   // Initialize the global BlocObserver for tracking state changes
   Bloc.observer = AppBlocObserver();
+
+  // Initialize Local Notifications
+  await NotificationService().init();
+
+  // Request all necessary permissions for the app
+  await PermissionService.requestAppPermissions();
 
   runApp(const MyApp());
 }

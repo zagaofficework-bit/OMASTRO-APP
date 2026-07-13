@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../models/chat_conversation.dart';
+import '../../astrologers/bloc/astrologers_bloc.dart';
+import '../../astrologers/bloc/astrologers_state.dart';
 
 class ChatTile extends StatelessWidget {
   final ChatConversation conversation;
@@ -13,98 +16,137 @@ class ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Generates a two-letter avatar initials circle (e.g., "Astro Priya" -> "AP")
     final words = conversation.astrologerName.trim().split(' ');
-    final initials = words
-        .map((w) => w.isNotEmpty ? w[0] : '')
-        .join()
-        .toUpperCase();
-    final displayInitials = initials.length > 2
-        ? initials.substring(0, 2)
-        : initials;
+    final initials = words.map((w) => w.isNotEmpty ? w[0] : '').join().toUpperCase();
+    final displayInitials = initials.length > 2 ? initials.substring(0, 2) : initials;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      // Anti-aliased clipping keeps the ripple inside your custom rounded borders
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.015),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors
-            .transparent, // 👈 Allows the Container background to show through
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.xs,
-          ),
-          onTap: onTap,
+    return BlocBuilder<AstrologersBloc, AstrologersState>(
+      builder: (context, astroState) {
+        String? avatarUrl;
+        if (astroState is AstrologersFollowingState) {
+          try {
+            final astro = astroState.astrologers.firstWhere((a) => a['id'] == conversation.id);
+            avatarUrl = astro['avatar_url'];
+          } catch (_) {}
+        }
 
-          // 1. Gold Monogram Initials Avatar
-          leading: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(
-                alpha: 0.75,
-              ), // Matches warm gold badge
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              displayInitials,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-          ),
-
-          // 2. Astrologer Details & Text Columns
-          title: Text(
-            conversation.astrologerName,
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
-              conversation.lastMessage,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
-            ),
-          ),
-
-          // 3. Right Aligned Timestamp Badge
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const SizedBox(height: 4),
-              Text(
-                conversation.time,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey[500],
-                  fontWeight: FontWeight.w500,
-                ),
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 15,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-        ),
-      ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    // Avatar with online indicator
+                    Stack(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
+                          ),
+                          child: CircleAvatar(
+                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundImage: avatarUrl != null
+                                ? NetworkImage(avatarUrl!)
+                                : (conversation.profileImageUrl != null
+                                    ? (conversation.profileImageUrl!.startsWith('http')
+                                        ? NetworkImage(conversation.profileImageUrl!)
+                                        : AssetImage(conversation.profileImageUrl!) as ImageProvider)
+                                    : null),
+                            child: (avatarUrl == null && conversation.profileImageUrl == null)
+                                ? Text(displayInitials, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18))
+                                : null,
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 4,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 16),
+                    // Name and Message
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                conversation.astrologerName,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                conversation.time,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  conversation.lastMessage,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
+                                ),
+                              ),
+                              // Optional unread badge or icon could go here
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.grey[300],
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

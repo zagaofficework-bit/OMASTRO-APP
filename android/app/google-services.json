@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "24968482924-vsp6cm525vuv7vknm2vidn4dic7aflou.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.omastro",
+            "certificate_hash": "6f24869b4f18780c5fa8a25dd8b30fd68c16e06b"
+          }
+        },
+        {
           "client_id": "24968482924-jsjjnrtvjeig3vcqrjau7g6pv659q29h.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -30,6 +38,13 @@
             {
               "client_id": "24968482924-jsjjnrtvjeig3vcqrjau7g6pv659q29h.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.omastro"
+              }
             }
           ]
         }

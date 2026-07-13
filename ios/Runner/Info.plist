@@ -68,5 +68,15 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSCameraUsageDescription</key>
+		<string>Omastro needs access to your camera for video calls with astrologers.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Omastro needs access to your microphone for voice and video calls with astrologers.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Omastro needs access to your photo library to update your profile picture.</string>
+		<key>NSBluetoothPeripheralUsageDescription</key>
+		<string>Omastro needs bluetooth access to connect your wireless headphones during calls.</string>
+		<key>NSBluetoothAlwaysUsageDescription</key>
+		<string>Omastro needs bluetooth access to connect your wireless headphones during calls.</string>
 	</dict>
 </plist>
