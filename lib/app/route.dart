@@ -49,15 +49,19 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/live-call',
       builder: (context, state) {
-        final astrologerData = state.extra as Map<String, dynamic>;
-        return LiveCallPage(astrologer: astrologerData);
+        final Map<String, dynamic> extraData = state.extra as Map<String, dynamic>? ?? {};
+        final Map<String, dynamic> astrologerData = extraData['astrologer'] ?? extraData;
+        final String? incomingCallId = extraData['incomingCallId'];
+        return LiveCallPage(astrologer: astrologerData, incomingCallId: incomingCallId);
       },
     ),
     GoRoute(
       path: '/video-call',
       builder: (context, state) {
-        final astrologerData = state.extra as Map<String, dynamic>;
-        return VideoCallPage(astrologer: astrologerData);
+        final Map<String, dynamic> extraData = state.extra as Map<String, dynamic>? ?? {};
+        final Map<String, dynamic> astrologerData = extraData['astrologer'] ?? extraData;
+        final String? incomingCallId = extraData['incomingCallId'];
+        return VideoCallPage(astrologer: astrologerData, incomingCallId: incomingCallId);
       },
     ),
     GoRoute(
@@ -103,7 +107,7 @@ final appRouter = GoRouter(
 
         GoRoute(
           path: '/astrologers',
-          builder: (_, _) => const AstrologerCategoryPage(),
+          builder: (_, _) => const AstrologerPage(initialCategory: 'All'),
         ),
 
         GoRoute(

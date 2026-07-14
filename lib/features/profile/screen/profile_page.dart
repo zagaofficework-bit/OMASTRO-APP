@@ -266,6 +266,7 @@ class ProfilePage extends StatelessWidget {
                                                     '/astrologer-profile',
                                                     extra: {
                                                       'id': details['id']?.toString() ?? '',
+                                                      'firebase_uid': details['firebase_uid']?.toString() ?? '',
                                                       'name': details['name']?.toString() ?? '',
                                                       'imageUrl':
                                                           details['image']

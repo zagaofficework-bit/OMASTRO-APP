@@ -99,6 +99,7 @@ class OnlineAstrologersSection extends StatelessWidget {
                           '/astrologer-profile',
                           extra: {
                             'id': astrologer['id']?.toString() ?? '',
+                            'firebase_uid': astrologer['firebase_uid']?.toString() ?? '',
                             'name': astrologer['name']?.toString() ?? '',
                             'imageUrl': astrologer['avatar_url']?.toString() ?? '',
                             'specialties': (astrologer['categories'] as List?)?.join(', ') ?? '',

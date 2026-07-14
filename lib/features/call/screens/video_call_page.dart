@@ -9,8 +9,9 @@ import '../repository/firebase_call_repository.dart';
 
 class VideoCallPage extends StatefulWidget {
   final Map<String, dynamic> astrologer;
+  final String? incomingCallId;
 
-  const VideoCallPage({super.key, required this.astrologer});
+  const VideoCallPage({super.key, required this.astrologer, this.incomingCallId});
 
   @override
   State<VideoCallPage> createState() => _VideoCallPageState();
@@ -23,11 +24,31 @@ class _VideoCallPageState extends State<VideoCallPage> {
   bool _isMuted = false;
   bool _isVideoOff = false;
   bool _isFrontCamera = true;
+  bool _isExiting = false;
+
+  void _safeExit() {
+    if (_isExiting) return;
+    _isExiting = true;
+    if (mounted) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _initCall();
+    if (widget.incomingCallId != null) {
+      setState(() {
+        _callId = widget.incomingCallId;
+        _isInitializing = false;
+      });
+    } else {
+      _initCall();
+    }
   }
 
   Future<void> _initCall() async {
@@ -105,10 +126,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: () {
-                  if (context.canPop()) context.pop();
-                  else context.go('/home');
-                },
+                onTap: _safeExit,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
@@ -243,10 +261,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   if (_callId != null) {
                     await _callRepo.endCall(_callId!);
                   }
-                  if (mounted) {
-                    if (context.canPop()) context.pop();
-                    else context.go('/home');
-                  }
+                  _safeExit();
                 },
                 child: Container(
                   width: 56,
@@ -290,6 +305,16 @@ class _VideoCallPageState extends State<VideoCallPage> {
       config: ZegoUIKitPrebuiltCallConfig.oneOnOneVideoCall()
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
+      events: ZegoUIKitPrebuiltCallEvents(
+        onCallEnd: (event, defaultAction) async {
+          if (_callId != null) {
+            await _callRepo.endCall(_callId!);
+          }
+          // DO NOT call defaultAction.call() here because it performs a Navigator.pop().
+          // _safeExit() already handles the navigation logic and prevents double pops.
+          _safeExit();
+        },
+      ),
     );
 
     return StreamBuilder<DocumentSnapshot>(
@@ -303,10 +328,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
           }
           if (data != null && (data['status'] == 'ended' || data['status'] == 'rejected')) {
              WidgetsBinding.instance.addPostFrameCallback((_) {
-               if (mounted) {
-                 if (context.canPop()) context.pop();
-                 else context.go('/home');
-               }
+               _safeExit();
              });
           }
         }

@@ -5,6 +5,13 @@ import '../models/chat_conversation.dart';
 class FirebaseChatRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
+  final Map<String, String> _devFirebaseUidMap = {
+    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
+    'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
+    'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
+  };
+
   String _astroUid(String astrologerId) => 'astro-$astrologerId';
 
   String _roomIdFor(String uidA, String uidB) {
@@ -12,14 +19,6 @@ class FirebaseChatRepository {
     list.sort();
     return list.join('__');
   }
-
-  // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
-  final Map<String, String> _devFirebaseUidMap = {
-    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
-    'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
-    'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
-    'Acharya Shivam': 'gJTgY48eBuNPoDLeC0WPUCjNroW2',
-  };
 
   /// Ensure a chat room exists between the user and the astrologer
   Future<String> ensureChatRoom({
@@ -31,14 +30,13 @@ class FirebaseChatRepository {
     String? userAvatar,
     String? astrologerAvatar,
   }) async {
-    final devUid = _devFirebaseUidMap[astrologerName];
-    
-    // 1. Use hardcoded DEV UID if matched
-    // 2. Use the firebase_uid from Supabase if available
-    // 3. Otherwise fallback to the raw astrologerId
-    final otherUid = devUid ?? (astrologerFirebaseUid != null && astrologerFirebaseUid.isNotEmpty 
-        ? astrologerFirebaseUid 
-        : astrologerId);
+    // 1. Use the firebase_uid from Supabase if available
+    // 2. Otherwise fallback to the hardcoded map or the raw astrologerId
+    final otherUid = _devFirebaseUidMap[astrologerName] ??
+        ((astrologerFirebaseUid != null && astrologerFirebaseUid.isNotEmpty)
+            ? astrologerFirebaseUid
+            : _astroUid(astrologerId));
+            
     final roomId = _roomIdFor(userUid, otherUid);
     debugPrint('[FirebaseChatRepository] Ensuring chat room exists: $roomId (userUid: $userUid, otherUid: $otherUid)');
     

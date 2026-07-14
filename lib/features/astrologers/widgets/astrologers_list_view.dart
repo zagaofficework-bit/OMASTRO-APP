@@ -6,8 +6,13 @@ import 'astrologers_list_card.dart';
 
 class AstrologersListView extends StatelessWidget {
   final List<Map<String, dynamic>> astrologers;
+  final double bottomPadding;
 
-  const AstrologersListView({super.key, required this.astrologers});
+  const AstrologersListView({
+    super.key,
+    required this.astrologers,
+    this.bottomPadding = 24,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +29,11 @@ class AstrologersListView extends StatelessWidget {
 
     return ListView.builder(
       physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.symmetric(
-        horizontal: responsive.horizontalPadding,
-        vertical: responsive.scale(12, min: 10, max: 16),
+      padding: EdgeInsets.only(
+        left: responsive.horizontalPadding,
+        right: responsive.horizontalPadding,
+        top: responsive.scale(12, min: 10, max: 16),
+        bottom: bottomPadding,
       ),
       itemCount: astrologers.length,
       itemBuilder: (context, index) {
@@ -43,6 +50,7 @@ class AstrologersListView extends StatelessWidget {
                 '/astrologer-profile',
                 extra: {
                   'id': currentItem['id']?.toString() ?? '',
+                  'firebase_uid': currentItem['firebase_uid']?.toString() ?? '',
                   'name': currentItem['name']?.toString() ?? '',
                   'imageUrl': currentItem['avatar_url']?.toString() ?? '',
                   'specialties': (currentItem['categories'] as List? ?? [])

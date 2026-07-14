@@ -4,15 +4,14 @@ import 'package:flutter/foundation.dart';
 class FirebaseCallRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  String _astroUid(String astrologerId) => 'astro-$astrologerId';
-
   // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
   final Map<String, String> _devFirebaseUidMap = {
     'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
     'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
     'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
-    'Acharya Shivam': 'gJTgY48eBuNPoDLeC0WPUCjNroW2',
   };
+
+  String _astroUid(String id) => 'astro-$id';
 
   /// Start a call to the astrologer.
   /// Returns the Firestore document ID which should be used as the Zego Room ID.
@@ -24,14 +23,18 @@ class FirebaseCallRepository {
     String? calleeFirebaseUid,
     required String mode, // 'audio' or 'video'
   }) async {
-    final devUid = _devFirebaseUidMap[calleeName];
-    
-    // 1. Use hardcoded DEV UID if matched
-    // 2. Use the firebase_uid from Supabase if available
-    // 3. Otherwise fallback to the raw astrologerId
-    final otherUid = devUid ?? (calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty 
-        ? calleeFirebaseUid 
-        : _astroUid(astrologerId));
+    // If Supabase didn't provide a firebase_uid, check our hardcoded map, else fallback
+    final String otherUid = _devFirebaseUidMap[calleeName] ?? 
+        ((calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty) 
+            ? calleeFirebaseUid 
+            : _astroUid(astrologerId));
+
+    debugPrint('=== START CALL DEBUG ===');
+    debugPrint('calleeName: $calleeName');
+    debugPrint('astrologerId: $astrologerId');
+    debugPrint('calleeFirebaseUid: $calleeFirebaseUid');
+    debugPrint('FINAL otherUid used: $otherUid');
+    debugPrint('========================');
 
     // Generate roomId
     final list = [callerUid, otherUid];

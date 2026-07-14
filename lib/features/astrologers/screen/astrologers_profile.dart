@@ -221,6 +221,7 @@ class AstrologerProfilePage extends StatelessWidget {
                           extra: {
                             'id': astrologerData['id'] ?? 'chat_${profileName.toLowerCase().replaceAll(' ', '_')}',
                             'name': profileName,
+                            'otherUid': astrologerData['firebase_uid'],
                           },
                         );
                       },
@@ -228,6 +229,7 @@ class AstrologerProfilePage extends StatelessWidget {
                         context.push(
                           '/live-call',
                           extra: {
+                            ...astrologerData,
                             'name': profileName,
                             'image': profileImageUrl,
                           },
@@ -237,6 +239,7 @@ class AstrologerProfilePage extends StatelessWidget {
                         context.push(
                           '/video-call',
                           extra: {
+                            ...astrologerData,
                             'name': profileName,
                             'image': profileImageUrl,
                           },

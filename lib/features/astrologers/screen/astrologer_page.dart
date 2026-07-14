@@ -56,6 +56,7 @@ class _AstrologerPageState extends State<AstrologerPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
+        bottom: false,
         child: Center(
           child: ConstrainedBox(
             constraints: responsive.pageConstraints(),
@@ -68,7 +69,7 @@ class _AstrologerPageState extends State<AstrologerPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: responsive.heroTopGap),
+                      SizedBox(height: responsive.topBarHeight - 8),
                       Row(
                         children: [
                           IconButton(
@@ -131,18 +132,9 @@ class _AstrologerPageState extends State<AstrologerPage> {
                   ),
                 ),
                 Expanded(
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: AstrologersListView(astrologers: filteredList),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: SizedBox(height: responsive.bottomInset),
-                      ),
-                    ],
+                  child: AstrologersListView(
+                    astrologers: filteredList,
+                    bottomPadding: MediaQuery.of(context).padding.bottom + 90,
                   ),
                 ),
               ],

@@ -17,8 +17,9 @@ import 'package:omastro/features/call/widgets/live_status_pill.dart';
 
 class LiveCallPage extends StatefulWidget {
   final Map<String, dynamic> astrologer;
+  final String? incomingCallId;
 
-  const LiveCallPage({super.key, required this.astrologer});
+  const LiveCallPage({super.key, required this.astrologer, this.incomingCallId});
 
   @override
   State<LiveCallPage> createState() => _LiveCallPageState();
@@ -30,11 +31,31 @@ class _LiveCallPageState extends State<LiveCallPage> {
   bool _isInitializing = true;
   bool _isMuted = false;
   bool _isSpeakerOn = true;
+  bool _isExiting = false;
+
+  void _safeExit() {
+    if (_isExiting) return;
+    _isExiting = true;
+    if (mounted) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _initCall();
+    if (widget.incomingCallId != null) {
+      setState(() {
+        _callId = widget.incomingCallId;
+        _isInitializing = false;
+      });
+    } else {
+      _initCall();
+    }
   }
 
   Future<void> _initCall() async {
@@ -82,10 +103,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             LiveCallBackButton(
-              onTap: () {
-                if (context.canPop()) context.pop();
-                else context.go('/home');
-              },
+              onTap: _safeExit,
             ),
             const SizedBox(width: 68), // Spacer
           ],
@@ -146,10 +164,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                   if (_callId != null) {
                     await _callRepo.endCall(_callId!);
                   }
-                  if (mounted) {
-                    if (context.canPop()) context.pop();
-                    else context.go('/home');
-                  }
+                  _safeExit();
                 },
               ),
             ],
@@ -191,6 +206,16 @@ class _LiveCallPageState extends State<LiveCallPage> {
       config: ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall()
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
+      events: ZegoUIKitPrebuiltCallEvents(
+        onCallEnd: (event, defaultAction) async {
+          if (_callId != null) {
+            await _callRepo.endCall(_callId!);
+          }
+          // DO NOT call defaultAction.call() here because it performs a Navigator.pop().
+          // _safeExit() already handles the navigation logic and prevents double pops.
+          _safeExit();
+        },
+      ),
     );
 
     return StreamBuilder<DocumentSnapshot>(
@@ -204,10 +229,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
           }
           if (data != null && (data['status'] == 'ended' || data['status'] == 'rejected')) {
              WidgetsBinding.instance.addPostFrameCallback((_) {
-               if (mounted) {
-                 if (context.canPop()) context.pop();
-                 else context.go('/home');
-               }
+               _safeExit();
              });
           }
         }

@@ -16,6 +16,7 @@ import 'features/astrologers/bloc/astrologers_bloc.dart';
 import 'features/astrologers/bloc/astrologers_event.dart';
 import 'features/reviews/bloc/reviews_bloc.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
+import 'features/call/widgets/incoming_call_listener.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -96,10 +97,11 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         routerConfig: appRouter,
         builder: (context, child) {
-          final responsiveChild = ResponsiveBuilder(child: child ?? const SizedBox.shrink());
           return Stack(
             children: [
-              responsiveChild,
+              IncomingCallListener(
+                child: ResponsiveBuilder(child: child ?? const SizedBox.shrink()),
+              ),
               ZegoUIKitPrebuiltCallMiniOverlayPage(
                 contextQuery: () => rootNavigatorKey.currentState?.context ?? context,
               ),
