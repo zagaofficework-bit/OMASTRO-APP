@@ -14,11 +14,13 @@ import '../../astrologers/bloc/astrologers_state.dart';
 class ChatRoomPage extends StatefulWidget {
   final String id;
   final String name;
+  final String? otherUid;
 
   const ChatRoomPage({
     super.key,
     required this.id,
     required this.name,
+    this.otherUid,
   });
 
   @override
@@ -28,22 +30,27 @@ class ChatRoomPage extends StatefulWidget {
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late final ChatBloc _chatBloc;
 
   @override
   void initState() {
     super.initState();
+    _chatBloc = context.read<ChatBloc>();
+    
     // Fetch astrologer's firebase_uid if available
     final astroState = context.read<AstrologersBloc>().state;
-    String? firebaseUid;
+    String? firebaseUid = widget.otherUid;
     if (astroState is AstrologersFollowingState) {
       try {
-        final astro = astroState.astrologers.firstWhere((a) => a['id'] == widget.id);
-        firebaseUid = astro['firebase_uid']?.toString();
+        final astro = astroState.astrologers.firstWhere((a) => a['id']?.toString() == widget.id.toString());
+        if (astro['firebase_uid'] != null && astro['firebase_uid'].toString().isNotEmpty) {
+          firebaseUid = astro['firebase_uid']?.toString();
+        }
       } catch (_) {}
     }
 
     // Initialize chat room listening
-    context.read<ChatBloc>().add(OpenChatRoomEvent(
+    _chatBloc.add(OpenChatRoomEvent(
       astrologerId: widget.id,
       astrologerName: widget.name,
       astrologerFirebaseUid: firebaseUid,
@@ -54,6 +61,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _chatBloc.add(CloseChatRoomEvent());
     super.dispose();
   }
 
@@ -71,7 +79,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0, // 0.0 is the bottom (newest message) for a reversed ListView
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeOutCubic,
         );
@@ -162,6 +170,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
                       return ListView.builder(
                         controller: _scrollController,
+                        reverse: true,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                         itemCount: messages.length,
                         itemBuilder: (context, index) {

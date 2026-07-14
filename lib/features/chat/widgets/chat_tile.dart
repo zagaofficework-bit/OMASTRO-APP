@@ -25,15 +25,17 @@ class ChatTile extends StatelessWidget {
         String? avatarUrl;
         if (astroState is AstrologersFollowingState) {
           try {
-            final astro = astroState.astrologers.firstWhere((a) => a['id'] == conversation.id);
-            avatarUrl = astro['avatar_url'];
+            final astro = astroState.astrologers.firstWhere((a) => a['id'].toString() == conversation.id.toString());
+            avatarUrl = astro['avatar_url']?.toString();
           } catch (_) {}
         }
+
+        final isUnread = conversation.unreadCount > 0;
 
         return Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isUnread ? AppColors.primary.withOpacity(0.04) : Colors.white,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             boxShadow: [
               BoxShadow(
@@ -63,8 +65,8 @@ class ChatTile extends StatelessWidget {
                           ),
                           child: CircleAvatar(
                             backgroundColor: AppColors.primary.withOpacity(0.1),
-                            backgroundImage: avatarUrl != null
-                                ? NetworkImage(avatarUrl!)
+                            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                                ? NetworkImage(avatarUrl)
                                 : (conversation.profileImageUrl != null
                                     ? (conversation.profileImageUrl!.startsWith('http')
                                         ? NetworkImage(conversation.profileImageUrl!)
@@ -103,7 +105,7 @@ class ChatTile extends StatelessWidget {
                                 conversation.astrologerName,
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: isUnread ? FontWeight.w900 : FontWeight.w700,
                                   color: Colors.black87,
                                 ),
                               ),
@@ -111,8 +113,8 @@ class ChatTile extends StatelessWidget {
                                 conversation.time,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: Colors.grey[500],
-                                  fontWeight: FontWeight.w500,
+                                  color: isUnread ? AppColors.primary : Colors.grey[500],
+                                  fontWeight: isUnread ? FontWeight.w800 : FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -125,16 +127,31 @@ class ChatTile extends StatelessWidget {
                                   conversation.lastMessage,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isUnread ? Colors.black87 : Colors.grey[600],
+                                    fontWeight: isUnread ? FontWeight.w700 : FontWeight.normal,
+                                  ),
                                 ),
                               ),
-                              // Optional unread badge or icon could go here
                               const SizedBox(width: 8),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: Colors.grey[300],
-                                size: 20,
-                              ),
+                              if (isUnread)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    conversation.unreadCount > 99 ? '99+' : conversation.unreadCount.toString(),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                )
+                              else
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: Colors.grey[300],
+                                  size: 20,
+                                ),
                             ],
                           ),
                         ],

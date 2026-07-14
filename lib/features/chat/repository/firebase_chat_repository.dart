@@ -15,7 +15,10 @@ class FirebaseChatRepository {
 
   // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
   final Map<String, String> _devFirebaseUidMap = {
-    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93', // Real Firebase UID from web console
+    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
+    'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
+    'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
+    'Acharya Shivam': 'gJTgY48eBuNPoDLeC0WPUCjNroW2',
   };
 
   /// Ensure a chat room exists between the user and the astrologer
@@ -28,12 +31,14 @@ class FirebaseChatRepository {
     String? userAvatar,
     String? astrologerAvatar,
   }) async {
-    // 1. Check if we have a hardcoded dev UID for this astrologer
-    // 2. Otherwise use the one passed from Supabase
-    // 3. Otherwise fallback to the astro- prefix
-    final resolvedFirebaseUid = _devFirebaseUidMap[astrologerName] ?? astrologerFirebaseUid;
+    final devUid = _devFirebaseUidMap[astrologerName];
     
-    final otherUid = resolvedFirebaseUid ?? _astroUid(astrologerId);
+    // 1. Use hardcoded DEV UID if matched
+    // 2. Use the firebase_uid from Supabase if available
+    // 3. Otherwise fallback to the raw astrologerId
+    final otherUid = devUid ?? (astrologerFirebaseUid != null && astrologerFirebaseUid.isNotEmpty 
+        ? astrologerFirebaseUid 
+        : astrologerId);
     final roomId = _roomIdFor(userUid, otherUid);
     debugPrint('[FirebaseChatRepository] Ensuring chat room exists: $roomId (userUid: $userUid, otherUid: $otherUid)');
     
@@ -135,6 +140,9 @@ class FirebaseChatRepository {
 
         // We use astrologerId as the id so that the chat_tile can fetch the real avatar
         final astrologerId = data['astrologerId'] as String? ?? doc.id;
+        
+        final unreadMap = data['unread'] as Map<String, dynamic>? ?? {};
+        final unreadCount = (unreadMap[userUid] as num?)?.toInt() ?? 0;
 
         return ChatConversation(
           id: astrologerId, // Astrologer's Supabase ID
@@ -145,6 +153,7 @@ class FirebaseChatRepository {
           roomId: doc.id, // Keep the firestore roomId
           otherUid: otherUid,
           lastSenderId: lastSenderId,
+          unreadCount: unreadCount,
         );
       }).toList();
     });
@@ -157,7 +166,7 @@ class FirebaseChatRepository {
         .collection('chats')
         .doc(roomId)
         .collection('messages')
-        .orderBy('createdAt', descending: false)
+        .orderBy('createdAt', descending: true)
         .limit(200)
         .snapshots()
         .map((snapshot) {
@@ -239,6 +248,17 @@ class FirebaseChatRepository {
       debugPrint('[FirebaseChatRepository] Message sent and batch committed successfully!');
     } catch (e) {
       debugPrint('[FirebaseChatRepository] Error sending message: $e');
+    }
+  }
+
+  /// Reset the unread count for the given user in a specific room
+  Future<void> resetUnreadCount({required String roomId, required String userUid}) async {
+    try {
+      final ref = _firestore.collection('chats').doc(roomId);
+      await ref.update({'unread.$userUid': 0});
+      debugPrint('[FirebaseChatRepository] Reset unread count for user $userUid in room $roomId');
+    } catch (e) {
+      debugPrint('[FirebaseChatRepository] Error resetting unread count: $e');
     }
   }
 }

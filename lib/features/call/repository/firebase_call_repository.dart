@@ -4,9 +4,14 @@ import 'package:flutter/foundation.dart';
 class FirebaseCallRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  String _astroUid(String astrologerId) => 'astro-$astrologerId';
+
   // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
   final Map<String, String> _devFirebaseUidMap = {
-    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93', // Real Firebase UID from web console
+    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
+    'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
+    'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
+    'Acharya Shivam': 'gJTgY48eBuNPoDLeC0WPUCjNroW2',
   };
 
   /// Start a call to the astrologer.
@@ -19,9 +24,14 @@ class FirebaseCallRepository {
     String? calleeFirebaseUid,
     required String mode, // 'audio' or 'video'
   }) async {
-    // Determine the real callee UID
-    final resolvedFirebaseUid = _devFirebaseUidMap[calleeName] ?? calleeFirebaseUid;
-    final otherUid = resolvedFirebaseUid ?? 'astro-$astrologerId';
+    final devUid = _devFirebaseUidMap[calleeName];
+    
+    // 1. Use hardcoded DEV UID if matched
+    // 2. Use the firebase_uid from Supabase if available
+    // 3. Otherwise fallback to the raw astrologerId
+    final otherUid = devUid ?? (calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty 
+        ? calleeFirebaseUid 
+        : _astroUid(astrologerId));
 
     // Generate roomId
     final list = [callerUid, otherUid];

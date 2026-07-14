@@ -40,10 +40,13 @@ class OpenChatRoomEvent extends ChatEvent {
   List<Object?> get props => [astrologerId, astrologerName, astrologerFirebaseUid];
 }
 
+class CloseChatRoomEvent extends ChatEvent {}
+
 class MessagesUpdatedEvent extends ChatEvent {
   final String roomId;
+  final String astrologerId;
   final List<ChatMessage> messages;
-  const MessagesUpdatedEvent({required this.roomId, required this.messages});
+  const MessagesUpdatedEvent({required this.roomId, required this.astrologerId, required this.messages});
 
   @override
   List<Object?> get props => [roomId, messages];

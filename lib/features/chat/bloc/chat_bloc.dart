@@ -18,6 +18,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<InitChatSystemEvent>(_onInit);
     on<RoomsUpdatedEvent>(_onRoomsUpdated);
     on<OpenChatRoomEvent>(_onOpenChatRoom);
+    on<CloseChatRoomEvent>(_onCloseChatRoom);
     on<MessagesUpdatedEvent>(_onMessagesUpdated);
     on<SendMessageEvent>(_onSendMessage);
 
@@ -61,17 +62,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
       // Check for new messages to show notifications
       for (final newRoom in event.rooms) {
-        if (newRoom.lastSenderId != null && newRoom.lastSenderId!.isNotEmpty && newRoom.lastSenderId != current.userUid) {
-          final oldRoom = current.activeConversations.where((c) => c.roomId == newRoom.roomId).firstOrNull;
-          if (oldRoom != null && oldRoom.lastMessage != newRoom.lastMessage && newRoom.lastMessage.isNotEmpty) {
-            // New message from astrologer!
-            if (current.activeRoomId != newRoom.roomId) {
-              NotificationService().showChatNotification(
-                title: 'New message from ${newRoom.astrologerName}',
-                body: newRoom.lastMessage,
-              );
-            }
+        final oldRoom = current.activeConversations.where((c) => c.roomId == newRoom.roomId).firstOrNull;
+        
+        // If unread count increased, it means we definitely got a new message
+        if (oldRoom != null && newRoom.unreadCount > oldRoom.unreadCount) {
+          if (current.activeRoomId != newRoom.roomId) {
+            NotificationService().showChatNotification(
+              title: 'New message from ${newRoom.astrologerName}',
+              body: newRoom.lastMessage,
+            );
           }
+        }
+        
+        // Auto reset unread count if the user is currently looking at this room
+        if (current.activeRoomId == newRoom.roomId && newRoom.unreadCount > 0 && newRoom.roomId != null) {
+          _repository.resetUnreadCount(roomId: newRoom.roomId!, userUid: current.userUid);
         }
       }
 
@@ -94,7 +99,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       );
 
       debugPrint('[ChatBloc] roomId established: $roomId');
-      emit(current.copyWith(activeRoomId: roomId));
+      if (state is ChatUpdatedState) {
+        emit((state as ChatUpdatedState).copyWith(activeRoomId: roomId));
+      }
+
+      await _repository.resetUnreadCount(roomId: roomId, userUid: current.userUid);
 
       _messagesSubscription?.cancel();
       _messagesSubscription = _repository.listenMessages(roomId).listen((msgs) {
@@ -106,7 +115,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           isMe: m.senderId == current.userUid,
         )).toList();
         
-        add(MessagesUpdatedEvent(roomId: roomId, messages: chatMessages));
+        add(MessagesUpdatedEvent(roomId: roomId, astrologerId: event.astrologerId, messages: chatMessages));
       }, onError: (e) {
         debugPrint('[ChatBloc] Error listening to messages: $e');
       });
@@ -115,22 +124,23 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
   }
 
+  void _onCloseChatRoom(CloseChatRoomEvent event, Emitter<ChatState> emit) {
+    debugPrint('[ChatBloc] _onCloseChatRoom: clearing active room');
+    if (state is ChatUpdatedState) {
+      final current = state as ChatUpdatedState;
+      emit(current.clearActiveRoom());
+      _messagesSubscription?.cancel();
+      _messagesSubscription = null;
+    }
+  }
+
   void _onMessagesUpdated(MessagesUpdatedEvent event, Emitter<ChatState> emit) {
-    debugPrint('[ChatBloc] _onMessagesUpdated: updating UI for roomId ${event.roomId}');
+    debugPrint('[ChatBloc] _onMessagesUpdated: updating UI for roomId ${event.roomId}, astrologerId ${event.astrologerId}');
     if (state is ChatUpdatedState) {
       final current = state as ChatUpdatedState;
       final newMessages = Map<String, List<ChatMessage>>.from(current.messages);
       
-      // Note: we key by the astrologer ID here for backwards compatibility with UI
-      // since the UI routes using the astrologer ID, not the firestore roomId.
-      // Let's find the astrologerId for this roomId from the activeConversations.
-      String targetId = event.roomId; 
-      try {
-        final convo = current.activeConversations.firstWhere((c) => c.roomId == event.roomId);
-        targetId = convo.id; // astrologerId
-      } catch (_) {}
-      
-      newMessages[targetId] = event.messages;
+      newMessages[event.astrologerId] = event.messages;
       emit(current.copyWith(messages: newMessages));
     }
   }

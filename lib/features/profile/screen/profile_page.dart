@@ -265,10 +265,8 @@ class ProfilePage extends StatelessWidget {
                                                   context.push(
                                                     '/astrologer-profile',
                                                     extra: {
-                                                      'name':
-                                                          details['name']
-                                                              ?.toString() ??
-                                                          '',
+                                                      'id': details['id']?.toString() ?? '',
+                                                      'name': details['name']?.toString() ?? '',
                                                       'imageUrl':
                                                           details['image']
                                                               ?.toString() ??

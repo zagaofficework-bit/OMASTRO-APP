@@ -24,11 +24,11 @@ import '../features/call/screens/video_call_page.dart';
 import '../features/profile/screen/edit_profile_page.dart';
 import '../features/profile/screen/my_details_page.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/home',
   refreshListenable: GoRouterRefreshStream(globalAuthBloc.stream),
   redirect: (context, state) {
@@ -64,7 +64,11 @@ final appRouter = GoRouter(
       path: '/chat-room',
       builder: (context, state) {
         final params = state.extra as Map<String, dynamic>;
-        return ChatRoomPage(id: params['id']!, name: params['name']!);
+        return ChatRoomPage(
+          id: params['id']!, 
+          name: params['name']!,
+          otherUid: params['otherUid'],
+        );
       },
     ),
     GoRoute(path: '/settings', builder: (context, state) => const SettingsPage()),

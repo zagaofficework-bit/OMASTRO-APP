@@ -15,6 +15,7 @@ import 'features/chat/bloc/chat_bloc.dart';
 import 'features/astrologers/bloc/astrologers_bloc.dart';
 import 'features/astrologers/bloc/astrologers_event.dart';
 import 'features/reviews/bloc/reviews_bloc.dart';
+import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -86,7 +87,7 @@ class _MyAppState extends State<MyApp> {
         BlocProvider(create: (_) => AuthBloc()),
         BlocProvider(create: (_) => WalletBloc()..add(LoadWallet())),
         BlocProvider(create: (_) => ProfileBloc()),
-        BlocProvider(create: (_) => ChatBloc()),
+        BlocProvider(create: (_) => ChatBloc(), lazy: false),
         BlocProvider(create: (_) => AstrologersBloc()..add(LoadAstrologers())),
         BlocProvider(create: (_) => ReviewsBloc()),
       ],
@@ -95,7 +96,15 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         routerConfig: appRouter,
         builder: (context, child) {
-          return ResponsiveBuilder(child: child ?? const SizedBox.shrink());
+          final responsiveChild = ResponsiveBuilder(child: child ?? const SizedBox.shrink());
+          return Stack(
+            children: [
+              responsiveChild,
+              ZegoUIKitPrebuiltCallMiniOverlayPage(
+                contextQuery: () => rootNavigatorKey.currentState?.context ?? context,
+              ),
+            ],
+          );
         },
       ),
     );

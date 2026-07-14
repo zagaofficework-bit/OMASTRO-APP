@@ -99,6 +99,7 @@ class TopAstrologersSection extends StatelessWidget {
                         context.push(
                           '/astrologer-profile',
                           extra: {
+                            'id': astrologer['id']?.toString() ?? '',
                             'name': astrologer['name']?.toString() ?? '',
                             'imageUrl': astrologer['avatar_url']?.toString() ?? '',
                             'specialties': (astrologer['categories'] as List?)?.join(', ') ?? '',

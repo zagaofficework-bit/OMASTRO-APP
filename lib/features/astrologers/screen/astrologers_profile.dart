@@ -219,8 +219,7 @@ class AstrologerProfilePage extends StatelessWidget {
                         context.push(
                           '/chat-room',
                           extra: {
-                            'id':
-                                'chat_${profileName.toLowerCase().replaceAll(' ', '_')}',
+                            'id': astrologerData['id'] ?? 'chat_${profileName.toLowerCase().replaceAll(' ', '_')}',
                             'name': profileName,
                           },
                         );

@@ -39,6 +39,10 @@ class ChatUpdatedState extends ChatState {
     this.activeRoomId,
   });
 
+  int get totalUnreadCount {
+    return activeConversations.fold(0, (sum, convo) => sum + convo.unreadCount);
+  }
+
   ChatUpdatedState copyWith({
     String? userUid,
     String? userName,
@@ -52,6 +56,16 @@ class ChatUpdatedState extends ChatState {
       activeConversations: activeConversations ?? this.activeConversations,
       messages: messages ?? this.messages,
       activeRoomId: activeRoomId ?? this.activeRoomId,
+    );
+  }
+
+  ChatUpdatedState clearActiveRoom() {
+    return ChatUpdatedState(
+      userUid: userUid,
+      userName: userName,
+      activeConversations: activeConversations,
+      messages: messages,
+      activeRoomId: null,
     );
   }
 

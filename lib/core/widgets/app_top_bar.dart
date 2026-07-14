@@ -7,6 +7,8 @@ import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/features/chat/screens/chat_page.dart';
 import 'package:omastro/features/wallet/bloc/wallet_bloc.dart';
 import 'package:omastro/features/wallet/bloc/wallet_state.dart';
+import 'package:omastro/features/chat/bloc/chat_bloc.dart';
+import 'package:omastro/features/chat/bloc/chat_state.dart';
 
 import '../theme/app_colors.dart';
 
@@ -92,12 +94,27 @@ class AppTopBar extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _CircleIconButton(
-                    icon: Icons.chat_bubble_outline,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const ChatsPage(),
+                  BlocBuilder<ChatBloc, ChatState>(
+                    builder: (context, state) {
+                      int unreadCount = 0;
+                      if (state is ChatUpdatedState) {
+                        unreadCount = state.totalUnreadCount;
+                      }
+                      
+                      return Badge(
+                        isLabelVisible: unreadCount > 0,
+                        label: Text(unreadCount > 99 ? '99+' : unreadCount.toString()),
+                        backgroundColor: AppColors.error,
+                        offset: const Offset(4, -4),
+                        child: _CircleIconButton(
+                          icon: Icons.chat_bubble_outline,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ChatsPage(),
+                              ),
+                            );
+                          },
                         ),
                       );
                     },

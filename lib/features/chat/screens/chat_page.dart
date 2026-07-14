@@ -56,6 +56,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                 extra: {
                                   'id': chat.id,
                                   'name': chat.astrologerName,
+                                  'otherUid': chat.otherUid,
                                 },
                               );
                             },

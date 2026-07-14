@@ -42,6 +42,7 @@ class AstrologersListView extends StatelessWidget {
               context.push(
                 '/astrologer-profile',
                 extra: {
+                  'id': currentItem['id']?.toString() ?? '',
                   'name': currentItem['name']?.toString() ?? '',
                   'imageUrl': currentItem['avatar_url']?.toString() ?? '',
                   'specialties': (currentItem['categories'] as List? ?? [])
@@ -68,8 +69,7 @@ class AstrologersListView extends StatelessWidget {
                 context.push(
                   '/chat-room',
                   extra: {
-                    'id':
-                        'chat_${currentItem['name'].toString().toLowerCase().replaceAll(' ', '_')}',
+                    'id': currentItem['id']?.toString() ?? '',
                     'name': currentItem['name'],
                   },
                 );

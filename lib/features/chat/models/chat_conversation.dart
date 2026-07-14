@@ -7,6 +7,7 @@ class ChatConversation {
   final String? roomId;
   final String? otherUid;
   final String? lastSenderId;
+  final int unreadCount;
 
   const ChatConversation({
     required this.id,
@@ -17,5 +18,6 @@ class ChatConversation {
     this.roomId,
     this.otherUid,
     this.lastSenderId,
+    this.unreadCount = 0,
   });
 }
