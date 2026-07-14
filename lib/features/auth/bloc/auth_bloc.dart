@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:async';
+import 'package:crypto/crypto.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:google_sign_in/google_sign_in.dart' as google_sign_in;
@@ -21,6 +24,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     });
 
     on<GoogleSignInRequested>(_onGoogleSignInRequested);
+    on<SendPhoneOtpRequested>(_onSendPhoneOtpRequested);
+    on<VerifyPhoneOtpRequested>(_onVerifyPhoneOtpRequested);
 
     on<SignOutRequested>((event, emit) async {
       emit(AuthLoading());
@@ -98,6 +103,87 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(Authenticated());
     } catch (e) {
       emit(AuthError('Authentication failed: ${e.toString()}'));
+    }
+  }
+
+  String _generateDeterministicPassword(String phoneNumber) {
+    final salt = dotenv.env['PHONE_AUTH_SECRET_SALT'] ?? 'default_omastro_salt_9191';
+    final bytes = utf8.encode(phoneNumber + salt);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
+  Future<void> _onSendPhoneOtpRequested(
+    SendPhoneOtpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    final completer = Completer<AuthState>();
+
+    try {
+      await firebase.FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: event.phoneNumber,
+        verificationCompleted: (firebase.PhoneAuthCredential credential) async {
+          // Automatic resolution (e.g. on Android)
+          // We can't easily emit here because the original event handler might have finished,
+          // but we can just let it timeout or user can press verify manually.
+        },
+        verificationFailed: (firebase.FirebaseAuthException e) {
+          if (!completer.isCompleted) completer.complete(AuthError(e.message ?? 'Phone verification failed'));
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!completer.isCompleted) completer.complete(PhoneOtpSentState(verificationId));
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+
+      final state = await completer.future;
+      emit(state);
+    } catch (e) {
+      emit(AuthError('Failed to send OTP: ${e.toString()}'));
+    }
+  }
+
+  Future<void> _onVerifyPhoneOtpRequested(
+    VerifyPhoneOtpRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      // 1. Verify with Firebase
+      final credential = firebase.PhoneAuthProvider.credential(
+        verificationId: event.verificationId,
+        smsCode: event.otp,
+      );
+      final userCredential = await firebase.FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+      if (user == null) throw Exception('Firebase user is null');
+
+      // 2. Authenticate with Supabase deterministically
+      final dummyEmail = 'phone_${user.phoneNumber?.replaceAll('+', '') ?? 'unknown'}@gmail.com';
+      final password = _generateDeterministicPassword(user.phoneNumber ?? 'unknown');
+
+      try {
+        await supabase.Supabase.instance.client.auth.signInWithPassword(
+          email: dummyEmail,
+          password: password,
+        );
+      } on supabase.AuthException catch (e) {
+        if (e.message.contains('Invalid login credentials') || e.statusCode == 400) {
+          // User doesn't exist, sign them up
+          await supabase.Supabase.instance.client.auth.signUp(
+            email: dummyEmail,
+            password: password,
+          );
+        } else {
+          rethrow;
+        }
+      }
+
+      _initZego(user);
+      emit(Authenticated());
+    } catch (e) {
+      emit(AuthError('Verification failed: ${e.toString()}'));
     }
   }
 }

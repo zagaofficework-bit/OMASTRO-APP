@@ -23,3 +23,12 @@ class AuthError extends AuthState {
   @override
   List<Object> get props => [message];
 }
+
+class PhoneOtpSentState extends AuthState {
+  final String verificationId;
+
+  const PhoneOtpSentState(this.verificationId);
+
+  @override
+  List<Object> get props => [verificationId];
+}

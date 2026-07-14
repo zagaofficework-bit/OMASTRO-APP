@@ -99,20 +99,52 @@ class MyDetailsPage extends StatelessWidget {
                           : null,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(height: AppSpacing.md),
+                  
+                  // Reminder Banner
+                  if (phone.isEmpty || name.isEmpty || dob.isEmpty || (email.contains('@gmail.com') && email.startsWith('phone_')) || email.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.xl),
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, color: Colors.orange, size: 24),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Text(
+                              phone.isEmpty 
+                                ? 'Phone verification is pending. Please verify your phone number in Edit Profile.'
+                                : 'Please complete your profile details (Name, Email, DOB) in Edit Profile.',
+                              style: const TextStyle(
+                                color: Colors.deepOrange,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (phone.isNotEmpty && name.isNotEmpty && dob.isNotEmpty && !(email.contains('@gmail.com') && email.startsWith('phone_')) && email.isNotEmpty)
+                    const SizedBox(height: AppSpacing.xl),
 
                   InfoGroupCard(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
-                      _buildDetailRow('Full Name', name, Icons.person_outline),
+                      _buildDetailRow('Full Name', name.isEmpty ? 'Not Provided' : name, Icons.person_outline),
                       const Divider(),
-                      _buildDetailRow('Email Address', email, Icons.mail_outline),
+                      _buildDetailRow('Email Address', (email.contains('@gmail.com') && email.startsWith('phone_')) || email.isEmpty ? 'Not Provided' : email, Icons.mail_outline),
                       const Divider(),
-                      _buildDetailRow('Date of Birth', dob, Icons.cake_outlined),
+                      _buildDetailRow('Date of Birth', dob.isEmpty ? 'Not Provided' : dob, Icons.cake_outlined),
                       const Divider(),
-                      _buildDetailRow('Gender', gender, Icons.wc_outlined),
+                      _buildDetailRow('Gender', gender.isEmpty ? 'Not Provided' : gender, Icons.wc_outlined),
                       const Divider(),
-                      _buildDetailRow('Phone Number', phone, Icons.phone_android_outlined),
+                      _buildDetailRow('Phone Number', phone.isEmpty ? 'Verification Pending' : phone, Icons.phone_android_outlined),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xl),

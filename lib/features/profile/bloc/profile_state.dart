@@ -29,4 +29,20 @@ class ProfileLoaded extends ProfileState {
   @override
   List<Object?> get props => [name, email, dob, gender, phone, avatarUrl];
 }
+class ProfileLoading extends ProfileState {}
 
+class ProfileError extends ProfileState {
+  final String message;
+  const ProfileError(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class ProfilePhoneOtpSent extends ProfileState {
+  final String verificationId;
+  const ProfilePhoneOtpSent(this.verificationId);
+
+  @override
+  List<Object?> get props => [verificationId];
+}

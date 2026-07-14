@@ -5,7 +5,7 @@ import '../../../core/theme/app_text_styles.dart';
 
 class PrimarySubmitButton extends StatelessWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const PrimarySubmitButton({
     super.key,

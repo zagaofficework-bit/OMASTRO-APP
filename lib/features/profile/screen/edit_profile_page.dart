@@ -31,6 +31,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String _selectedGender = 'Male';
   String? _avatarUrl;
   bool _isUploading = false;
+  bool _isPhoneVerified = false;
+  String _initialPhone = '';
 
   @override
   void initState() {
@@ -47,16 +49,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
       initialName = state.name;
       initialEmail = state.email;
       initialDob = state.dob;
-      initialPhone = state.phone;
+      _initialPhone = state.phone;
       initialGender = state.gender;
       _avatarUrl = state.avatarUrl;
+      _isPhoneVerified = _initialPhone.isNotEmpty;
     }
 
     _nameController = TextEditingController(text: initialName);
-    _emailController = TextEditingController(text: initialEmail);
+    _emailController = TextEditingController(
+      text: (initialEmail.contains('@gmail.com') && initialEmail.startsWith('phone_')) ? '' : initialEmail,
+    );
     _dobController = TextEditingController(text: initialDob);
-    _phoneController = TextEditingController(text: initialPhone);
+    _phoneController = TextEditingController(
+      text: _initialPhone.isEmpty ? '+91 ' : _initialPhone,
+    );
     _selectedGender = initialGender;
+
+    _phoneController.addListener(() {
+      final currentPhone = _phoneController.text.trim();
+      if (currentPhone == _initialPhone && _initialPhone.isNotEmpty) {
+        if (!_isPhoneVerified) setState(() => _isPhoneVerified = true);
+      } else {
+        if (_isPhoneVerified) setState(() => _isPhoneVerified = false);
+      }
+    });
   }
 
   @override
@@ -227,6 +243,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void _saveChanges() {
     context.read<ProfileBloc>().add(UpdateProfileEvent(
       name: _nameController.text,
+      email: _emailController.text,
       dob: _dobController.text,
       gender: _selectedGender,
       phone: _phoneController.text,
@@ -244,7 +261,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    bool needsVerification = !_isPhoneVerified && _phoneController.text.trim().isNotEmpty;
+    bool isEmailEditable = _emailController.text.isEmpty || (_emailController.text.contains('@gmail.com') && _emailController.text.startsWith('phone_'));
+
+    return BlocListener<ProfileBloc, ProfileState>(
+      listener: (context, state) {
+        if (state is ProfileError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        } else if (state is ProfilePhoneOtpSent) {
+          _showOtpDialog(context, state.verificationId);
+        } else if (state is ProfileLoaded && state.phone == _phoneController.text.trim()) {
+          setState(() {
+            _initialPhone = state.phone;
+            _isPhoneVerified = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone number verified successfully!')),
+          );
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background, // Premium cream tone base tint
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -316,7 +354,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     controller: _emailController,
                     label: 'Email Address',
                     prefixIcon: Icons.mail_outline,
-                    readOnly: true,
+                    readOnly: !isEmailEditable,
                   ),
                   const SizedBox(height: AppSpacing.md),
 
@@ -337,7 +375,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     prefixIcon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  if (needsVerification)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          String phone = _phoneController.text.trim();
+                          if (!phone.startsWith('+')) {
+                            phone = '+91$phone'; // Default to Indian country code
+                          }
+                          context.read<ProfileBloc>().add(SendProfilePhoneOtp(phone));
+                        },
+                        icon: const Icon(Icons.verified_user_outlined, size: 16),
+                        label: const Text('Verify Phone Number'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.orange,
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox(height: AppSpacing.md),
 
                   // Gender Choice Chips Sub-selection Node
                   GenderChoiceChips(
@@ -353,7 +410,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               // 3. Persistent Core Submit Actions Button
               PrimarySubmitButton(
                 label: 'Save Changes',
-                onPressed: () {
+                onPressed: needsVerification ? null : () {
                   _saveChanges();
                   _performPop();
                 },
@@ -368,7 +425,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ),
         ),
       ),
-    ),
+      ),
+      ),
+    );
+  }
+
+  void _showOtpDialog(BuildContext context, String verificationId) {
+    final TextEditingController otpController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter OTP'),
+          content: TextField(
+            controller: otpController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            decoration: const InputDecoration(
+              hintText: '6-digit code',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final otp = otpController.text.trim();
+                if (otp.length == 6) {
+                  Navigator.pop(context);
+                  context.read<ProfileBloc>().add(VerifyProfilePhoneOtp(verificationId, otp));
+                }
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_event.dart';
+import 'package:omastro/features/auth/bloc/auth_state.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -20,7 +21,18 @@ class _SignInPageState extends State<SignInPage> {
     const primaryGold = Color(0xFFE5C693);
     const softCreamBg = Color(0xFFFFFBF2);
 
-    return Scaffold(
+    return BlocListener<AuthBloc, AuthState>(
+      bloc: globalAuthBloc,
+      listener: (context, state) {
+        if (state is AuthError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
+          );
+        } else if (state is PhoneOtpSentState) {
+          _showOtpDialog(context, state.verificationId);
+        }
+      },
+      child: Scaffold(
       backgroundColor: softCreamBg,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -148,9 +160,17 @@ class _SignInPageState extends State<SignInPage> {
                         height: 54,
                         child: ElevatedButton(
                           onPressed: () {
-                            debugPrint(
-                              'Sending SMS Verification to: ${_phoneController.text}',
-                            );
+                            String phone = _phoneController.text.trim();
+                            if (phone.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please enter a phone number')),
+                              );
+                              return;
+                            }
+                            if (!phone.startsWith('+')) {
+                              phone = '+91$phone'; // Default to Indian country code
+                            }
+                            globalAuthBloc.add(SendPhoneOtpRequested(phone));
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primaryGold,
@@ -270,6 +290,44 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ),
       ),
+      ),
+    );
+  }
+
+  void _showOtpDialog(BuildContext context, String verificationId) {
+    final TextEditingController otpController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter OTP'),
+          content: TextField(
+            controller: otpController,
+            keyboardType: TextInputType.number,
+            maxLength: 6,
+            decoration: const InputDecoration(
+              hintText: '6-digit code',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final otp = otpController.text.trim();
+                if (otp.length == 6) {
+                  Navigator.pop(context);
+                  globalAuthBloc.add(VerifyPhoneOtpRequested(verificationId, otp));
+                }
+              },
+              child: const Text('Verify'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
