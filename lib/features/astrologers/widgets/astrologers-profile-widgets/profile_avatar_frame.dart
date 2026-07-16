@@ -4,6 +4,7 @@ class ProfileAvatarFrame extends StatelessWidget {
   final String imageUrl;
   final bool isOnline;
   final double radius;
+  final String? astrologerId;
 
   const ProfileAvatarFrame({
     super.key,
@@ -11,6 +12,7 @@ class ProfileAvatarFrame extends StatelessWidget {
     this.isOnline = true,
     this.radius =
         54.0, // Perfectly balances out to a total diameter of 108px matching the layout
+    this.astrologerId,
   });
 
   @override
@@ -60,24 +62,7 @@ class ProfileAvatarFrame extends StatelessWidget {
             ),
           ),
 
-          // --- 3. FLOATING STATUS DOT INDICATOR ---
-          if (isOnline)
-            Positioned(
-              right: 6,
-              bottom: 6,
-              child: Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: const Color(0xff10B981), // Solid active green dot
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white, // Crisp separation ring buffer
-                    width: 2.5,
-                  ),
-                ),
-              ),
-            ),
+
         ],
       ),
     );

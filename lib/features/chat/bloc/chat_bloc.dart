@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/services/notification_service.dart';
-import '../models/chat_conversation.dart';
 import '../repository/firebase_chat_repository.dart';
 import 'chat_event.dart';
 import 'chat_state.dart';
@@ -21,6 +21,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<CloseChatRoomEvent>(_onCloseChatRoom);
     on<MessagesUpdatedEvent>(_onMessagesUpdated);
     on<SendMessageEvent>(_onSendMessage);
+    on<UpdateRemainingCharactersEvent>(_onUpdateRemainingCharacters);
 
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
@@ -67,9 +68,17 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         // If unread count increased, it means we definitely got a new message
         if (oldRoom != null && newRoom.unreadCount > oldRoom.unreadCount) {
           if (current.activeRoomId != newRoom.roomId) {
+            final payloadStr = jsonEncode({
+              'id': newRoom.id,
+              'name': newRoom.astrologerName,
+              'otherUid': newRoom.otherUid ?? '',
+              'avatarUrl': newRoom.profileImageUrl ?? '',
+            });
+
             NotificationService().showChatNotification(
-              title: 'New message from ${newRoom.astrologerName}',
+              title: newRoom.astrologerName,
               body: newRoom.lastMessage,
+              payload: payloadStr,
             );
           }
         }
@@ -96,6 +105,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         astrologerId: event.astrologerId,
         astrologerName: event.astrologerName,
         astrologerFirebaseUid: event.astrologerFirebaseUid,
+        userAvatar: event.userAvatar,
+        astrologerAvatar: event.astrologerAvatar,
       );
 
       debugPrint('[ChatBloc] roomId established: $roomId');
@@ -159,6 +170,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
       } else {
         debugPrint('[ChatBloc] Warning: Attempted to send message but activeRoomId is null');
       }
+    }
+  }
+
+  void _onUpdateRemainingCharacters(UpdateRemainingCharactersEvent event, Emitter<ChatState> emit) {
+    if (state is ChatUpdatedState) {
+      final current = state as ChatUpdatedState;
+      final newMap = Map<String, int>.from(current.remainingCharacters);
+      newMap[event.astrologerId] = event.characters;
+      emit(current.copyWith(remainingCharacters: newMap));
     }
   }
 

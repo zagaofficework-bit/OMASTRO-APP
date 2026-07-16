@@ -25,11 +25,13 @@ class ProfileMenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        ListTile(
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: 4.0,
-          ),
+        Material(
+          color: Colors.transparent,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 4.0,
+            ),
           leading: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -62,6 +64,7 @@ class ProfileMenuTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
+      ),
         if (!isLast)
           Divider(
             color: AppColors.border.withValues(alpha: 0.5),

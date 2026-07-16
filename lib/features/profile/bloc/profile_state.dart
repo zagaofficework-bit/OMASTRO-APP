@@ -24,7 +24,14 @@ class ProfileLoaded extends ProfileState {
     this.avatarUrl,
   });
 
-  bool get isProfileIncomplete => dob.isEmpty || gender.isEmpty || phone.isEmpty;
+  bool get isProfileIncomplete {
+    final isPhoneLogin = email.isEmpty || email.startsWith('phone_');
+    if (isPhoneLogin) {
+      return name.isEmpty || email.isEmpty || dob.isEmpty || gender.isEmpty;
+    } else {
+      return dob.isEmpty || gender.isEmpty;
+    }
+  }
 
   @override
   List<Object?> get props => [name, email, dob, gender, phone, avatarUrl];

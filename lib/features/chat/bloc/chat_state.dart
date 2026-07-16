@@ -29,6 +29,7 @@ class ChatUpdatedState extends ChatState {
   final String userName;
   final List<ChatConversation> activeConversations;
   final Map<String, List<ChatMessage>> messages; // Keyed by roomId
+  final Map<String, int> remainingCharacters; // Keyed by roomId
   final String? activeRoomId; // The room currently open
 
   const ChatUpdatedState({
@@ -36,6 +37,7 @@ class ChatUpdatedState extends ChatState {
     required this.userName,
     required this.activeConversations,
     required this.messages,
+    this.remainingCharacters = const {},
     this.activeRoomId,
   });
 
@@ -48,6 +50,7 @@ class ChatUpdatedState extends ChatState {
     String? userName,
     List<ChatConversation>? activeConversations,
     Map<String, List<ChatMessage>>? messages,
+    Map<String, int>? remainingCharacters,
     String? activeRoomId,
   }) {
     return ChatUpdatedState(
@@ -55,6 +58,7 @@ class ChatUpdatedState extends ChatState {
       userName: userName ?? this.userName,
       activeConversations: activeConversations ?? this.activeConversations,
       messages: messages ?? this.messages,
+      remainingCharacters: remainingCharacters ?? this.remainingCharacters,
       activeRoomId: activeRoomId ?? this.activeRoomId,
     );
   }
@@ -65,10 +69,11 @@ class ChatUpdatedState extends ChatState {
       userName: userName,
       activeConversations: activeConversations,
       messages: messages,
+      remainingCharacters: remainingCharacters,
       activeRoomId: null,
     );
   }
 
   @override
-  List<Object?> get props => [userUid, userName, activeConversations, messages, activeRoomId];
+  List<Object?> get props => [userUid, userName, activeConversations, messages, remainingCharacters, activeRoomId];
 }

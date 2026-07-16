@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 
 class ProfileStatsCard extends StatelessWidget {
-  final String ordersCount;
-  final String followersCount;
+  final String rating;
   final String minsCount;
 
   const ProfileStatsCard({
     super.key,
-    this.ordersCount = "500",
-    this.followersCount = "2.5k+",
-    this.minsCount = "3k+",
+    this.rating = "5.0",
+    this.minsCount = "0",
   });
 
   @override
   Widget build(BuildContext context) {
-    // Soft cream tint matching the background layer of the screenshot precisely
     const double containerHeight = 84.0;
     const dividerColor = Color(0xFFE5DCC3);
 
@@ -22,9 +19,7 @@ class ProfileStatsCard extends StatelessWidget {
       height: containerHeight,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(
-          40,
-        ), // Creates the elegant pill capsule curve
+        borderRadius: BorderRadius.circular(40),
         border: Border.all(
           color: dividerColor.withValues(alpha: 0.4),
           width: 1,
@@ -39,20 +34,14 @@ class ProfileStatsCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // --- 1. Orders Stat Item ---
-          Expanded(child: _buildStatItem(ordersCount, "orders")),
+          // --- 1. Rating Stat Item ---
+          Expanded(child: _buildStatItem('⭐ $rating', "Rating")),
 
           // Vertical Divider
           Container(height: 40, width: 1, color: dividerColor),
 
-          // --- 2. Followers Stat Item ---
-          Expanded(child: _buildStatItem(followersCount, "followers")),
-
-          // Vertical Divider
-          Container(height: 40, width: 1, color: dividerColor),
-
-          // --- 3. Mins Stat Item ---
-          Expanded(child: _buildStatItem(minsCount, "mins")),
+          // --- 2. Mins Stat Item ---
+          Expanded(child: _buildStatItem('$minsCount mins', "Consulted")),
         ],
       ),
     );
@@ -65,7 +54,7 @@ class ProfileStatsCard extends StatelessWidget {
         Text(
           count,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black,
             letterSpacing: 0.2,
@@ -75,7 +64,7 @@ class ProfileStatsCard extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w400,
             color: Colors.black54,
           ),

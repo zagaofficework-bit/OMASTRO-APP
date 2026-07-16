@@ -3,15 +3,21 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/theme/app_colors.dart';
 import '../repository/firebase_call_repository.dart';
+import '../utils/billing_engine.dart';
 
 class VideoCallPage extends StatefulWidget {
   final Map<String, dynamic> astrologer;
   final String? incomingCallId;
 
-  const VideoCallPage({super.key, required this.astrologer, this.incomingCallId});
+  const VideoCallPage({
+    super.key,
+    required this.astrologer,
+    this.incomingCallId,
+  });
 
   @override
   State<VideoCallPage> createState() => _VideoCallPageState();
@@ -20,13 +26,79 @@ class VideoCallPage extends StatefulWidget {
 class _VideoCallPageState extends State<VideoCallPage> {
   final _callRepo = FirebaseCallRepository();
   String? _callId;
+  String? _roomId;
   bool _isInitializing = true;
   bool _isMuted = false;
   bool _isVideoOff = false;
   bool _isFrontCamera = true;
   bool _isExiting = false;
+  Timer? _callTimer;
+  int _elapsedSeconds = 0;
+  double _callRate = 10.0;
+
+  void _startTimer() {
+    if (_callTimer != null) return;
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) _elapsedSeconds++;
+    });
+  }
+
+  void _stopTimer() {
+    _callTimer?.cancel();
+    _callTimer = null;
+  }
+
+  Future<bool> _showAntiGravityDialog() async {
+    _stopTimer(); // Freeze timer!
+    final cost = BillingEngine.calculateProRataDeduction(
+      elapsedSeconds: _elapsedSeconds,
+      pricePerMinute: _callRate,
+    );
+    final mm = (_elapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final ss = (_elapsedSeconds % 60).toString().padLeft(2, '0');
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('End Video Call?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Duration: $mm:$ss', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 12),
+              Text('Cost so far: ₹${cost.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontSize: 16)),
+              const SizedBox(height: 16),
+              const Text('Do you want to end this call?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel / Resume'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Yes, End Call'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      return true;
+    } else {
+      _startTimer(); // Unfreeze timer
+      return false;
+    }
+  }
 
   void _safeExit() {
+    _stopTimer();
     if (_isExiting) return;
     _isExiting = true;
     if (mounted) {
@@ -41,13 +113,32 @@ class _VideoCallPageState extends State<VideoCallPage> {
   @override
   void initState() {
     super.initState();
+    _callRate = (widget.astrologer['video_rate'] is num)
+        ? (widget.astrologer['video_rate'] as num).toDouble()
+        : double.tryParse(widget.astrologer['video_rate']?.toString() ?? '10') ?? 10.0;
+        
     if (widget.incomingCallId != null) {
-      setState(() {
-        _callId = widget.incomingCallId;
-        _isInitializing = false;
-      });
+      _callId = widget.incomingCallId;
+      _loadRoomId();
     } else {
       _initCall();
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    super.dispose();
+  }
+
+  Future<void> _loadRoomId() async {
+    if (_callId == null) return;
+    final roomId = await _callRepo.getRoomId(_callId!);
+    if (mounted) {
+      setState(() {
+        _roomId = roomId;
+        _isInitializing = false;
+      });
     }
   }
 
@@ -59,7 +150,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
     }
 
     final String astrologerName = widget.astrologer['name'] ?? 'Astrologer';
-    final String astrologerId = widget.astrologer['id']?.toString() ?? 'unknown';
+    final String astrologerId =
+        widget.astrologer['id']?.toString() ?? 'unknown';
     final String? firebaseUid = widget.astrologer['firebase_uid']?.toString();
 
     try {
@@ -71,10 +163,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
         calleeFirebaseUid: firebaseUid,
         mode: 'video',
       );
-      
+
+      final roomId = await _callRepo.getRoomId(callId);
       if (mounted) {
         setState(() {
           _callId = callId;
+          _roomId = roomId;
           _isInitializing = false;
         });
       }
@@ -111,10 +205,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
   @override
   Widget build(BuildContext context) {
     final String astrologerName = widget.astrologer['name'] ?? 'Astrologer';
-    final String imageUrl = widget.astrologer['image'] ?? 'assets/images/logo.png';
+    final String imageUrl =
+        widget.astrologer['image'] ?? 'assets/images/logo.png';
 
     final user = FirebaseAuth.instance.currentUser;
-    final String userID = '${user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}'}_flutter';
+    final String userID =
+        '${user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}'}_flutter';
     final String userName = user?.displayName ?? 'Guest';
 
     Widget buildTopBar(bool isConnecting) {
@@ -128,16 +224,26 @@ class _VideoCallPageState extends State<VideoCallPage> {
               GestureDetector(
                 onTap: _safeExit,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white12,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 12),
+                      Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 12,
+                      ),
                       SizedBox(width: 4),
-                      Text('Back', style: TextStyle(color: Colors.white, fontSize: 12)),
+                      Text(
+                        'Back',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -145,7 +251,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
               const SizedBox(width: 12),
               Row(
                 children: [
-                  CircleAvatar(radius: 18, backgroundImage: AssetImage(imageUrl)),
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundImage: AssetImage(imageUrl),
+                  ),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,21 +262,25 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       Text(
                         astrologerName,
                         style: const TextStyle(
-                          color: Colors.white, 
-                          fontWeight: FontWeight.bold, 
-                          fontSize: 14, 
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                           fontFamily: 'PlayfairDisplay',
-                          shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                          shadows: [
+                            Shadow(color: Colors.black54, blurRadius: 4),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         isConnecting ? 'CONNECTING...' : 'LIVE',
                         style: const TextStyle(
-                          color: Colors.white60, 
+                          color: Colors.white60,
                           fontSize: 11,
-                          shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                        )
+                          shadows: [
+                            Shadow(color: Colors.black54, blurRadius: 4),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -186,21 +299,31 @@ class _VideoCallPageState extends State<VideoCallPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 6, 
-                  height: 6, 
+                  width: 6,
+                  height: 6,
                   decoration: BoxDecoration(
-                    color: isConnecting ? Colors.orangeAccent : Colors.greenAccent, 
+                    color: isConnecting
+                        ? Colors.orangeAccent
+                        : Colors.greenAccent,
                     shape: BoxShape.circle,
                     boxShadow: [
                       if (!isConnecting)
-                        const BoxShadow(color: Colors.greenAccent, blurRadius: 4)
-                    ]
-                  )
+                        const BoxShadow(
+                          color: Colors.greenAccent,
+                          blurRadius: 4,
+                        ),
+                    ],
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   isConnecting ? 'WAITING' : 'LIVE',
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5)
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ],
             ),
@@ -231,8 +354,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(12)),
-            child: const Text('Connecting to astrologer...', style: TextStyle(color: Colors.white70, fontSize: 11)),
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'Connecting to astrologer...',
+              style: TextStyle(color: Colors.white70, fontSize: 11),
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -245,7 +374,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
               const SizedBox(width: 14),
               _buildControlButton(
-                icon: _isVideoOff ? Icons.videocam_off_outlined : Icons.videocam_outlined,
+                icon: _isVideoOff
+                    ? Icons.videocam_off_outlined
+                    : Icons.videocam_outlined,
                 isActive: _isVideoOff,
                 onTap: () => setState(() => _isVideoOff = !_isVideoOff),
               ),
@@ -269,10 +400,20 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   decoration: const BoxDecoration(
                     color: Colors.redAccent,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.redAccent, blurRadius: 10, offset: Offset(0, 2))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.redAccent,
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   alignment: Alignment.center,
-                  child: const Icon(Icons.call_end_rounded, color: Colors.white, size: 26),
+                  child: const Icon(
+                    Icons.call_end_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
                 ),
               ),
             ],
@@ -287,9 +428,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
         body: SafeArea(
           child: Stack(
             children: [
-              Positioned(top: 16, left: 16, right: 16, child: buildTopBar(true)),
+              Positioned(
+                top: 16,
+                left: 16,
+                right: 16,
+                child: buildTopBar(true),
+              ),
               buildConnectingCenter(),
-              Positioned(bottom: 24, left: 16, right: 16, child: buildConnectingBottom()),
+              Positioned(
+                bottom: 24,
+                left: 16,
+                right: 16,
+                child: buildConnectingBottom(),
+              ),
             ],
           ),
         ),
@@ -301,11 +452,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
       appSign: dotenv.env['ZEGO_APP_SIGN']!,
       userID: userID,
       userName: userName,
-      callID: _callId!,
+      callID: _roomId ?? _callId!,
       config: ZegoUIKitPrebuiltCallConfig.oneOnOneVideoCall()
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
       events: ZegoUIKitPrebuiltCallEvents(
+        onHangUpConfirmation: (event, defaultAction) async {
+          return await _showAntiGravityDialog();
+        },
         onCallEnd: (event, defaultAction) async {
           if (_callId != null) {
             await _callRepo.endCall(_callId!);
@@ -318,32 +472,60 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('calls').doc(_callId).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('calls')
+          .doc(_callId)
+          .snapshots(),
       builder: (context, snapshot) {
         bool isConnecting = true;
-        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+        if (snapshot.hasData &&
+            snapshot.data != null &&
+            snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>?;
-          if (data != null && (data['status'] == 'accepted' || data['status'] == 'connected' || data['status'] == 'ended' || data['status'] == 'rejected')) {
+          if (data != null &&
+              (data['status'] == 'accepted' ||
+                  data['status'] == 'connected' ||
+                  data['status'] == 'ended' ||
+                  data['status'] == 'rejected')) {
             isConnecting = false;
           }
-          if (data != null && (data['status'] == 'ended' || data['status'] == 'rejected')) {
-             WidgetsBinding.instance.addPostFrameCallback((_) {
-               _safeExit();
-             });
+          if (data != null && (data['status'] == 'accepted' || data['status'] == 'connected')) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+               _startTimer();
+            });
+          }
+          if (data != null &&
+              (data['status'] == 'ended' || data['status'] == 'rejected')) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _stopTimer();
+              _safeExit();
+            });
           }
         }
-        
+
         return Scaffold(
-          backgroundColor: isConnecting ? AppColors.darkBackground : Colors.black,
+          backgroundColor: isConnecting
+              ? AppColors.darkBackground
+              : Colors.black,
           body: SafeArea(
             child: Stack(
               children: [
                 if (!isConnecting) zegoCall, // Zego renders below our Top Bar
-                Positioned(top: 16, left: 16, right: 16, child: buildTopBar(isConnecting)),
-                
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  right: 16,
+                  child: buildTopBar(isConnecting),
+                ),
+
                 if (isConnecting) ...[
                   buildConnectingCenter(),
-                  Positioned(bottom: 24, left: 16, right: 16, child: buildConnectingBottom()),
+                  Positioned(
+                    bottom: 24,
+                    left: 16,
+                    right: 16,
+                    child: buildConnectingBottom(),
+                  ),
                 ],
               ],
             ),

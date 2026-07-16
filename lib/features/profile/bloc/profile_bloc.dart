@@ -8,6 +8,22 @@ import 'profile_state.dart';
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final _supabase = Supabase.instance.client;
 
+  String _extractNameFromEmail(String rawEmail) {
+    if (rawEmail.isEmpty || !rawEmail.contains('@') || rawEmail.startsWith('phone_')) return 'User';
+    String localPart = rawEmail.split('@').first;
+    String cleanedName = localPart.replaceAll(RegExp(r'[._-]'), ' ');
+    cleanedName = cleanedName.replaceAll(RegExp(r'\d'), '');
+    return cleanedName
+        .trim()
+        .split(' ')
+        .map((word) {
+          if (word.isEmpty) return '';
+          return word[0].toUpperCase() + word.substring(1).toLowerCase();
+        })
+        .join(' ')
+        .trim();
+  }
+
   ProfileBloc()
       : super(const ProfileLoaded(
           name: '',
@@ -30,22 +46,50 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         final authName = metadata['full_name'] ?? metadata['name'] ?? '';
         final authAvatar = metadata['avatar_url'] ?? metadata['picture'];
 
+        // If email is dummy phone email, extract phone number and treat email as empty
+        final isPhoneAuth = authEmail.startsWith('phone_');
+        String extractedPhone = '';
+        if (isPhoneAuth) {
+          try {
+            final rawNum = authEmail.split('_')[1].split('@')[0];
+            extractedPhone = rawNum.startsWith('+') ? rawNum : '+$rawNum';
+          } catch (_) {}
+        }
+        if (extractedPhone.isEmpty) {
+          extractedPhone = firebase.FirebaseAuth.instance.currentUser?.phoneNumber ?? '';
+        }
+
+        final defaultName = (authName.toString().isEmpty) 
+            ? (isPhoneAuth ? 'User' : _extractNameFromEmail(authEmail)) 
+            : authName;
+
         if (response != null) {
+          final dbPhone = response['phone'] ?? '';
+          final finalPhone = (dbPhone.toString().isEmpty) ? extractedPhone : dbPhone;
+          
+          final dbEmail = response['email'] ?? '';
+          final finalEmail = (dbEmail.toString().isEmpty || dbEmail.toString().startsWith('phone_')) 
+              ? (isPhoneAuth ? '' : authEmail) 
+              : dbEmail;
+
+          final dbName = response['full_name'] ?? '';
+          final finalName = (dbName.toString().isEmpty) ? defaultName : dbName;
+
           emit(ProfileLoaded(
-            name: (response['full_name'] == null || response['full_name'].toString().isEmpty) ? authName : response['full_name'],
-            email: (response['email'] == null || response['email'].toString().isEmpty) ? authEmail : response['email'],
+            name: finalName,
+            email: finalEmail,
             dob: response['date_of_birth'] ?? '',
             gender: response['gender'] ?? '',
-            phone: response['phone'] ?? '',
+            phone: finalPhone,
             avatarUrl: response['avatar_url'] ?? authAvatar,
           ));
         } else {
           emit(ProfileLoaded(
-            name: authName,
-            email: authEmail,
+            name: defaultName,
+            email: isPhoneAuth ? '' : authEmail,
             dob: '',
             gender: '',
-            phone: '',
+            phone: extractedPhone,
             avatarUrl: authAvatar,
           ));
         }
@@ -76,7 +120,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           
           final userId = user.id;
           await Supabase.instance.client
-              .from('users')
+              .from('profiles')
               .update({
             'full_name': event.name,
             'email': event.email,

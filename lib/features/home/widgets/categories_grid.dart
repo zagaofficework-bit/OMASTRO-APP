@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
-import 'package:omastro/features/astrologers/screen/astrologer_page.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_category_card.dart';
 
@@ -58,15 +58,7 @@ class HomeCategoryGrid extends StatelessWidget {
                 icon: item['icon'],
                 label: item['label'],
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AstrologerPage(
-                        initialCategory: item['label']
-                            .toString(), // 👈 Pass the exact string category name here dynamically (e.g., item['title'])
-                      ),
-                    ),
-                  );
+                  context.go('/hub-list/${item['label']}');
                 },
               );
             },

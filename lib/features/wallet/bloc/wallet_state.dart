@@ -22,3 +22,19 @@ class WalletBalanceUpdated extends WalletState {
   List<Object> get props => [balance, transactions, isLoading];
 }
 
+class WalletDeductionSuccess extends WalletState {
+  final double newBalance;
+  const WalletDeductionSuccess(this.newBalance);
+
+  @override
+  List<Object> get props => [newBalance];
+}
+
+class WalletInsufficientBalance extends WalletState {
+  final double currentBalance;
+  final double requiredAmount;
+  const WalletInsufficientBalance({required this.currentBalance, required this.requiredAmount});
+
+  @override
+  List<Object> get props => [currentBalance, requiredAmount];
+}

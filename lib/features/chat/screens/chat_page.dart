@@ -81,16 +81,16 @@ class _ChatsPageState extends State<ChatsPage> {
                         bottom: AppSpacing.md,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.7), // Transparent for blur
+                        color: Colors.white.withValues(alpha: 0.7), // Transparent for blur
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             width: 1,
                           ),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -110,7 +110,7 @@ class _ChatsPageState extends State<ChatsPage> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.1),
+                              color: AppColors.primary.withValues(alpha: 0.1),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -140,7 +140,7 @@ class _ChatsPageState extends State<ChatsPage> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
+              color: AppColors.primary.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
             child: const Icon(

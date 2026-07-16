@@ -10,9 +10,14 @@ import '../../profile/bloc/profile_bloc.dart';
 import '../../profile/bloc/profile_state.dart';
 
 class WriteReviewBottomSheet extends StatefulWidget {
+  final String astrologerId;
   final String astrologerName;
 
-  const WriteReviewBottomSheet({super.key, required this.astrologerName});
+  const WriteReviewBottomSheet({
+    super.key,
+    required this.astrologerId,
+    required this.astrologerName,
+  });
 
   @override
   State<WriteReviewBottomSheet> createState() => _WriteReviewBottomSheetState();
@@ -45,6 +50,7 @@ class _WriteReviewBottomSheetState extends State<WriteReviewBottomSheet> {
 
     final newReview = ReviewModel(
       id: const Uuid().v4(),
+      astrologerId: widget.astrologerId,
       astrologerName: widget.astrologerName,
       userName: userName,
       rating: _rating,

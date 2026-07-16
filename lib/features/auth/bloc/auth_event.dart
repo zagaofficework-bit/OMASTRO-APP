@@ -9,6 +9,8 @@ abstract class AuthEvent extends Equatable {
 
 class SignInRequested extends AuthEvent {}
 
+class CheckAuthStatus extends AuthEvent {}
+
 class GoogleSignInRequested extends AuthEvent {}
 
 class SendPhoneOtpRequested extends AuthEvent {
@@ -29,3 +31,24 @@ class VerifyPhoneOtpRequested extends AuthEvent {
 }
 
 class SignOutRequested extends AuthEvent {}
+
+// ── Astrologer Auth Events ──
+
+class AstrologerSignInRequested extends AuthEvent {
+  final String email;
+  final String password;
+  const AstrologerSignInRequested(this.email, this.password);
+
+  @override
+  List<Object> get props => [email, password];
+}
+
+class AstrologerSignUpRequested extends AuthEvent {
+  final String name;
+  final String email;
+  final String password;
+  const AstrologerSignUpRequested(this.name, this.email, this.password);
+
+  @override
+  List<Object> get props => [name, email, password];
+}

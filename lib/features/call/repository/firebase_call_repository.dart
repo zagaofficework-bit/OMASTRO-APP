@@ -13,8 +13,14 @@ class FirebaseCallRepository {
 
   String _astroUid(String id) => 'astro-$id';
 
+  String _roomIdFor(String uidA, String uidB) {
+    final list = [uidA, uidB];
+    list.sort();
+    return list.join('__');
+  }
+
   /// Start a call to the astrologer.
-  /// Returns the Firestore document ID which should be used as the Zego Room ID.
+  /// Returns the Firestore document ID for the call record.
   Future<String> startCall({
     required String callerUid,
     required String callerName,
@@ -24,9 +30,10 @@ class FirebaseCallRepository {
     required String mode, // 'audio' or 'video'
   }) async {
     // If Supabase didn't provide a firebase_uid, check our hardcoded map, else fallback
-    final String otherUid = _devFirebaseUidMap[calleeName] ?? 
-        ((calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty) 
-            ? calleeFirebaseUid 
+    final String otherUid =
+        _devFirebaseUidMap[calleeName] ??
+        ((calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty)
+            ? calleeFirebaseUid
             : _astroUid(astrologerId));
 
     debugPrint('=== START CALL DEBUG ===');
@@ -36,10 +43,8 @@ class FirebaseCallRepository {
     debugPrint('FINAL otherUid used: $otherUid');
     debugPrint('========================');
 
-    // Generate roomId
-    final list = [callerUid, otherUid];
-    list.sort();
-    final roomId = '${list.join('__')}_${DateTime.now().millisecondsSinceEpoch}';
+    // Keep the Zego room ID stable so it matches the existing chat room thread.
+    final roomId = _roomIdFor(callerUid, otherUid);
 
     debugPrint('[FirebaseCallRepository] Creating $mode call to $otherUid...');
 
@@ -55,14 +60,64 @@ class FirebaseCallRepository {
         'status': 'ringing',
         'createdAt': FieldValue.serverTimestamp(),
       });
-      
+
       final callId = docRef.id;
-      
       debugPrint('[FirebaseCallRepository] Call created with ID: $callId');
+
+      try {
+        final chatRoomId = _roomIdFor(callerUid, otherUid);
+
+        final roomRef = _firestore.collection('chats').doc(chatRoomId);
+        final roomSnap = await roomRef.get();
+        if (!roomSnap.exists) {
+          await roomRef.set({
+            'members': [callerUid, otherUid],
+            'memberNames': {callerUid: callerName, otherUid: calleeName},
+            'memberAvatars': {callerUid: '', otherUid: ''},
+            'astrologerId': astrologerId,
+            'astrologerFirebaseUid': otherUid,
+            'createdAt': FieldValue.serverTimestamp(),
+            'unread': {callerUid: 0, otherUid: 0},
+          });
+        }
+
+        // Add the custom call log message
+        await roomRef.collection('messages').add({
+          'text': '[CALL_LOG]:$mode:ended',
+          'senderId': callerUid,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Update the last message in chat room
+        await roomRef.update({
+          'lastMessage': mode == 'audio' ? '📞 Voice Call' : '📹 Video Call',
+          'lastSenderId': callerUid,
+          'lastMessageAt': FieldValue.serverTimestamp(),
+        });
+      } catch (chatError) {
+        debugPrint(
+          '[FirebaseCallRepository] Failed to log call in chat: $chatError',
+        );
+      }
+
       return callId;
     } catch (e) {
       debugPrint('[FirebaseCallRepository] Failed to create call: $e');
       rethrow;
+    }
+  }
+
+  /// Resolve the shared room ID for a call document.
+  Future<String?> getRoomId(String callId) async {
+    try {
+      final doc = await _firestore.collection('calls').doc(callId).get();
+      final data = doc.data();
+      return data?['roomId']?.toString();
+    } catch (e) {
+      debugPrint(
+        '[FirebaseCallRepository] Failed to load roomId for $callId: $e',
+      );
+      return null;
     }
   }
 

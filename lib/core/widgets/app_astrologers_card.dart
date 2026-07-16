@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
 
 class FeaturedAstrologerCard extends StatelessWidget {
   final String name;
@@ -10,6 +8,7 @@ class FeaturedAstrologerCard extends StatelessWidget {
   final double rating;
   final int pricePerMin;
   final bool isOnline;
+  final String? astrologerId;
   final VoidCallback onTap;
 
   const FeaturedAstrologerCard({
@@ -20,6 +19,7 @@ class FeaturedAstrologerCard extends StatelessWidget {
     required this.rating,
     required this.pricePerMin,
     required this.isOnline,
+    this.astrologerId,
     required this.onTap,
   });
 
@@ -32,131 +32,148 @@ class FeaturedAstrologerCard extends StatelessWidget {
       height: responsive.featuredCardHeight,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppRadius.radiusMd,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.radiusMd,
-            border: Border.all(color: AppColors.border),
-            boxShadow: const [
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFAF2E6), width: 1.2),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x05000000),
-                blurRadius: 8,
-                offset: Offset(0, 4),
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.04),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final h = constraints.maxHeight;
-
-              final avatarRadius = (h * 0.18).clamp(24.0, 36.0);
-
-              return Padding(
-                padding: EdgeInsets.all(responsive.scale(10, min: 8, max: 14)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Avatar Frame with Gold Ring & Presence Status
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    // Avatar
-                    Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: avatarRadius,
-                          backgroundColor: AppColors.background,
-                          backgroundImage: imageUrl.startsWith('assets/')
-                              ? AssetImage(imageUrl)
-                              : NetworkImage(imageUrl) as ImageProvider,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFFE5C693).withValues(alpha: 0.3),
+                          width: 2,
                         ),
-
-                        if (isOnline)
-                          Positioned(
-                            right: 2,
-                            bottom: 2,
-                            child: Container(
-                              width: responsive.scale(12),
-                              height: responsive.scale(12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xff4CAF50),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.surface,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: const Color(0xFFFDF6EC),
+                        backgroundImage: imageUrl.startsWith('assets/')
+                            ? AssetImage(imageUrl)
+                            : NetworkImage(imageUrl) as ImageProvider,
+                      ),
                     ),
+                    if (isOnline)
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10B981),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
 
-                    SizedBox(height: responsive.scale(8)),
-
+                // Name & Specialty Block
+                Column(
+                  children: [
                     Text(
                       name,
-                      textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: responsive.font(13, min: 12, max: 15),
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
                       ),
                     ),
-
-                    SizedBox(height: responsive.scale(3)),
-
+                    const SizedBox(height: 2),
                     Text(
                       specialty,
-                      textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontFamily: "Poppins",
-                        fontSize: responsive.font(10, min: 9, max: 12),
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-
-                    const Spacer(),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.star_rounded,
-                          color: AppColors.primary,
-                          size: responsive.scale(14, min: 12, max: 16),
-                        ),
-
-                        SizedBox(width: responsive.scale(2)),
-
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: TextStyle(
-                            fontSize: responsive.font(11, min: 10, max: 13),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: responsive.scale(5)),
-
-                    Text(
-                      "₹$pricePerMin/min",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: "Poppins",
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                        fontSize: responsive.font(12, min: 11, max: 14),
+                        fontFamily: 'Poppins',
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+
+                // Neat combined Rating & Price Badge Row
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFFBF2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFFF0D4),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Rating
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Color(0xFFD4AF37),
+                            size: 14,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Vertical Divider
+                      Container(
+                        width: 1,
+                        height: 10,
+                        color: const Color(0xFFE5C693).withValues(alpha: 0.3),
+                      ),
+                      // Price
+                      Text(
+                        '₹$pricePerMin/m',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFD4AF37),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

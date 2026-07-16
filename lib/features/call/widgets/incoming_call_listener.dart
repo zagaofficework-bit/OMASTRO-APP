@@ -34,7 +34,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
         opaque: false,
         barrierColor: Colors.black87,
         barrierDismissible: false,
-        pageBuilder: (ctx, _, __) => PopScope(
+        pageBuilder: (ctx, _, _) => PopScope(
           canPop: false,
           child: _IncomingCallOverlay(
             callId: callId,
@@ -69,7 +69,8 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        if (authState is Authenticated) {
+        final isLoggedIn = authState is Authenticated || authState is AuthenticatedAsAstrologer;
+        if (isLoggedIn) {
           final uid = FirebaseAuth.instance.currentUser?.uid;
           if (uid == null) return widget.child;
 

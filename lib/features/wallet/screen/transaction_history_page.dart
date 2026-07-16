@@ -19,7 +19,10 @@ class TransactionHistoryPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -30,7 +33,9 @@ class TransactionHistoryPage extends StatelessWidget {
         ),
         title: Text(
           'Transaction History',
-          style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.displayMedium.copyWith(
+            color: AppColors.textPrimary,
+          ),
         ),
       ),
       body: SafeArea(
@@ -51,11 +56,17 @@ class TransactionHistoryPage extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.history_rounded, size: 64, color: Colors.grey[400]),
+                    Icon(
+                      Icons.history_rounded,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No transactions yet.',
-                      style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600]),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
@@ -69,18 +80,20 @@ class TransactionHistoryPage extends StatelessWidget {
               separatorBuilder: (context, index) => const Divider(height: 24),
               itemBuilder: (context, index) {
                 final tx = transactions[index];
-                
+
                 final isCredit = tx['kind'] == 'credit';
                 final amountPaise = tx['amount_paise'] as num? ?? 0;
                 final amount = amountPaise / 100.0;
-                
-                final dateStr = tx['created_at'] as String?;
+
+                final createdAt = tx['created_at'];
                 DateTime? date;
-                if (dateStr != null) {
-                  date = DateTime.tryParse(dateStr)?.toLocal();
+                if (createdAt is DateTime) {
+                  date = createdAt.toLocal();
+                } else if (createdAt is String) {
+                  date = DateTime.tryParse(createdAt)?.toLocal();
                 }
-                
-                final dateFormatted = date != null 
+
+                final dateFormatted = date != null
                     ? DateFormat('dd MMM yyyy, hh:mm a').format(date)
                     : 'Unknown Date';
 
@@ -89,11 +102,15 @@ class TransactionHistoryPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isCredit ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                        color: isCredit
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                        isCredit
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
                         color: isCredit ? Colors.green : Colors.red,
                         size: 24,
                       ),
@@ -105,12 +122,16 @@ class TransactionHistoryPage extends StatelessWidget {
                         children: [
                           Text(
                             tx['note'] ?? (isCredit ? 'Deposit' : 'Payment'),
-                            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             dateFormatted,
-                            style: AppTextStyles.bodySecondary.copyWith(color: Colors.grey[600]),
+                            style: AppTextStyles.bodySecondary.copyWith(
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),

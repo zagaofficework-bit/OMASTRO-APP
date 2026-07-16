@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/profile_bloc.dart';
-import '../bloc/profile_event.dart';
 import '../bloc/profile_state.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
@@ -13,7 +12,6 @@ import '../widgets/info_group_card.dart';
 import '../widgets/profile_menu_tile.dart';
 import '../../wallet/bloc/wallet_bloc.dart';
 import '../../wallet/bloc/wallet_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../astrologers/bloc/astrologers_bloc.dart';
 import '../../astrologers/bloc/astrologers_state.dart';
 
@@ -166,189 +164,7 @@ class ProfilePage extends StatelessWidget {
                       ),
                       SizedBox(height: responsive.scale(10, min: 8, max: 14)),
 
-                      // Who I Follow Section
-                      BlocBuilder<AstrologersBloc, AstrologersState>(
-                        builder: (context, state) {
-                          List<String> followedNames = [];
-                          if (state is AstrologersFollowingState) {
-                            followedNames = state.followedAstrologers;
-                          }
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4.0,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.favorite_rounded,
-                                      color: Color(0xffE4A834),
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Who I Follow',
-                                      style: AppTextStyles.displayMedium
-                                          .copyWith(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.textPrimary,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 7),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: AppColors.border,
-                                    width: 1.0,
-                                  ),
-                                ),
-                                child: followedNames.isEmpty
-                                    ? Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12.0,
-                                          ),
-                                          child: Text(
-                                            'Follow your favorite astrologers to see them here!',
-                                            textAlign: TextAlign.center,
-                                            style: AppTextStyles.bodyMedium
-                                                .copyWith(
-                                                  color: Colors.grey[500],
-                                                  fontSize: 12,
-                                                ),
-                                          ),
-                                        ),
-                                      )
-                                    : SizedBox(
-                                        height: responsive.scale(
-                                          90,
-                                          min: 82,
-                                          max: 104,
-                                        ),
-                                        child: ListView.builder(
-                                          scrollDirection: Axis.horizontal,
-                                          physics:
-                                              const BouncingScrollPhysics(),
-                                          itemCount: followedNames.length,
-                                          itemBuilder: (context, index) {
-                                            final name = followedNames[index];
-                                            // Look up full astrologer details
-                                            final details = (state is AstrologersFollowingState) 
-                                                ? state.astrologers.firstWhere(
-                                                    (element) => element['name'] == name,
-                                                    orElse: () => <String, dynamic>{},
-                                                  )
-                                                : <String, dynamic>{};
 
-                                            if (details.isEmpty) {
-                                              return const SizedBox.shrink();
-                                            }
-
-                                            final String img = details['avatar_url'] ?? '';
-                                            return Padding(
-                                              padding: const EdgeInsets.only(
-                                                right: 16.0,
-                                              ),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  // Construct the Map<String, String> that AstrologerProfilePage expects
-                                                  context.push(
-                                                    '/astrologer-profile',
-                                                    extra: {
-                                                      'id': details['id']?.toString() ?? '',
-                                                      'firebase_uid': details['firebase_uid']?.toString() ?? '',
-                                                      'name': details['name']?.toString() ?? '',
-                                                      'imageUrl':
-                                                          details['image']
-                                                              ?.toString() ??
-                                                          '',
-                                                      'specialties':
-                                                          (details['specialties']
-                                                                  as List?)
-                                                              ?.join(', ') ??
-                                                          '',
-                                                      'languages':
-                                                          (details['languages']
-                                                                  as List?)
-                                                              ?.join(', ') ??
-                                                          '',
-                                                      'experience':
-                                                          '${details['experience']} Years',
-                                                      'rate':
-                                                          details['price']
-                                                              ?.toString() ??
-                                                          '0',
-                                                      'bio':
-                                                          details['bio']
-                                                              ?.toString() ??
-                                                          '',
-                                                    },
-                                                  );
-                                                },
-                                                child: Column(
-                                                  children: [
-                                                    CircleAvatar(
-                                                      radius: responsive.scale(
-                                                        26,
-                                                        min: 23,
-                                                        max: 30,
-                                                      ),
-                                                      backgroundColor:
-                                                          AppColors.background,
-                                                      backgroundImage:
-                                                          img.startsWith(
-                                                            'assets/',
-                                                          )
-                                                          ? AssetImage(img)
-                                                                as ImageProvider
-                                                          : NetworkImage(img),
-                                                    ),
-                                                    const SizedBox(height: 6),
-                                                    Text(
-                                                      name
-                                                          .split(' ')
-                                                          .last, // Show short name or last part
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                        fontFamily: 'Poppins',
-                                                        fontSize: 11,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color: AppColors
-                                                            .textPrimary,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                              ),
-                              SizedBox(
-                                height: responsive.scale(
-                                  AppSpacing.sm,
-                                  min: 8,
-                                  max: 14,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
 
 
 

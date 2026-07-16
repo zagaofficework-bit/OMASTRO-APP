@@ -33,6 +33,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _isUploading = false;
   bool _isPhoneVerified = false;
   String _initialPhone = '';
+  bool _isPhoneLogin = false;
 
   @override
   void initState() {
@@ -53,6 +54,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       initialGender = state.gender;
       _avatarUrl = state.avatarUrl;
       _isPhoneVerified = _initialPhone.isNotEmpty;
+      _isPhoneLogin = initialEmail.contains('@gmail.com') && initialEmail.startsWith('phone_');
     }
 
     _nameController = TextEditingController(text: initialName);
@@ -349,14 +351,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // Protected Read-Only Identity Parameter Field
-                  EditTextField(
-                    controller: _emailController,
-                    label: 'Email Address',
-                    prefixIcon: Icons.mail_outline,
-                    readOnly: !isEmailEditable,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
+                  if (!_isPhoneLogin) ...[
+                    // Protected Read-Only Identity Parameter Field (Wait, email is editable here!)
+                    EditTextField(
+                      controller: _emailController,
+                      label: 'Email Address',
+                      prefixIcon: Icons.mail_outline,
+                      readOnly: !isEmailEditable,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // Interactive Date Context Field Hook
                   EditTextField(
@@ -368,33 +372,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // Phone Number Field
-                  EditTextField(
-                    controller: _phoneController,
-                    label: 'Phone Number',
-                    prefixIcon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  if (needsVerification)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () {
-                          String phone = _phoneController.text.trim();
-                          if (!phone.startsWith('+')) {
-                            phone = '+91$phone'; // Default to Indian country code
-                          }
-                          context.read<ProfileBloc>().add(SendProfilePhoneOtp(phone));
-                        },
-                        icon: const Icon(Icons.verified_user_outlined, size: 16),
-                        label: const Text('Verify Phone Number'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Colors.orange,
+                  if (_isPhoneLogin) ...[
+                    // Phone Number Field
+                    EditTextField(
+                      controller: _phoneController,
+                      label: 'Phone Number',
+                      prefixIcon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    if (needsVerification)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            String phone = _phoneController.text.trim();
+                            if (!phone.startsWith('+')) {
+                              phone = '+91$phone'; // Default to Indian country code
+                            }
+                            context.read<ProfileBloc>().add(SendProfilePhoneOtp(phone));
+                          },
+                          icon: const Icon(Icons.verified_user_outlined, size: 16),
+                          label: const Text('Verify Phone Number'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.orange,
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    const SizedBox(height: AppSpacing.md),
+                      )
+                    else
+                      const SizedBox(height: AppSpacing.md),
+                  ],
 
                   // Gender Choice Chips Sub-selection Node
                   GenderChoiceChips(

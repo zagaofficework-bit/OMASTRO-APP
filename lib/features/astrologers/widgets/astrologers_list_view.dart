@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 
-import 'astrologers_list_card.dart';
+import 'astrologer_list_card.dart';
 
 class AstrologersListView extends StatelessWidget {
   final List<Map<String, dynamic>> astrologers;
   final double bottomPadding;
+  final Future<void> Function()? onRefresh;
 
   const AstrologersListView({
     super.key,
     required this.astrologers,
     this.bottomPadding = 24,
+    this.onRefresh,
   });
 
   @override
@@ -27,7 +29,7 @@ class AstrologersListView extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    final listView = ListView.builder(
       physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.only(
         left: responsive.horizontalPadding,
@@ -60,7 +62,15 @@ class AstrologersListView extends StatelessWidget {
                   ),
                   'experience': '${currentItem['experience_years'] ?? 0} Years',
                   'rate': currentItem['price_per_minute']?.toString() ?? '0',
-                  'bio': currentItem['bio']?.toString() ?? 'Verified expert specializing in Astrology.',
+                  'chat_rate': currentItem['chat_rate']?.toString() ?? '5',
+                  'call_rate': currentItem['call_rate']?.toString() ?? '10',
+                  'video_rate': currentItem['video_rate']?.toString() ?? '15',
+                  'is_online': currentItem['is_online']?.toString() ?? 'false',
+                  'total_minutes_consulted':
+                      currentItem['total_minutes_consulted']?.toString() ?? '0',
+                  'bio':
+                      currentItem['bio']?.toString() ??
+                      'Verified expert specializing in Astrology.',
                 },
               );
             },
@@ -73,21 +83,44 @@ class AstrologersListView extends StatelessWidget {
               rating: (currentItem['rating'] ?? 5.0).toDouble(),
               pricePerMin: (currentItem['price_per_minute'] ?? 0).toInt(),
               isOnline: currentItem['is_online'] ?? false,
+              chatRate: (currentItem['chat_rate'] ?? 5.0).toDouble(),
+              callRate: (currentItem['call_rate'] ?? 10.0).toDouble(),
+              videoRate: (currentItem['video_rate'] ?? 15.0).toDouble(),
+              astrologerId: currentItem['id']?.toString() ?? '',
               onChatTap: () {
                 context.push(
                   '/chat-room',
                   extra: {
                     'id': currentItem['id']?.toString() ?? '',
                     'name': currentItem['name'],
+                    'avatarUrl': currentItem['avatar_url'] ?? '',
                   },
                 );
               },
-              onCallTap: () => context.push('/live-call', extra: currentItem),
-              onVideoTap: () => context.push('/video-call', extra: currentItem),
+              onCallTap: () => context.push(
+                '/live-call',
+                extra: {
+                  ...currentItem,
+                  'image': currentItem['avatar_url'] ?? '',
+                },
+              ),
+              onVideoTap: () => context.push(
+                '/video-call',
+                extra: {
+                  ...currentItem,
+                  'image': currentItem['avatar_url'] ?? '',
+                },
+              ),
             ),
           ),
         );
       },
     );
+
+    if (onRefresh != null) {
+      return RefreshIndicator(onRefresh: onRefresh!, child: listView);
+    }
+
+    return listView;
   }
 }

@@ -15,6 +15,7 @@ import 'features/chat/bloc/chat_bloc.dart';
 import 'features/astrologers/bloc/astrologers_bloc.dart';
 import 'features/astrologers/bloc/astrologers_event.dart';
 import 'features/reviews/bloc/reviews_bloc.dart';
+import 'features/astrologer_dashboard/bloc/astrologer_dashboard_bloc.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'features/call/widgets/incoming_call_listener.dart';
 
@@ -91,21 +92,25 @@ class _MyAppState extends State<MyApp> {
         BlocProvider(create: (_) => ChatBloc(), lazy: false),
         BlocProvider(create: (_) => AstrologersBloc()..add(LoadAstrologers())),
         BlocProvider(create: (_) => ReviewsBloc()),
+        BlocProvider(create: (_) => AstrologerDashboardBloc()),
       ],
       child: MaterialApp.router(
         theme: AppTheme.lightTheme,
         debugShowCheckedModeBanner: false,
         routerConfig: appRouter,
         builder: (context, child) {
-          return Stack(
-            children: [
-              IncomingCallListener(
-                child: ResponsiveBuilder(child: child ?? const SizedBox.shrink()),
-              ),
-              ZegoUIKitPrebuiltCallMiniOverlayPage(
-                contextQuery: () => rootNavigatorKey.currentState?.context ?? context,
-              ),
-            ],
+          return Container(
+            color: const Color(0xFFFFFBF2), // Force app base background color to prevent flash
+            child: Stack(
+              children: [
+                IncomingCallListener(
+                  child: ResponsiveBuilder(child: child ?? const SizedBox.shrink()),
+                ),
+                ZegoUIKitPrebuiltCallMiniOverlayPage(
+                  contextQuery: () => rootNavigatorKey.currentState?.context ?? context,
+                ),
+              ],
+            ),
           );
         },
       ),

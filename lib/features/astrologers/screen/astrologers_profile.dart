@@ -3,37 +3,219 @@ import 'package:omastro/core/theme/app_text_styles.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/consultation_action_dock.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_avatar_frame.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_meta_details.dart';
-import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_stats_card.dart'; // 👈 1. Added import statement
+import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_stats_card.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../bloc/astrologers_bloc.dart';
-import '../bloc/astrologers_event.dart';
-import '../bloc/astrologers_state.dart';
 import '../../reviews/bloc/reviews_bloc.dart';
+import '../../reviews/bloc/reviews_event.dart';
 import '../../reviews/bloc/reviews_state.dart';
 import '../../reviews/widgets/write_review_bottom_sheet.dart';
+import '../widgets/connect_modal.dart';
+import '../../../../core/services/notify_service.dart';
+import '../bloc/astrologers_bloc.dart';
+import '../bloc/astrologers_state.dart';
 
-class AstrologerProfilePage extends StatelessWidget {
+class AstrologerProfilePage extends StatefulWidget {
   final Map<String, String> astrologerData;
 
   const AstrologerProfilePage({super.key, required this.astrologerData});
 
   @override
-  Widget build(BuildContext context) {
-    final String profileName = astrologerData['name'] ?? 'Astrologer';
-    final String profileImageUrl = astrologerData['imageUrl'] ?? '';
-    final String specialties = astrologerData['specialties'] ?? '';
-    final String languages = astrologerData['languages'] ?? 'English';
-    final String experienceYears = astrologerData['experience'] ?? '0 Years';
-    final String hourlyRate = astrologerData['rate'] ?? '0';
-    final String biography =
-        astrologerData['bio'] ?? 'Verified Professional Astrologer.';
+  State<AstrologerProfilePage> createState() => _AstrologerProfilePageState();
+}
 
-    // Optional: Extract values from map if you pass orders, followers, or mins dynamically later
-    final String totalOrders = astrologerData['orders'] ?? '500';
-    final String totalFollowers = astrologerData['followers'] ?? '2.5k+';
-    final String totalMins = astrologerData['mins'] ?? '3k+';
+class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
+  late final String astrologerId;
+
+  @override
+  void initState() {
+    super.initState();
+    astrologerId = widget.astrologerData['id'] ?? '';
+    if (astrologerId.isNotEmpty) {
+      context.read<ReviewsBloc>().add(LoadReviewsForAstrologer(astrologerId));
+    }
+  }
+
+  void _handleConnect(BuildContext context) async {
+    final name = widget.astrologerData['name'] ?? 'Astrologer';
+    final chatRate = (widget.astrologerData['chat_rate'] is num)
+        ? (widget.astrologerData['chat_rate'] as num).toDouble()
+        : double.tryParse(
+                widget.astrologerData['chat_rate']?.toString() ?? '5',
+              ) ??
+              5.0;
+    final callRate = (widget.astrologerData['call_rate'] is num)
+        ? (widget.astrologerData['call_rate'] as num).toDouble()
+        : double.tryParse(
+                widget.astrologerData['call_rate']?.toString() ?? '10',
+              ) ??
+              10.0;
+    final videoRate = (widget.astrologerData['video_rate'] is num)
+        ? (widget.astrologerData['video_rate'] as num).toDouble()
+        : double.tryParse(
+                widget.astrologerData['video_rate']?.toString() ?? '15',
+              ) ??
+              15.0;
+    final astroBlocState = context.read<AstrologersBloc>().state;
+    bool isOnline = false;
+    
+    if (astroBlocState is AstrologersFollowingState) {
+      final currentAstro = astroBlocState.astrologers.firstWhere(
+        (a) => a['id'] == astrologerId,
+        orElse: () => widget.astrologerData,
+      );
+      isOnline = currentAstro['is_online'] == true || currentAstro['is_online'].toString() == 'true';
+    } else {
+      isOnline = widget.astrologerData['is_online'] == true || widget.astrologerData['is_online'].toString() == 'true';
+    }
+
+    if (!isOnline) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          title: const Text('Astrologer Offline'),
+          content: Text(
+            '$name is currently offline. Would you like to be notified when they come online?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(dialogCtx);
+                final success = await NotifyService.requestNotification(
+                  astrologerId: astrologerId,
+                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      backgroundColor: success
+                          ? const Color(0xFFFFFBF2)
+                          : const Color(0xFFFFF5F5),
+                      elevation: 6,
+                      margin: const EdgeInsets.only(
+                        bottom: 24,
+                        left: 16,
+                        right: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: success
+                              ? const Color(0xFFD4AF37)
+                              : Colors.redAccent,
+                          width: 1.5,
+                        ),
+                      ),
+                      content: Row(
+                        children: [
+                          Icon(
+                            success
+                                ? Icons.check_circle_rounded
+                                : Icons.error_rounded,
+                            color: success
+                                ? const Color(0xFFD4AF37)
+                                : Colors.redAccent,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              success
+                                  ? 'We will notify you when $name comes online!'
+                                  : 'Failed to register notification request.',
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+              ),
+              child: const Text('Notify Me'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ConnectModal(
+        chatRate: chatRate,
+        callRate: callRate,
+        videoRate: videoRate,
+        astrologerId: astrologerId,
+        astrologerName: name,
+      ),
+    );
+
+    if (result != null && context.mounted) {
+      if (result == 'chat') {
+        context.push(
+          '/chat-room',
+          extra: {
+            'id': astrologerId,
+            'name': name,
+            'avatarUrl': widget.astrologerData['imageUrl'] ?? '',
+          },
+        );
+      } else if (result == 'call') {
+        context.push(
+          '/live-call',
+          extra: {
+            ...widget.astrologerData,
+            'name': name,
+            'image': widget.astrologerData['imageUrl'] ?? '',
+          },
+        );
+      } else if (result == 'video') {
+        context.push(
+          '/video-call',
+          extra: {
+            ...widget.astrologerData,
+            'name': name,
+            'image': widget.astrologerData['imageUrl'] ?? '',
+          },
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String profileName = widget.astrologerData['name'] ?? 'Astrologer';
+    final String profileImageUrl = widget.astrologerData['imageUrl'] ?? '';
+    final String specialties = widget.astrologerData['specialties'] ?? '';
+    final String languages = widget.astrologerData['languages'] ?? 'English';
+    final String experienceYears =
+        widget.astrologerData['experience'] ?? '0 Years';
+    final String hourlyRate = widget.astrologerData['rate'] ?? '0';
+    final String biography =
+        widget.astrologerData['bio'] ?? 'Verified Professional Astrologer.';
+    final String rating = widget.astrologerData['rating']?.toString() ?? '5.0';
+    final String totalMins =
+        widget.astrologerData['total_minutes_consulted']?.toString() ?? '0';
+    final bool isOnline =
+        widget.astrologerData['is_online'] == true ||
+        widget.astrologerData['is_online'].toString() == 'true';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -92,7 +274,6 @@ class AstrologerProfilePage extends StatelessWidget {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                // Top Golden banner decoration layer
                 Container(
                   height: 120,
                   width: double.infinity,
@@ -108,7 +289,6 @@ class AstrologerProfilePage extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Floating Details Card
                 Padding(
                   padding: const EdgeInsets.only(
                     top: 40.0,
@@ -133,43 +313,23 @@ class AstrologerProfilePage extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Avatar
                         ProfileAvatarFrame(
                           imageUrl: profileImageUrl,
-                          isOnline: true,
+                          isOnline: isOnline,
+                          astrologerId: astrologerId,
                         ),
                         const SizedBox(height: 16),
-                        // Meta Details (Name, Rating, Specialties, rate, Follow button)
-                        BlocBuilder<AstrologersBloc, AstrologersState>(
-                          builder: (context, state) {
-                            bool isFollowing = false;
-                            if (state is AstrologersFollowingState) {
-                              isFollowing = state.followedAstrologers.contains(profileName);
-                            }
-                            return ProfileMetaDetails(
-                              name: profileName,
-                              specialties: specialties,
-                              languages: languages,
-                              experience: experienceYears,
-                              ratePerMinute: hourlyRate,
-                              isFollowing: isFollowing,
-                              onFollowTap: () {
-                                context.read<AstrologersBloc>().add(
-                                  ToggleFollowAstrologer(profileName),
-                                );
-                              },
-                            );
-                          },
+                        ProfileMetaDetails(
+                          name: profileName,
+                          specialties: specialties,
+                          languages: languages,
+                          experience: experienceYears,
+                          ratePerMinute: hourlyRate,
                         ),
                         const SizedBox(height: 16),
                         const Divider(color: Color(0xffFAF6F0), thickness: 1.5),
                         const SizedBox(height: 16),
-                        // Stats Card
-                        ProfileStatsCard(
-                          ordersCount: totalOrders,
-                          followersCount: totalFollowers,
-                          minsCount: totalMins,
-                        ),
+                        ProfileStatsCard(rating: rating, minsCount: totalMins),
                       ],
                     ),
                   ),
@@ -177,7 +337,6 @@ class AstrologerProfilePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
-            // Consultation Options Card
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Container(
@@ -215,43 +374,13 @@ class AstrologerProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     ConsultationActionDock(
-                      onChatTap: () {
-                        context.push(
-                          '/chat-room',
-                          extra: {
-                            'id': astrologerData['id'] ?? 'chat_${profileName.toLowerCase().replaceAll(' ', '_')}',
-                            'name': profileName,
-                            'otherUid': astrologerData['firebase_uid'],
-                          },
-                        );
-                      },
-                      onCallTap: () {
-                        context.push(
-                          '/live-call',
-                          extra: {
-                            ...astrologerData,
-                            'name': profileName,
-                            'image': profileImageUrl,
-                          },
-                        );
-                      },
-                      onVideoTap: () {
-                        context.push(
-                          '/video-call',
-                          extra: {
-                            ...astrologerData,
-                            'name': profileName,
-                            'image': profileImageUrl,
-                          },
-                        );
-                      },
+                      onConnectTap: () => _handleConnect(context),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            // About Card & Reviews
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Container(
@@ -308,7 +437,7 @@ class AstrologerProfilePage extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              'User Reviews',
+                              'Reviews',
                               style: AppTextStyles.headingMedium.copyWith(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -322,12 +451,21 @@ class AstrologerProfilePage extends StatelessWidget {
                               context: context,
                               isScrollControlled: true,
                               shape: const RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(24),
+                                ),
                               ),
-                              builder: (context) => WriteReviewBottomSheet(astrologerName: profileName),
+                              builder: (context) => WriteReviewBottomSheet(
+                                astrologerId: astrologerId,
+                                astrologerName: profileName,
+                              ),
                             );
                           },
-                          icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xffE4A834)),
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            size: 16,
+                            color: Color(0xffE4A834),
+                          ),
                           label: const Text(
                             'Write Review',
                             style: TextStyle(
@@ -342,13 +480,17 @@ class AstrologerProfilePage extends StatelessWidget {
                     BlocBuilder<ReviewsBloc, ReviewsState>(
                       builder: (context, state) {
                         if (state is ReviewsUpdatedState) {
-                          // Try getting specific reviews, fallback to generic DEFAULT reviews
-                          final reviews = state.reviews[profileName] ?? state.reviews['DEFAULT'] ?? [];
-                          
+                          final reviews = state.reviews[astrologerId] ?? [];
+
                           if (reviews.isEmpty) {
                             return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: Text('No reviews yet. Be the first to review!', style: TextStyle(color: Colors.grey[600])),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16.0,
+                              ),
+                              child: Text(
+                                'No reviews yet. Be the first to review!',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
                             );
                           }
 
@@ -356,16 +498,21 @@ class AstrologerProfilePage extends StatelessWidget {
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: reviews.length,
-                            separatorBuilder: (context, index) => const Divider(height: 24),
+                            separatorBuilder: (context, index) =>
+                                const Divider(height: 24),
                             itemBuilder: (context, index) {
                               final review = reviews[index];
-                              
+
                               String formattedTime;
-                              final difference = DateTime.now().difference(review.timestamp);
+                              final difference = DateTime.now().difference(
+                                review.timestamp,
+                              );
                               if (difference.inMinutes < 60) {
-                                formattedTime = '${difference.inMinutes} mins ago';
+                                formattedTime =
+                                    '${difference.inMinutes} mins ago';
                               } else if (difference.inHours < 24) {
-                                formattedTime = '${difference.inHours} hours ago';
+                                formattedTime =
+                                    '${difference.inHours} hours ago';
                               } else {
                                 formattedTime = '${difference.inDays} days ago';
                               }
@@ -375,6 +522,7 @@ class AstrologerProfilePage extends StatelessWidget {
                                 review.rating,
                                 review.comment,
                                 formattedTime,
+                                review.reviewerAvatar,
                               );
                             },
                           );
@@ -398,51 +546,76 @@ class AstrologerProfilePage extends StatelessWidget {
     double rating,
     String comment,
     String time,
+    String? avatarUrl,
   ) {
-    return Column(
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              name,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              time,
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 11,
-                color: Colors.grey[500],
-              ),
-            ),
-          ],
+        CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.grey[200],
+          backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+              ? NetworkImage(avatarUrl)
+              : null,
+          child: (avatarUrl == null || avatarUrl.isEmpty)
+              ? Text(
+                  name.isNotEmpty ? name[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )
+              : null,
         ),
-        const SizedBox(height: 4),
-        Row(
-          children: List.generate(
-            rating.toInt(),
-            (index) => const Icon(
-              Icons.star_rounded,
-              color: Color(0xffE4A834),
-              size: 14,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          comment,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 13,
-            color: Colors.grey[700],
-            height: 1.4,
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    time,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: List.generate(
+                  rating.toInt(),
+                  (index) => const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xffE4A834),
+                    size: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                comment,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  color: Colors.grey[700],
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
         ),
       ],

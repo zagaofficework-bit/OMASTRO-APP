@@ -35,11 +35,11 @@ class ChatTile extends StatelessWidget {
         return Container(
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: isUnread ? AppColors.primary.withOpacity(0.04) : Colors.white,
+            color: isUnread ? AppColors.primary.withValues(alpha: 0.04) : Colors.white,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 15,
                 offset: const Offset(0, 4),
               ),
@@ -61,10 +61,10 @@ class ChatTile extends StatelessWidget {
                           height: 56,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary.withOpacity(0.2), width: 2),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
                           ),
                           child: CircleAvatar(
-                            backgroundColor: AppColors.primary.withOpacity(0.1),
+                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                             backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
                                 ? NetworkImage(avatarUrl)
                                 : (conversation.profileImageUrl != null

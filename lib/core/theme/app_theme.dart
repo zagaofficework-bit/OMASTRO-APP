@@ -60,6 +60,23 @@ class AppTheme {
         showUnselectedLabels: true,
       ),
 
+      // --- SnackBar & Toast Styling ---
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFFFFFBF2), // Elegant cream backing
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFFFF0D4), width: 1.2), // Warm gold outline border
+        ),
+        contentTextStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: Colors.black87,
+        ),
+      ),
+
       // --- Custom Typography Engine Mapping ---
       textTheme: const TextTheme(
         displayLarge: AppTextStyles.displayLarge,

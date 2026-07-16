@@ -8,8 +8,6 @@ class ProfileMetaDetails extends StatelessWidget {
   final String languages;
   final String experience;
   final String ratePerMinute;
-  final bool isFollowing;
-  final VoidCallback onFollowTap;
 
   const ProfileMetaDetails({
     super.key,
@@ -18,8 +16,6 @@ class ProfileMetaDetails extends StatelessWidget {
     required this.languages,
     required this.experience,
     required this.ratePerMinute,
-    required this.isFollowing,
-    required this.onFollowTap,
   });
 
   @override
@@ -28,64 +24,17 @@ class ProfileMetaDetails extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // --- 1. NAME & + FOLLOW ROW ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                name,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: const TextStyle(
-                  fontFamily: 'PlayfairDisplay',
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8.0),
-
-            // Capsule Follow Button
-            InkWell(
-              onTap: onFollowTap,
-              borderRadius: BorderRadius.circular(20.0),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10.0,
-                  vertical: 4.0,
-                ),
-                decoration: BoxDecoration(
-                  color: isFollowing
-                      ? const Color(0xff10B981) // Active Green
-                      : const Color(0xffE4A834), // Brand Gold
-                  borderRadius: BorderRadius.circular(20.0),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      isFollowing ? Icons.check : Icons.add,
-                      color: Colors.white,
-                      size: 12,
-                    ),
-                    const SizedBox(width: 2.0),
-                    Text(
-                      isFollowing ? 'Following' : 'Follow',
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        // --- 1. NAME ---
+        Text(
+          name,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: const TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 6.0),
 
@@ -146,10 +95,10 @@ class ProfileMetaDetails extends StatelessWidget {
             fontFamily: 'Poppins',
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xffD4931A), // Prominent Ochre/Gold for pricing
+            color: Color(0xffD4931A),
           ),
         ),
-        AppSpacing.heightMd, // Vertical spacing after the rate
+        AppSpacing.heightMd,
       ],
     );
   }

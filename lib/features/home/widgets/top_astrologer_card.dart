@@ -23,8 +23,10 @@ class TopAstrologersSection extends StatelessWidget {
           // You could add logic here to filter or sort top astrologers, e.g. based on rating
         }
 
-        if (topAstrologers.isEmpty && state is AstrologersFollowingState && !state.isLoading) {
-           return const SizedBox.shrink(); // Hide section if no astrologers
+        if (topAstrologers.isEmpty &&
+            state is AstrologersFollowingState &&
+            !state.isLoading) {
+          return const SizedBox.shrink(); // Hide section if no astrologers
         }
 
         return Column(
@@ -73,7 +75,7 @@ class TopAstrologersSection extends StatelessWidget {
 
             SizedBox(height: responsive.scale(8)),
 
-            if (state is AstrologersFollowingState && state.isLoading)
+            if (state is AstrologersFollowingState && state.isLoading && topAstrologers.isEmpty)
               const Center(child: CircularProgressIndicator())
             else
               SizedBox(
@@ -82,31 +84,62 @@ class TopAstrologersSection extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   clipBehavior: Clip.none,
-                  padding: EdgeInsets.symmetric(horizontal: responsive.scale(2)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: responsive.scale(2),
+                  ),
                   itemCount: topAstrologers.length,
-                  separatorBuilder: (_, _) => SizedBox(width: responsive.scale(12)),
+                  separatorBuilder: (_, _) =>
+                      SizedBox(width: responsive.scale(12)),
                   itemBuilder: (context, index) {
                     final astrologer = topAstrologers[index];
 
                     return FeaturedAstrologerCard(
                       name: astrologer['name'] ?? 'Unknown',
                       imageUrl: astrologer['avatar_url'] ?? '',
-                      specialty: (astrologer['categories'] as List?)?.join(', ') ?? '',
+                      astrologerId: astrologer['id']?.toString(),
+                      specialty:
+                          (astrologer['categories'] as List?)?.join(', ') ?? '',
                       rating: (astrologer['rating'] ?? 5.0).toDouble(),
-                      pricePerMin: (astrologer['price_per_minute'] ?? 0).toInt(),
+                      pricePerMin: (astrologer['price_per_minute'] ?? 0)
+                          .toInt(),
                       isOnline: astrologer['is_online'] ?? false,
                       onTap: () {
                         context.push(
                           '/astrologer-profile',
                           extra: {
                             'id': astrologer['id']?.toString() ?? '',
-                            'firebase_uid': astrologer['firebase_uid']?.toString() ?? '',
+                            'firebase_uid':
+                                astrologer['firebase_uid']?.toString() ?? '',
                             'name': astrologer['name']?.toString() ?? '',
-                            'imageUrl': astrologer['avatar_url']?.toString() ?? '',
-                            'specialties': (astrologer['categories'] as List?)?.join(', ') ?? '',
-                            'languages': (astrologer['languages'] as List?)?.join(', ') ?? '',
-                            'experience': '${astrologer['experience_years']} Years',
-                            'rate': astrologer['price_per_minute']?.toString() ?? '0',
+                            'imageUrl':
+                                astrologer['avatar_url']?.toString() ?? '',
+                            'specialties':
+                                (astrologer['categories'] as List?)?.join(
+                                  ', ',
+                                ) ??
+                                '',
+                            'languages':
+                                (astrologer['languages'] as List?)?.join(
+                                  ', ',
+                                ) ??
+                                '',
+                            'experience':
+                                '${astrologer['experience_years']} Years',
+                            'rate':
+                                astrologer['price_per_minute']?.toString() ??
+                                '0',
+                            'chat_rate':
+                                astrologer['chat_rate']?.toString() ?? '5',
+                            'call_rate':
+                                astrologer['call_rate']?.toString() ?? '10',
+                            'video_rate':
+                                astrologer['video_rate']?.toString() ?? '15',
+                            'is_online':
+                                astrologer['is_online']?.toString() ?? 'false',
+                            'total_minutes_consulted':
+                                astrologer['total_minutes_consulted']
+                                    ?.toString() ??
+                                '0',
                             'bio': astrologer['bio']?.toString() ?? '',
                           },
                         );

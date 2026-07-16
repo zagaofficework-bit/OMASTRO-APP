@@ -16,3 +16,12 @@ class AddReviewEvent extends ReviewsEvent {
   @override
   List<Object> get props => [review];
 }
+
+class LoadReviewsForAstrologer extends ReviewsEvent {
+  final String astrologerId;
+
+  const LoadReviewsForAstrologer(this.astrologerId);
+
+  @override
+  List<Object> get props => [astrologerId];
+}

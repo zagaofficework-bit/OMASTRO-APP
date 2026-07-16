@@ -3,8 +3,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../repository/firebase_call_repository.dart';
+import '../utils/billing_engine.dart';
 import 'package:omastro/features/call/widgets/live_avatar_glow_frame.dart';
 import 'package:omastro/features/call/widgets/live_call_action_card.dart';
 import 'package:omastro/features/call/widgets/live_call_back_button.dart';
@@ -12,14 +14,16 @@ import 'package:omastro/features/call/widgets/live_call_background.dart';
 import 'package:omastro/features/call/widgets/live_call_disconnect_button.dart';
 import 'package:omastro/features/call/widgets/live_call_footer_hint.dart';
 import 'package:omastro/features/call/widgets/live_caller_header.dart';
-import 'package:omastro/features/call/widgets/live_calling_timer_badge.dart';
-import 'package:omastro/features/call/widgets/live_status_pill.dart';
 
 class LiveCallPage extends StatefulWidget {
   final Map<String, dynamic> astrologer;
   final String? incomingCallId;
 
-  const LiveCallPage({super.key, required this.astrologer, this.incomingCallId});
+  const LiveCallPage({
+    super.key,
+    required this.astrologer,
+    this.incomingCallId,
+  });
 
   @override
   State<LiveCallPage> createState() => _LiveCallPageState();
@@ -28,12 +32,89 @@ class LiveCallPage extends StatefulWidget {
 class _LiveCallPageState extends State<LiveCallPage> {
   final _callRepo = FirebaseCallRepository();
   String? _callId;
+  String? _roomId;
   bool _isInitializing = true;
   bool _isMuted = false;
   bool _isSpeakerOn = true;
   bool _isExiting = false;
+  Timer? _callTimer;
+  int _elapsedSeconds = 0;
+  double _callRate = 10.0;
+
+  void _startTimer() {
+    if (_callTimer != null) return;
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) _elapsedSeconds++;
+    });
+  }
+
+  void _stopTimer() {
+    _callTimer?.cancel();
+    _callTimer = null;
+  }
+
+  Future<bool> _showAntiGravityDialog() async {
+    _stopTimer(); // Freeze timer!
+    final cost = BillingEngine.calculateProRataDeduction(
+      elapsedSeconds: _elapsedSeconds,
+      pricePerMinute: _callRate,
+    );
+    final mm = (_elapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final ss = (_elapsedSeconds % 60).toString().padLeft(2, '0');
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text('End Call?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Duration: $mm:$ss',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Cost so far: ₹${cost.toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              const Text('Do you want to end this call?'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel / Resume'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Yes, End Call'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      return true;
+    } else {
+      _startTimer(); // Unfreeze timer
+      return false;
+    }
+  }
 
   void _safeExit() {
+    _stopTimer();
     if (_isExiting) return;
     _isExiting = true;
     if (mounted) {
@@ -48,14 +129,35 @@ class _LiveCallPageState extends State<LiveCallPage> {
   @override
   void initState() {
     super.initState();
+
+    _callRate = (widget.astrologer['call_rate'] is num)
+        ? (widget.astrologer['call_rate'] as num).toDouble()
+        : double.tryParse(widget.astrologer['call_rate']?.toString() ?? '10') ??
+              10.0;
+
     if (widget.incomingCallId != null) {
-      setState(() {
-        _callId = widget.incomingCallId;
-        _isInitializing = false;
-      });
+      _callId = widget.incomingCallId;
+      _loadRoomId();
     } else {
       _initCall();
     }
+  }
+
+  Future<void> _loadRoomId() async {
+    if (_callId == null) return;
+    final roomId = await _callRepo.getRoomId(_callId!);
+    if (mounted) {
+      setState(() {
+        _roomId = roomId;
+        _isInitializing = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _stopTimer();
+    super.dispose();
   }
 
   Future<void> _initCall() async {
@@ -66,7 +168,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
     }
 
     final String astrologerName = widget.astrologer['name'] ?? 'Astrologer';
-    final String astrologerId = widget.astrologer['id']?.toString() ?? 'unknown';
+    final String astrologerId =
+        widget.astrologer['id']?.toString() ?? 'unknown';
     final String? firebaseUid = widget.astrologer['firebase_uid']?.toString();
 
     try {
@@ -78,10 +181,12 @@ class _LiveCallPageState extends State<LiveCallPage> {
         calleeFirebaseUid: firebaseUid,
         mode: 'audio',
       );
-      
+
+      final roomId = await _callRepo.getRoomId(callId);
       if (mounted) {
         setState(() {
           _callId = callId;
+          _roomId = roomId;
           _isInitializing = false;
         });
       }
@@ -102,9 +207,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            LiveCallBackButton(
-              onTap: _safeExit,
-            ),
+            LiveCallBackButton(onTap: _safeExit),
             const SizedBox(width: 68), // Spacer
           ],
         ),
@@ -127,10 +230,10 @@ class _LiveCallPageState extends State<LiveCallPage> {
             child: Text(
               isConnecting ? 'CONNECTING...' : 'LIVE',
               style: TextStyle(
-                color: isConnecting ? Colors.white : Colors.greenAccent, 
-                fontSize: 10, 
-                fontWeight: FontWeight.bold, 
-                letterSpacing: 0.5
+                color: isConnecting ? Colors.white : Colors.greenAccent,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -182,11 +285,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
           child: SafeArea(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                buildTopBar(),
-                buildCenter(true),
-                buildBottom(),
-              ],
+              children: [buildTopBar(), buildCenter(true), buildBottom()],
             ),
           ),
         ),
@@ -194,7 +293,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
     }
 
     final user = FirebaseAuth.instance.currentUser;
-    final String userID = '${user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}'}_flutter';
+    final String userID =
+        '${user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}'}_flutter';
     final String userName = user?.displayName ?? 'Guest';
 
     final zegoCall = ZegoUIKitPrebuiltCall(
@@ -202,11 +302,14 @@ class _LiveCallPageState extends State<LiveCallPage> {
       appSign: dotenv.env['ZEGO_APP_SIGN']!,
       userID: userID,
       userName: userName,
-      callID: _callId!,
+      callID: _roomId ?? _callId!,
       config: ZegoUIKitPrebuiltCallConfig.oneOnOneVoiceCall()
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
       events: ZegoUIKitPrebuiltCallEvents(
+        onHangUpConfirmation: (event, defaultAction) async {
+          return await _showAntiGravityDialog();
+        },
         onCallEnd: (event, defaultAction) async {
           if (_callId != null) {
             await _callRepo.endCall(_callId!);
@@ -219,21 +322,38 @@ class _LiveCallPageState extends State<LiveCallPage> {
     );
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('calls').doc(_callId).snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection('calls')
+          .doc(_callId)
+          .snapshots(),
       builder: (context, snapshot) {
         bool isConnecting = true;
-        if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+        if (snapshot.hasData &&
+            snapshot.data != null &&
+            snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>?;
-          if (data != null && (data['status'] == 'accepted' || data['status'] == 'connected' || data['status'] == 'ended' || data['status'] == 'rejected')) {
+          if (data != null &&
+              (data['status'] == 'accepted' ||
+                  data['status'] == 'connected' ||
+                  data['status'] == 'ended' ||
+                  data['status'] == 'rejected')) {
             isConnecting = false;
           }
-          if (data != null && (data['status'] == 'ended' || data['status'] == 'rejected')) {
-             WidgetsBinding.instance.addPostFrameCallback((_) {
-               _safeExit();
-             });
+          if (data != null &&
+              (data['status'] == 'accepted' || data['status'] == 'connected')) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _startTimer();
+            });
+          }
+          if (data != null &&
+              (data['status'] == 'ended' || data['status'] == 'rejected')) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _stopTimer();
+              _safeExit();
+            });
           }
         }
-        
+
         return Scaffold(
           body: Stack(
             children: [
@@ -260,7 +380,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
                       // For audio calls, let's also keep our center avatar so it doesn't look empty!
                       // Zego's audio UI is just dark anyway. We can pass IgnorePointer so we can still tap Zego buttons if needed
                       IgnorePointer(child: buildCenter(false)),
-                      const Spacer(), 
+                      const Spacer(),
                     ],
                   ),
                 ),

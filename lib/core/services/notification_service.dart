@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../app/route.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._();
@@ -56,8 +59,19 @@ class NotificationService {
 
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('Notification tapped with payload: ${response.payload}');
-    // Here we can navigate to the specific chat room using go_router 
-    // if we store the chat room ID in the payload.
+    if (response.payload != null && response.payload!.isNotEmpty) {
+      try {
+        final data = jsonDecode(response.payload!);
+        if (data is Map<String, dynamic> && data.containsKey('id')) {
+          final context = rootNavigatorKey.currentContext;
+          if (context != null) {
+            context.push('/chat-room', extra: data);
+          }
+        }
+      } catch (e) {
+        debugPrint('Error parsing notification payload: $e');
+      }
+    }
   }
 
   Future<void> showChatNotification({

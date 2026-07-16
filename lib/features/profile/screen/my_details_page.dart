@@ -30,6 +30,8 @@ class MyDetailsPage extends StatelessWidget {
           phone = state.phone;
           avatarUrl = state.avatarUrl ?? '';
         }
+        
+        final bool isPhoneLogin = email.contains('@gmail.com') && email.startsWith('phone_');
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
@@ -102,7 +104,7 @@ class MyDetailsPage extends StatelessWidget {
                   const SizedBox(height: AppSpacing.md),
                   
                   // Reminder Banner
-                  if (phone.isEmpty || name.isEmpty || dob.isEmpty || (email.contains('@gmail.com') && email.startsWith('phone_')) || email.isEmpty)
+                  if (name.isEmpty || dob.isEmpty || gender.isEmpty)
                     Container(
                       margin: const EdgeInsets.only(bottom: AppSpacing.xl),
                       padding: const EdgeInsets.all(AppSpacing.md),
@@ -115,12 +117,10 @@ class MyDetailsPage extends StatelessWidget {
                         children: [
                           const Icon(Icons.info_outline_rounded, color: Colors.orange, size: 24),
                           const SizedBox(width: AppSpacing.md),
-                          Expanded(
+                          const Expanded(
                             child: Text(
-                              phone.isEmpty 
-                                ? 'Phone verification is pending. Please verify your phone number in Edit Profile.'
-                                : 'Please complete your profile details (Name, Email, DOB) in Edit Profile.',
-                              style: const TextStyle(
+                              'Please complete your profile details (Name, DOB, Gender) in Edit Profile to get the best experience.',
+                              style: TextStyle(
                                 color: Colors.deepOrange,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -130,21 +130,25 @@ class MyDetailsPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (phone.isNotEmpty && name.isNotEmpty && dob.isNotEmpty && !(email.contains('@gmail.com') && email.startsWith('phone_')) && email.isNotEmpty)
+                  if (!(name.isEmpty || dob.isEmpty || gender.isEmpty))
                     const SizedBox(height: AppSpacing.xl),
 
                   InfoGroupCard(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
-                      _buildDetailRow('Full Name', name.isEmpty ? 'Not Provided' : name, Icons.person_outline),
+                      _buildDetailRow('Full Name', name.isEmpty ? 'Add your name' : name, Icons.person_outline),
                       const Divider(),
-                      _buildDetailRow('Email Address', (email.contains('@gmail.com') && email.startsWith('phone_')) || email.isEmpty ? 'Not Provided' : email, Icons.mail_outline),
+                      if (!isPhoneLogin) ...[
+                        _buildDetailRow('Email Address', email.isEmpty ? 'Add your email' : email, Icons.mail_outline),
+                        const Divider(),
+                      ],
+                      _buildDetailRow('Date of Birth', dob.isEmpty ? 'Add your date of birth' : dob, Icons.cake_outlined),
                       const Divider(),
-                      _buildDetailRow('Date of Birth', dob.isEmpty ? 'Not Provided' : dob, Icons.cake_outlined),
-                      const Divider(),
-                      _buildDetailRow('Gender', gender.isEmpty ? 'Not Provided' : gender, Icons.wc_outlined),
-                      const Divider(),
-                      _buildDetailRow('Phone Number', phone.isEmpty ? 'Verification Pending' : phone, Icons.phone_android_outlined),
+                      _buildDetailRow('Gender', gender.isEmpty ? 'Add your gender' : gender, Icons.wc_outlined),
+                      if (isPhoneLogin) ...[
+                        const Divider(),
+                        _buildDetailRow('Phone Number', phone.isEmpty ? 'Add your phone number' : phone, Icons.phone_android_outlined),
+                      ],
                     ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
