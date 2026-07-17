@@ -57,44 +57,53 @@ class _WalletPageState extends State<WalletPage> {
     final responsive = ResponsiveProvider.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF6F0),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom Top Bar with Back Button
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive.scale(16),
-                vertical: responsive.scale(8),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.black87),
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/home');
-                      }
-                    },
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: const CircleBorder(),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFFFFDF9), Color(0xFFF7F2E9)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom Top Bar with Back Button
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive.scale(16),
+                  vertical: responsive.scale(8),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 20),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: const CircleBorder(),
+                        shadowColor: Colors.black.withOpacity(0.04),
+                        elevation: 4,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: responsive.scale(16)),
-                  Text(
-                    'Wallet',
-                    style: AppTextStyles.displayMedium.copyWith(
-                      fontSize: responsive.font(20, min: 18, max: 24),
-                      fontWeight: FontWeight.bold,
+                    SizedBox(width: responsive.scale(16)),
+                    Text(
+                      'Wallet Balance',
+                      style: AppTextStyles.displayMedium.copyWith(
+                        fontSize: responsive.font(20, min: 18, max: 24),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(
+              Expanded(
               child: SingleChildScrollView(
           padding: responsive.pagePadding(vertical: AppSpacing.md),
           child: Center(
@@ -196,6 +205,7 @@ class _WalletPageState extends State<WalletPage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

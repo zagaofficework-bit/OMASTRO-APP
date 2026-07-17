@@ -408,7 +408,7 @@ class _AstrologerOnboardingPageState extends State<AstrologerOnboardingPage> {
       debugPrint('[Onboarding] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
+          SnackBar(content: Text('An error occurred during onboarding. Please try again.')),
         );
       }
     } finally {

@@ -57,7 +57,13 @@ class AstrologerCategoryPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   // --- 2. Centralized Search Input Target ---
-                  AppSearchBar(),
+                  AppSearchBar(
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        context.go('/astrologers?search=$val');
+                      }
+                    },
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),

@@ -56,6 +56,9 @@ dependencies:
   permission_handler: ^12.0.3
   flutter_ringtone_player: ^4.0.0+4
   crypto: ^3.0.3
+  flutter_staggered_animations: ^1.1.1
+  animations: ^2.2.0
+  font_awesome_flutter: ^11.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

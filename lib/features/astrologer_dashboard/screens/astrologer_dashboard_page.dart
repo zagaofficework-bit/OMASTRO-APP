@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../bloc/astrologer_dashboard_bloc.dart';
 import '../bloc/astrologer_dashboard_state.dart';
 import '../bloc/astrologer_dashboard_event.dart';
@@ -36,68 +38,77 @@ class AstrologerDashboardPage extends StatelessWidget {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              // Greeting
-              Text(
-                'Welcome, ${state.name} 🙏',
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                state.isOnline ? '🟢 You are currently online' : '⚫ You are currently offline',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: state.isOnline ? const Color(0xFF10B981) : Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Stats Cards Row
-              Row(
-                children: [
-                  Expanded(child: _statCard('⭐', 'Rating', state.rating.toStringAsFixed(1), const Color(0xFFFDF6EC))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard('💬', 'Reviews', state.reviewsCount.toString(), const Color(0xFFF0FDF4))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _statCard('🕐', 'Minutes', state.totalMinutesConsulted.toString(), const Color(0xFFF0F9FF))),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // Rates Card
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+            child: AnimationLimiter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: AnimationConfiguration.toStaggeredList(
+                  duration: const Duration(milliseconds: 375),
+                  childAnimationBuilder: (widget) => SlideAnimation(
+                    verticalOffset: 44.0,
+                    child: FadeInAnimation(
+                      child: widget,
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.currency_rupee, size: 18, color: accentGold),
-                        SizedBox(width: 8),
-                        Text('Your Rates', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      ],
+                    // Greeting
+                    Text(
+                      'Welcome, ${state.name} 🙏',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 4),
+                    Text(
+                      state.isOnline ? '🟢 You are currently online' : '⚫ You are currently offline',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: state.isOnline ? const Color(0xFF10B981) : Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Stats Cards Row
                     Row(
                       children: [
+                        Expanded(child: _statCard('⭐', 'Rating', state.rating.toStringAsFixed(1), const Color(0xFFFDF6EC))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _statCard('💬', 'Reviews', state.reviewsCount.toString(), const Color(0xFFF0FDF4))),
+                        const SizedBox(width: 12),
+                        Expanded(child: _statCard('🕐', 'Minutes', state.totalMinutesConsulted.toString(), const Color(0xFFF0F9FF))),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Rates Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              FaIcon(FontAwesomeIcons.indianRupeeSign, size: 18, color: accentGold),
+                              SizedBox(width: 8),
+                              Text('Your Rates', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
                         Expanded(child: _rateChip('💬 Chat', '₹${state.chatRate.toStringAsFixed(0)}/msg')),
                         const SizedBox(width: 8),
                         Expanded(child: _rateChip('📞 Call', '₹${state.callRate.toStringAsFixed(0)}/min')),
@@ -150,8 +161,10 @@ class AstrologerDashboardPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 80),
-            ],
-          ),
+                  ],
+                ),
+              ),
+            ),
           ),
         );
       },

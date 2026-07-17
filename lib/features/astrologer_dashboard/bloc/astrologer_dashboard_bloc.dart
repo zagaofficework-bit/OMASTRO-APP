@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'astrologer_dashboard_event.dart';
 import 'astrologer_dashboard_state.dart';
 
@@ -91,10 +92,22 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
     final current = state as AstrologerDashboardLoaded;
 
     try {
+      // 1. Update Supabase
       await _supabase
           .from('astrologers')
           .update(event.updates)
           .eq('id', current.astrologerId);
+
+      // 2. Update Firestore
+      if (current.firebaseUid.isNotEmpty) {
+        // Map any snake_case keys from event.updates to whatever Firestore expects, 
+        // though typically they can just match. Wait, Firestore may use camelCase or the same.
+        // The user's prompt says "using the exact same verified payload".
+        await FirebaseFirestore.instance
+            .collection('astrologers')
+            .doc(current.firebaseUid)
+            .set(event.updates, SetOptions(merge: true));
+      }
 
       // Reload
       add(LoadAstrologerDashboard(

@@ -296,6 +296,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       }
 
+      // 3. Sync/create client profile in Supabase profiles table
+      final supabaseUser = supabase.Supabase.instance.client.auth.currentUser;
+      if (supabaseUser != null) {
+        try {
+          final profile = await supabase.Supabase.instance.client
+              .from('profiles')
+              .select()
+              .eq('id', supabaseUser.id)
+              .maybeSingle();
+
+          if (profile == null) {
+            final phoneNum = user.phoneNumber ?? '';
+            final displayName = user.displayName ?? (phoneNum.isNotEmpty ? 'User ${phoneNum}' : 'User');
+            await supabase.Supabase.instance.client.from('profiles').insert({
+              'id': supabaseUser.id,
+              'full_name': displayName,
+              'email': dummyEmail,
+              'avatar_url': user.photoURL ?? '',
+              'phone': phoneNum,
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          }
+        } catch (e) {
+          debugPrint('[AuthBloc] Error auto-creating phone OTP profile: $e');
+        }
+      }
+
       _initZego(user);
       emit(Authenticated());
     } catch (e) {

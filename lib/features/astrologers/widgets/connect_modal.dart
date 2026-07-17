@@ -85,10 +85,6 @@ class ConnectModal extends StatelessWidget {
         return;
       }
 
-      if (value != 'chat') {
-        context.read<WalletBloc>().add(DeductMoney(rate, astrologerId: astrologerId, astrologerName: astrologerName));
-      }
-
       Navigator.pop(context, value);
     }
 

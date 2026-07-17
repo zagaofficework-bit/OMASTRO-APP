@@ -35,6 +35,29 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
 final _astrologerShellKey = GlobalKey<NavigatorState>();
 
+CustomTransitionPage _buildPremiumTransitionPage(Widget child, {LocalKey? key}) {
+  return CustomTransitionPage(
+    key: key,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurveTween(curve: Curves.easeOut).animate(animation),
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.02),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          )),
+          child: child,
+        ),
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300),
+  );
+}
+
 final appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/splash',
@@ -152,19 +175,19 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/astrologer-home',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerDashboardPage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const AstrologerDashboardPage(), key: state.pageKey),
         ),
         GoRoute(
           path: '/astrologer-chats',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerChatHistoryPage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const AstrologerChatHistoryPage(), key: state.pageKey),
         ),
         GoRoute(
           path: '/astrologer-history',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerConsultationHistoryPage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const AstrologerConsultationHistoryPage(), key: state.pageKey),
         ),
         GoRoute(
           path: '/astrologer-profile-page',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerDashboardProfilePage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const AstrologerDashboardProfilePage(), key: state.pageKey),
         ),
         GoRoute(path: '/astrologer-edit-profile', builder: (context, state) => const AstrologerEditProfilePage()),
       ],
@@ -179,39 +202,45 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: '/home',
-          pageBuilder: (context, state) => const NoTransitionPage(child: HomePage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const HomePage(), key: state.pageKey),
         ),
         GoRoute(
           path: '/estore',
-          pageBuilder: (context, state) => const NoTransitionPage(child: EStorePage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const EStorePage(), key: state.pageKey),
         ),
 
         GoRoute(
           path: '/astrologers',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerPage(initialCategory: 'All')),
+          pageBuilder: (context, state) {
+            final searchQuery = state.uri.queryParameters['search'];
+            return _buildPremiumTransitionPage(AstrologerPage(initialCategory: 'All', initialSearchQuery: searchQuery), key: state.pageKey);
+          },
         ),
 
         GoRoute(
           path: '/hub-list',
-          pageBuilder: (context, state) => const NoTransitionPage(child: AstrologerPage(initialCategory: 'All')),
+          pageBuilder: (context, state) {
+            final searchQuery = state.uri.queryParameters['search'];
+            return _buildPremiumTransitionPage(AstrologerPage(initialCategory: 'All', initialSearchQuery: searchQuery), key: state.pageKey);
+          },
         ),
 
         GoRoute(
           path: '/hub-list/:category',
           pageBuilder: (context, state) {
             final category = state.pathParameters['category'] ?? 'All';
-            return NoTransitionPage(child: AstrologerPage(initialCategory: category));
+            final searchQuery = state.uri.queryParameters['search'];
+            return _buildPremiumTransitionPage(AstrologerPage(initialCategory: category, initialSearchQuery: searchQuery), key: state.pageKey);
           },
         ),
 
-
         GoRoute(
           path: '/live',
-          pageBuilder: (context, state) => const NoTransitionPage(child: LivePage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const LivePage(), key: state.pageKey),
         ),
         GoRoute(
           path: '/profile',
-          pageBuilder: (context, state) => const NoTransitionPage(child: ProfilePage()),
+          pageBuilder: (context, state) => _buildPremiumTransitionPage(const ProfilePage(), key: state.pageKey),
         ),
       ],
     ),

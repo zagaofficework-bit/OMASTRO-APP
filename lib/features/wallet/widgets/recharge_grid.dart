@@ -34,19 +34,22 @@ class RechargeGrid extends StatelessWidget {
 
         return GestureDetector(
           onTap: () => onAmountSelected(amount),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isSelected ? const Color(0xFFFFF6E6) : Colors.white,
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
-                color: isSelected ? AppColors.primary : Colors.transparent,
-                width: 1.5,
+                color: isSelected ? AppColors.primary : Colors.grey.shade200,
+                width: isSelected ? 2.0 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: isSelected 
+                      ? AppColors.primary.withOpacity(0.08) 
+                      : Colors.black.withOpacity(0.02),
+                  blurRadius: isSelected ? 12 : 8,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -54,8 +57,9 @@ class RechargeGrid extends StatelessWidget {
             child: Text(
               '₹$amount',
               style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: Colors.black87,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? AppColors.primary : Colors.black87,
+                fontSize: 15,
               ),
             ),
           ),

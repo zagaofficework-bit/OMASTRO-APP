@@ -12,6 +12,7 @@ import '../../features/auth/bloc/auth_state.dart';
 import '../../features/chat/bloc/chat_bloc.dart';
 import '../../features/chat/bloc/chat_state.dart';
 import '../theme/app_colors.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 
 class AstrologerShell extends StatefulWidget {
@@ -76,7 +77,7 @@ class _AstrologerShellState extends State<AstrologerShell> {
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off_rounded, color: Colors.redAccent, size: 18),
+          FaIcon(FontAwesomeIcons.wifi, color: Colors.redAccent, size: 18),
           SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -111,28 +112,17 @@ class _AstrologerShellState extends State<AstrologerShell> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      extendBody: true,
-      body: Stack(
+      extendBody: false,
+      body: Column(
         children: [
-          Positioned.fill(
-            child: Column(
-              children: [
-                if (_isOffline) _buildOfflineBanner(),
-                // Top bar with online toggle
-                _buildAstrologerTopBar(context),
-                Expanded(child: widget.child),
-              ],
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              child: _buildAstrologerBottomNavigation(context, currentIndex),
-            ),
-          ),
+          if (_isOffline) _buildOfflineBanner(),
+          // Top bar with online toggle
+          _buildAstrologerTopBar(context),
+          Expanded(child: widget.child),
         ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: _buildAstrologerBottomNavigation(context, currentIndex),
       ),
     );
   }
@@ -147,10 +137,10 @@ class _AstrologerShellState extends State<AstrologerShell> {
         : 16.0;
 
     final items = [
-      {'icon': Icons.dashboard_rounded, 'label': 'Dashboard', 'route': '/astrologer-home'},
-      {'icon': Icons.chat_bubble_rounded, 'label': 'Chats', 'route': '/astrologer-chats'},
-      {'icon': Icons.history_rounded, 'label': 'History', 'route': '/astrologer-history'},
-      {'icon': Icons.person_rounded, 'label': 'Profile', 'route': '/astrologer-profile-page'},
+      {'icon': FontAwesomeIcons.borderAll, 'label': 'Dashboard', 'route': '/astrologer-home'},
+      {'icon': FontAwesomeIcons.solidComment, 'label': 'Chats', 'route': '/astrologer-chats'},
+      {'icon': FontAwesomeIcons.clockRotateLeft, 'label': 'History', 'route': '/astrologer-history'},
+      {'icon': FontAwesomeIcons.solidUser, 'label': 'Profile', 'route': '/astrologer-profile-page'},
     ];
 
     return Container(
@@ -225,8 +215,8 @@ class _AstrologerShellState extends State<AstrologerShell> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                item['icon'] as IconData,
+                              FaIcon(
+                                item['icon'] as dynamic,
                                 color: isSelected ? Colors.white : Colors.grey,
                                 size: 20,
                               ),
@@ -275,13 +265,34 @@ class _AstrologerShellState extends State<AstrologerShell> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDF6EC),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.auto_awesome, color: Color(0xFFD4AF37), size: 20),
+          BlocBuilder<AstrologerDashboardBloc, AstrologerDashboardState>(
+            builder: (context, state) {
+              final avatarUrl = state is AstrologerDashboardLoaded ? state.avatarUrl : null;
+              
+              if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                return Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF6EC),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFD4AF37), width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: NetworkImage(avatarUrl),
+                  ),
+                );
+              }
+              
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDF6EC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const FaIcon(FontAwesomeIcons.solidUser, color: Color(0xFFD4AF37), size: 20),
+              );
+            },
           ),
           const SizedBox(width: 12),
           const Expanded(

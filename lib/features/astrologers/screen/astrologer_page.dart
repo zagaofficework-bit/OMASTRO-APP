@@ -13,7 +13,8 @@ import 'package:omastro/features/astrologers/bloc/astrologers_event.dart';
 
 class AstrologerPage extends StatefulWidget {
   final String? initialCategory;
-  const AstrologerPage({super.key, this.initialCategory = 'All'});
+  final String? initialSearchQuery;
+  const AstrologerPage({super.key, this.initialCategory = 'All', this.initialSearchQuery});
 
   @override
   State<AstrologerPage> createState() => _AstrologerPageState();
@@ -21,28 +22,43 @@ class AstrologerPage extends StatefulWidget {
 
 class _AstrologerPageState extends State<AstrologerPage> {
   String _selectedCategory = 'All';
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _selectedCategory = widget.initialCategory ?? 'All';
+    _searchQuery = widget.initialSearchQuery ?? '';
     context.read<AstrologersBloc>().add(LoadAstrologers());
   }
 
   List<Map<String, dynamic>> _getFilteredAstrologers(
     List<Map<String, dynamic>> allAstrologers,
   ) {
-    if (_selectedCategory == 'All') {
-      return allAstrologers;
+    List<Map<String, dynamic>> filtered = allAstrologers;
+    if (_selectedCategory != 'All') {
+      filtered = filtered.where((astrologer) {
+        final List<String> specialties = List<String>.from(
+          astrologer['categories'] ?? [],
+        );
+        return specialties.any(
+          (s) => s.toLowerCase() == _selectedCategory.toLowerCase(),
+        );
+      }).toList();
     }
-    return allAstrologers.where((astrologer) {
-      final List<String> specialties = List<String>.from(
-        astrologer['categories'] ?? [],
-      );
-      return specialties.any(
-        (s) => s.toLowerCase() == _selectedCategory.toLowerCase(),
-      );
-    }).toList();
+    
+    if (_searchQuery.trim().isNotEmpty) {
+      final query = _searchQuery.trim().toLowerCase();
+      filtered = filtered.where((astrologer) {
+        final name = (astrologer['name'] ?? '').toString().toLowerCase();
+        final List<String> specialties = List<String>.from(
+          astrologer['categories'] ?? [],
+        );
+        return name.contains(query) || specialties.any((s) => s.toLowerCase().contains(query));
+      }).toList();
+    }
+    
+    return filtered;
   }
 
   @override
@@ -127,7 +143,14 @@ class _AstrologerPageState extends State<AstrologerPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const AppSearchBar(),
+                          AppSearchBar(
+                            initialValue: _searchQuery,
+                            onChanged: (val) {
+                              setState(() {
+                                _searchQuery = val;
+                              });
+                            },
+                          ),
                           SizedBox(
                             height: responsive.scale(16, min: 12, max: 20),
                           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:omastro/core/theme/app_text_styles.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/consultation_action_dock.dart';
 import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets/profile_avatar_frame.dart';
@@ -7,6 +8,8 @@ import 'package:omastro/features/astrologers/widgets/astrologers-profile-widgets
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../reviews/bloc/reviews_bloc.dart';
 import '../../reviews/bloc/reviews_event.dart';
 import '../../reviews/bloc/reviews_state.dart';
@@ -27,13 +30,68 @@ class AstrologerProfilePage extends StatefulWidget {
 
 class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
   late final String astrologerId;
+  Map<String, dynamic>? _supabaseAstroData;
+  bool _isLoadingSupabaseData = true;
+  StreamSubscription? _presenceSubscription;
+  bool _isOnlineFromPresence = false;
 
   @override
   void initState() {
     super.initState();
     astrologerId = widget.astrologerData['id'] ?? '';
+    _isOnlineFromPresence = widget.astrologerData['is_online'] == true || widget.astrologerData['is_online'].toString() == 'true';
+    _listenPresence();
+    _loadSupabaseData();
     if (astrologerId.isNotEmpty) {
       context.read<ReviewsBloc>().add(LoadReviewsForAstrologer(astrologerId));
+    }
+  }
+
+  @override
+  void dispose() {
+    _presenceSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _listenPresence() {
+    _presenceSubscription?.cancel();
+    final firebaseUid = widget.astrologerData['firebase_uid'] ?? _supabaseAstroData?['firebase_uid'] ?? '';
+    if (firebaseUid.isNotEmpty) {
+      _presenceSubscription = FirebaseFirestore.instance
+          .collection('presence')
+          .doc(firebaseUid)
+          .snapshots()
+          .listen((snap) {
+        if (snap.exists && mounted) {
+          final data = snap.data();
+          setState(() {
+            _isOnlineFromPresence = data?['is_online'] == true || data?['is_online'].toString() == 'true';
+          });
+        }
+      });
+    }
+  }
+
+  Future<void> _loadSupabaseData() async {
+    if (astrologerId.isEmpty) return;
+    try {
+      final res = await Supabase.instance.client
+          .from('astrologers')
+          .select()
+          .eq('id', astrologerId)
+          .maybeSingle();
+      if (res != null) {
+        setState(() {
+          _supabaseAstroData = res;
+          _isLoadingSupabaseData = false;
+        });
+        _listenPresence();
+      } else {
+        setState(() => _isLoadingSupabaseData = false);
+      }
+    } catch (e) {
+      print('Error loading astrologer details from Supabase: $e');
+      setState(() => _isLoadingSupabaseData = false);
     }
   }
 
@@ -57,18 +115,7 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
                 widget.astrologerData['video_rate']?.toString() ?? '15',
               ) ??
               15.0;
-    final astroBlocState = context.read<AstrologersBloc>().state;
-    bool isOnline = false;
-    
-    if (astroBlocState is AstrologersFollowingState) {
-      final currentAstro = astroBlocState.astrologers.firstWhere(
-        (a) => a['id'] == astrologerId,
-        orElse: () => widget.astrologerData,
-      );
-      isOnline = currentAstro['is_online'] == true || currentAstro['is_online'].toString() == 'true';
-    } else {
-      isOnline = widget.astrologerData['is_online'] == true || widget.astrologerData['is_online'].toString() == 'true';
-    }
+    final isOnline = _isOnlineFromPresence;
 
     if (!isOnline) {
       showDialog(
@@ -76,76 +123,12 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
         builder: (dialogCtx) => AlertDialog(
           title: const Text('Astrologer Offline'),
           content: Text(
-            '$name is currently offline. Would you like to be notified when they come online?',
+            '$name is currently offline. Please try again later.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(dialogCtx);
-                final success = await NotifyService.requestNotification(
-                  astrologerId: astrologerId,
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: success
-                          ? const Color(0xFFFFFBF2)
-                          : const Color(0xFFFFF5F5),
-                      elevation: 6,
-                      margin: const EdgeInsets.only(
-                        bottom: 24,
-                        left: 16,
-                        right: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: success
-                              ? const Color(0xFFD4AF37)
-                              : Colors.redAccent,
-                          width: 1.5,
-                        ),
-                      ),
-                      content: Row(
-                        children: [
-                          Icon(
-                            success
-                                ? Icons.check_circle_rounded
-                                : Icons.error_rounded,
-                            color: success
-                                ? const Color(0xFFD4AF37)
-                                : Colors.redAccent,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              success
-                                  ? 'We will notify you when $name comes online!'
-                                  : 'Failed to register notification request.',
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
-              ),
-              child: const Text('Notify Me'),
+              child: const Text('OK'),
             ),
           ],
         ),
@@ -175,6 +158,7 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
             'id': astrologerId,
             'name': name,
             'avatarUrl': widget.astrologerData['imageUrl'] ?? '',
+            'otherUid': widget.astrologerData['firebase_uid'] ?? _supabaseAstroData?['firebase_uid'] ?? '',
           },
         );
       } else if (result == 'call') {
@@ -201,21 +185,31 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final String profileName = widget.astrologerData['name'] ?? 'Astrologer';
-    final String profileImageUrl = widget.astrologerData['imageUrl'] ?? '';
-    final String specialties = widget.astrologerData['specialties'] ?? '';
-    final String languages = widget.astrologerData['languages'] ?? 'English';
-    final String experienceYears =
-        widget.astrologerData['experience'] ?? '0 Years';
-    final String hourlyRate = widget.astrologerData['rate'] ?? '0';
-    final String biography =
-        widget.astrologerData['bio'] ?? 'Verified Professional Astrologer.';
-    final String rating = widget.astrologerData['rating']?.toString() ?? '5.0';
-    final String totalMins =
-        widget.astrologerData['total_minutes_consulted']?.toString() ?? '0';
-    final bool isOnline =
-        widget.astrologerData['is_online'] == true ||
-        widget.astrologerData['is_online'].toString() == 'true';
+    final String profileName = _supabaseAstroData?['name']?.toString() ?? widget.astrologerData['name'] ?? 'Astrologer';
+    final String profileImageUrl = _supabaseAstroData?['avatar_url']?.toString() ?? widget.astrologerData['imageUrl'] ?? '';
+    
+    // Parse categories/specialties
+    final dynamic rawCategories = _supabaseAstroData?['categories'];
+    final String specialties = (rawCategories is List)
+        ? rawCategories.join(', ')
+        : widget.astrologerData['specialties'] ?? '';
+
+    // Parse languages
+    final dynamic rawLanguages = _supabaseAstroData?['languages'];
+    final String languages = (rawLanguages is List)
+        ? rawLanguages.join(', ')
+        : widget.astrologerData['languages'] ?? 'English';
+
+    final String experienceYears = _supabaseAstroData != null
+        ? '${_supabaseAstroData!['experience_years']} Years'
+        : widget.astrologerData['experience'] ?? '0 Years';
+
+    final String hourlyRate = _supabaseAstroData?['price_per_minute']?.toString() ?? widget.astrologerData['rate'] ?? '0';
+    final String biography = _supabaseAstroData?['bio']?.toString() ?? widget.astrologerData['bio'] ?? 'Verified Professional Astrologer.';
+    final String rating = _supabaseAstroData?['rating']?.toString() ?? widget.astrologerData['rating']?.toString() ?? '5.0';
+    final String totalMins = _supabaseAstroData?['total_minutes_consulted']?.toString() ?? widget.astrologerData['total_minutes_consulted']?.toString() ?? '0';
+
+    final isOnline = _isOnlineFromPresence;
 
     return Scaffold(
       backgroundColor: AppColors.background,

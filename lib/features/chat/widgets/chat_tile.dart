@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -63,19 +64,56 @@ class ChatTile extends StatelessWidget {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.primary.withValues(alpha: 0.2), width: 2),
                           ),
-                          child: CircleAvatar(
-                            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                            backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                                ? NetworkImage(avatarUrl)
-                                : (conversation.profileImageUrl != null
-                                    ? (conversation.profileImageUrl!.startsWith('http')
-                                        ? NetworkImage(conversation.profileImageUrl!)
-                                        : AssetImage(conversation.profileImageUrl!) as ImageProvider)
-                                    : null),
-                            child: (avatarUrl == null && conversation.profileImageUrl == null)
-                                ? Text(displayInitials, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18))
-                                : null,
-                          ),
+                          child: () {
+                            final resolvedUrl = (avatarUrl != null && avatarUrl.isNotEmpty)
+                                ? avatarUrl
+                                : ((conversation.profileImageUrl != null && conversation.profileImageUrl!.isNotEmpty)
+                                    ? conversation.profileImageUrl
+                                    : null);
+
+                            if (resolvedUrl != null && resolvedUrl.isNotEmpty) {
+                              return CircleAvatar(
+                                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                backgroundImage: resolvedUrl.startsWith('http')
+                                    ? NetworkImage(resolvedUrl)
+                                    : AssetImage(resolvedUrl) as ImageProvider,
+                              );
+                            }
+
+                            return FutureBuilder<String?>(
+                              future: () async {
+                                try {
+                                  final res = await Supabase.instance.client
+                                      .from('astrologers')
+                                      .select('avatar_url')
+                                      .eq('id', conversation.id)
+                                      .maybeSingle();
+                                  return res?['avatar_url']?.toString();
+                                } catch (_) {
+                                  return null;
+                                }
+                              }(),
+                              builder: (context, snapshot) {
+                                final url = snapshot.data;
+                                return CircleAvatar(
+                                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                  backgroundImage: (url != null && url.isNotEmpty)
+                                      ? NetworkImage(url)
+                                      : null,
+                                  child: (url == null || url.isEmpty)
+                                      ? Text(
+                                          displayInitials,
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        )
+                                      : null,
+                                );
+                              },
+                            );
+                          }(),
                         ),
                         Positioned(
                           right: 0,

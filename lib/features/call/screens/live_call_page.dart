@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omastro/features/wallet/bloc/wallet_bloc.dart';
+import 'package:omastro/features/wallet/bloc/wallet_state.dart';
+import 'package:omastro/features/auth/bloc/auth_bloc.dart';
+import 'package:omastro/features/auth/bloc/auth_state.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
@@ -31,36 +36,60 @@ class LiveCallPage extends StatefulWidget {
 
 class _LiveCallPageState extends State<LiveCallPage> {
   final _callRepo = FirebaseCallRepository();
+  final _billingEngine = BillingEngine();
   String? _callId;
   String? _roomId;
   bool _isInitializing = true;
   bool _isMuted = false;
   bool _isSpeakerOn = true;
   bool _isExiting = false;
-  Timer? _callTimer;
-  int _elapsedSeconds = 0;
   double _callRate = 10.0;
 
   void _startTimer() {
-    if (_callTimer != null) return;
-    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) _elapsedSeconds++;
-    });
+    final authState = context.read<AuthBloc>().state;
+    final isAstrologer =
+        authState is AuthenticatedAsAstrologer ||
+        authState is AstrologerOnboardingRequired;
+
+    double balance = 500.0; // fallback
+    final walletState = context.read<WalletBloc>().state;
+    if (walletState is WalletBalanceUpdated) {
+      balance = walletState.balance;
+    }
+    _billingEngine.add(StartBillingEvent(
+      perMinuteRate: _callRate,
+      initialWalletBalance: balance,
+      astrologerId: widget.astrologer['firebase_uid']?.toString() ?? '',
+      consultationId: _callId ?? '',
+      astrologerName: widget.astrologer['name']?.toString(),
+      isBillingEnabled: !isAstrologer,
+      consultationType: 'Audio Call',
+    ));
   }
 
   void _stopTimer() {
-    _callTimer?.cancel();
-    _callTimer = null;
+    _billingEngine.add(StopBillingEvent());
   }
 
   Future<bool> _showAntiGravityDialog() async {
     _stopTimer(); // Freeze timer!
-    final cost = BillingEngine.calculateProRataDeduction(
-      elapsedSeconds: _elapsedSeconds,
-      pricePerMinute: _callRate,
-    );
-    final mm = (_elapsedSeconds ~/ 60).toString().padLeft(2, '0');
-    final ss = (_elapsedSeconds % 60).toString().padLeft(2, '0');
+    final state = _billingEngine.state;
+    int elapsedSeconds = 0;
+    double cost = 0.0;
+    
+    if (state is BillingInProgress) {
+       elapsedSeconds = state.durationSeconds;
+       cost = state.currentCost;
+    } else if (state is BillingEndedManually) {
+       elapsedSeconds = state.finalDuration;
+       cost = state.finalCost;
+    } else if (state is BillingLowBalanceWarning) {
+       elapsedSeconds = state.durationSeconds;
+       cost = state.currentCost;
+    }
+
+    final mm = (elapsedSeconds ~/ 60).toString().padLeft(2, '0');
+    final ss = (elapsedSeconds % 60).toString().padLeft(2, '0');
 
     final result = await showDialog<bool>(
       context: context,
@@ -157,6 +186,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
   @override
   void dispose() {
     _stopTimer();
+    _billingEngine.close();
     super.dispose();
   }
 
@@ -314,14 +344,26 @@ class _LiveCallPageState extends State<LiveCallPage> {
           if (_callId != null) {
             await _callRepo.endCall(_callId!);
           }
-          // DO NOT call defaultAction.call() here because it performs a Navigator.pop().
-          // _safeExit() already handles the navigation logic and prevents double pops.
           _safeExit();
         },
       ),
     );
 
-    return StreamBuilder<DocumentSnapshot>(
+    return BlocListener<BillingEngine, BillingState>(
+      bloc: _billingEngine,
+      listener: (context, state) {
+        if (state is BillingLowBalanceWarning) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(
+               content: Text('Low Wallet Balance! Recharge to continue. Remaining Balance: ₹${state.walletBalance.toStringAsFixed(2)}'),
+               backgroundColor: Colors.orange,
+             )
+           );
+        } else if (state is BillingEndedDueToInsufficientBalance) {
+           _safeExit();
+        }
+      },
+      child: StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('calls')
           .doc(_callId)
@@ -388,6 +430,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
           ),
         );
       },
+    ),
     );
   }
 }

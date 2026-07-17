@@ -61,15 +61,17 @@ class SendMessageEvent extends ChatEvent {
   final String text;
   final String astrologerId;
   final String astrologerName;
+  final String? imageUrl;
 
   const SendMessageEvent({
     required this.text,
     required this.astrologerId,
     required this.astrologerName,
+    this.imageUrl,
   });
 
   @override
-  List<Object?> get props => [text, astrologerId, astrologerName];
+  List<Object?> get props => [text, astrologerId, astrologerName, imageUrl];
 }
 
 class UpdateRemainingCharactersEvent extends ChatEvent {

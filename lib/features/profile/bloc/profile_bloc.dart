@@ -84,6 +84,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             avatarUrl: response['avatar_url'] ?? authAvatar,
           ));
         } else {
+          try {
+            await _supabase.from('profiles').insert({
+              'id': userId,
+              'full_name': defaultName,
+              'email': authEmail,
+              'phone': extractedPhone,
+              'avatar_url': authAvatar ?? '',
+              'created_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            });
+          } catch (e) {
+            print("Error auto-creating profile in DB: $e");
+          }
+
           emit(ProfileLoaded(
             name: defaultName,
             email: isPhoneAuth ? '' : authEmail,

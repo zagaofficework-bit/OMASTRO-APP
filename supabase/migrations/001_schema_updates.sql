@@ -97,3 +97,15 @@ CREATE POLICY "Users can manage their own wallet transactions"
   FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Enable Supabase Realtime for notify_requests table
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notify_requests'
+  ) then
+    alter publication supabase_realtime add table notify_requests;
+  end if;
+end;
+$$;

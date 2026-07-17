@@ -3,24 +3,62 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_text_styles.dart';
 
-class AppSearchBar extends StatelessWidget {
-  const AppSearchBar({super.key});
+class AppSearchBar extends StatefulWidget {
+  final String? initialValue;
+  final void Function(String)? onChanged;
+  final void Function(String)? onSubmitted;
+
+  const AppSearchBar({
+    super.key,
+    this.initialValue,
+    this.onChanged,
+    this.onSubmitted,
+  });
+
+  @override
+  State<AppSearchBar> createState() => _AppSearchBarState();
+}
+
+class _AppSearchBarState extends State<AppSearchBar> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void didUpdateWidget(AppSearchBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialValue != oldWidget.initialValue && widget.initialValue != _controller.text) {
+      _controller.text = widget.initialValue ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: const [
+      decoration: const BoxDecoration(
+        boxShadow: [
           BoxShadow(
-            color: Color(
-              0x05000000,
-            ), // Ultra-subtle 2% shadow to lift the card elegantly
+            color: Color(0x05000000), // Ultra-subtle 2% shadow to lift the card elegantly
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
         ],
       ),
       child: TextField(
+        controller: _controller,
+        onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted,
+        textInputAction: TextInputAction.search,
         textAlignVertical: TextAlignVertical.center,
         style: AppTextStyles.bodyMedium,
         cursorColor: AppColors.primary,

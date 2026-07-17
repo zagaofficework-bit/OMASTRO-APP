@@ -10,6 +10,40 @@ import '../bloc/wallet_state.dart';
 class RecentTransactionsBlock extends StatelessWidget {
   const RecentTransactionsBlock({super.key});
 
+  String _formatTransactionNote(String note) {
+    String cleaned = note;
+    if (cleaned.contains(' (ID:')) {
+      cleaned = cleaned.split(' (ID:').first;
+    }
+    
+    final map = {
+      'DRBaphzzYdYVcLnPfPAhYHynQn93': 'Astro Priya',
+      '4QByl2hM3HZPj2cb0W4mYhXooMo2': 'Yogini Meera',
+      'bD5luP4IfnbCU1s0EbRCjSGKWWf1': 'Pandit Ramesh',
+      '7ddb004c-46ae-4714-87f3-81042c4a3e79': 'Pandit Ramesh',
+      '28e48fff-bc76-43c3-b4fc-53e058bb2c6c': 'Yogini Meera',
+      'astro-DRBaphzzYdYVcLnPfPAhYHynQn93': 'Astro Priya',
+      'astro-4QByl2hM3HZPj2cb0W4mYhXooMo2': 'Yogini Meera',
+      'astro-bD5luP4IfnbCU1s0EbRCjSGKWWf1': 'Pandit Ramesh',
+      'astro-7ddb004c-46ae-4714-87f3-81042c4a3e79': 'Pandit Ramesh',
+      'astro-28e48fff-bc76-43c3-b4fc-53e058bb2c6c': 'Yogini Meera',
+    };
+
+    for (final entry in map.entries) {
+      if (cleaned.contains(entry.key)) {
+        cleaned = cleaned.replaceAll(entry.key, entry.value);
+      }
+    }
+    
+    cleaned = cleaned.replaceAll('Chat message to Astro ID:', 'Chat with');
+    cleaned = cleaned.replaceAll('Chat message with', 'Chat with');
+    cleaned = cleaned.replaceAll('Call with Astro ID:', 'Call with');
+    cleaned = cleaned.replaceAll('Call with Astrologer ID:', 'Call with');
+    cleaned = cleaned.replaceAll('Consultation with Astrologer ID:', 'Call with');
+
+    return cleaned;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -42,7 +76,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.02),
+                      color: Colors.black.withOpacity(0.02),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -90,8 +124,8 @@ class RecentTransactionsBlock extends StatelessWidget {
               );
             }
 
-            // Show top 3 recent transactions
-            final displayCount = transactions.length > 3 ? 3 : transactions.length;
+            // Show top 5 recent transactions
+            final displayCount = transactions.length > 5 ? 5 : transactions.length;
             final recentTxs = transactions.take(displayCount).toList();
 
             return Container(
@@ -105,7 +139,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
+                    color: Colors.black.withOpacity(0.02),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -133,12 +167,15 @@ class RecentTransactionsBlock extends StatelessWidget {
                       ? DateFormat('dd MMM yyyy, hh:mm a').format(date)
                       : 'Unknown Date';
 
+                  final rawNote = tx['note'] as String? ?? (isCredit ? 'Deposit' : 'Payment');
+                  final noteFormatted = _formatTransactionNote(rawNote);
+
                   return Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isCredit ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
+                          color: isCredit ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -153,7 +190,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              tx['note'] ?? (isCredit ? 'Deposit' : 'Payment'),
+                              noteFormatted,
                               style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
                             ),
                             const SizedBox(height: 2),

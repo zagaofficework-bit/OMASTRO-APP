@@ -1,7 +1,14 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart' as image_picker;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,12 +49,26 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   late final ChatBloc _chatBloc;
   int _charCount = 0;
   int _remainingCharacters = 0;
+
+  bool get _isUserAstrologer {
+    final authState = context.read<AuthBloc>().state;
+    return authState is AuthenticatedAsAstrologer ||
+        authState is AstrologerOnboardingRequired;
+  }
   String? _pendingMessageText;
   String? _firebaseUid;
   String? _pendingCallRoute;
+  String? _otherAvatarUrl;
   Map<String, dynamic>? _pendingCallExtra;
   double _callRate = 10.0;
   double _videoRate = 15.0;
+
+  // New Chat Token state variables
+  String? _activeTokenId;
+  int _freeAttachments = 0;
+  int _extraAttachments = 0;
+  bool _isUploadingImage = false;
+  bool _isPurchasingExtraAttachment = false;
 
   @override
   void initState() {
@@ -75,33 +96,123 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _videoRate = _readRateFromAstrologerState('video_rate', 15.0);
 
     // Initialize chat room listening
-    final authState = context.read<AuthBloc>().state;
-    final isAstrologer =
-        authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+    final isAstrologer = _isUserAstrologer;
+
+    _loadActiveToken();
+
+    _otherAvatarUrl = widget.avatarUrl;
 
     final currentUser = FirebaseAuth.instance.currentUser;
     final currentUserAvatar = currentUser?.photoURL;
 
-    String? userAv;
-    String? astroAv;
-    if (isAstrologer) {
-      userAv = widget.avatarUrl;
-      astroAv = currentUserAvatar;
-    } else {
-      userAv = currentUserAvatar;
-      astroAv = widget.avatarUrl;
-    }
+    String? userAv = currentUserAvatar;
+    String? astroAv = widget.avatarUrl;
 
-    _chatBloc.add(
-      OpenChatRoomEvent(
-        astrologerId: widget.id,
-        astrologerName: widget.name,
-        astrologerFirebaseUid: _firebaseUid,
-        userAvatar: userAv,
-        astrologerAvatar: astroAv,
-      ),
-    );
+    if (!isAstrologer) {
+      // If we are the client, the other member is the astrologer. Query astrologer's avatar if missing.
+      if (_otherAvatarUrl == null || _otherAvatarUrl!.isEmpty) {
+        Supabase.instance.client
+            .from('astrologers')
+            .select('avatar_url')
+            .eq('id', widget.id)
+            .maybeSingle()
+            .then((res) {
+              if (res != null && res['avatar_url'] != null) {
+                setState(() {
+                  _otherAvatarUrl = res['avatar_url']?.toString();
+                });
+              }
+            });
+      }
+
+      Supabase.instance.client
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', currentUser?.uid ?? '')
+          .maybeSingle()
+          .then((profileRes) {
+            if (profileRes != null && profileRes['avatar_url'] != null) {
+              userAv = profileRes['avatar_url']?.toString();
+            }
+            _chatBloc.add(
+              OpenChatRoomEvent(
+                astrologerId: widget.id,
+                astrologerName: widget.name,
+                astrologerFirebaseUid: _firebaseUid,
+                userAvatar: userAv,
+                astrologerAvatar: astroAv,
+              ),
+            );
+          }).catchError((e) {
+            _chatBloc.add(
+              OpenChatRoomEvent(
+                astrologerId: widget.id,
+                astrologerName: widget.name,
+                astrologerFirebaseUid: _firebaseUid,
+                userAvatar: userAv,
+                astrologerAvatar: astroAv,
+              ),
+            );
+          });
+    } else {
+      // If we are the astrologer, the other member is the client. Always query client's avatar from Supabase profiles to override any incorrect pre-populated value.
+      if (widget.otherUid != null) {
+        Supabase.instance.client
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', widget.otherUid!)
+            .maybeSingle()
+            .then((res) {
+              if (res != null && res['avatar_url'] != null) {
+                setState(() {
+                  _otherAvatarUrl = res['avatar_url']?.toString();
+                  // Also reload userAv to the latest
+                  userAv = res['avatar_url']?.toString();
+                  _chatBloc.add(
+                    OpenChatRoomEvent(
+                      astrologerId: widget.id,
+                      astrologerName: widget.name,
+                      astrologerFirebaseUid: _firebaseUid,
+                      userAvatar: userAv,
+                      astrologerAvatar: astroAv,
+                    ),
+                  );
+                });
+              }
+            });
+      }
+
+      userAv = widget.avatarUrl;
+      Supabase.instance.client
+          .from('astrologers')
+          .select('avatar_url')
+          .eq('firebase_uid', currentUser?.uid ?? '')
+          .maybeSingle()
+          .then((astroRes) {
+            if (astroRes != null && astroRes['avatar_url'] != null) {
+              astroAv = astroRes['avatar_url']?.toString();
+            }
+            _chatBloc.add(
+              OpenChatRoomEvent(
+                astrologerId: widget.id,
+                astrologerName: widget.name,
+                astrologerFirebaseUid: _firebaseUid,
+                userAvatar: userAv,
+                astrologerAvatar: astroAv,
+              ),
+            );
+          }).catchError((e) {
+            _chatBloc.add(
+              OpenChatRoomEvent(
+                astrologerId: widget.id,
+                astrologerName: widget.name,
+                astrologerFirebaseUid: _firebaseUid,
+                userAvatar: userAv,
+                astrologerAvatar: astroAv,
+              ),
+            );
+          });
+    }
 
     final currentState = _chatBloc.state;
     if (currentState is ChatUpdatedState) {
@@ -146,17 +257,75 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     super.dispose();
   }
 
-  void _sendMessage() {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+  Future<void> _loadActiveToken() async {
+    final isAstrologer = _isUserAstrologer;
+    if (isAstrologer) return;
 
-    final authState = context.read<AuthBloc>().state;
-    final isAstrologer =
-        authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      // Ensure _firebaseUid is resolved via Supabase if null or empty
+      if (_firebaseUid == null || _firebaseUid!.isEmpty) {
+        try {
+          final astroRes = await supabase
+              .from('astrologers')
+              .select('firebase_uid')
+              .eq('id', widget.id)
+              .maybeSingle();
+          if (astroRes != null && astroRes['firebase_uid'] != null) {
+            _firebaseUid = astroRes['firebase_uid']?.toString();
+            debugPrint('[ChatRoomPage] Resolved _firebaseUid from database: $_firebaseUid');
+          }
+        } catch (e) {
+          debugPrint('[ChatRoomPage] Failed to resolve _firebaseUid from database: $e');
+        }
+      }
+
+      final res = await supabase
+          .from('chat_tokens')
+          .select()
+          .eq('user_id', userId)
+          .eq('astrologer_id', _firebaseUid ?? widget.id)
+          .eq('status', 'ACTIVE')
+          .order('created_at', ascending: true)
+          .limit(1)
+          .maybeSingle();
+
+      if (res != null) {
+        setState(() {
+          _activeTokenId = res['id'] as String;
+          _remainingCharacters = res['characters_remaining'] as int;
+          _freeAttachments = res['free_attachment_remaining'] as int;
+          _extraAttachments = res['extra_attachment_purchased'] as int;
+        });
+      } else {
+        setState(() {
+          _activeTokenId = null;
+          _remainingCharacters = 0;
+          _freeAttachments = 0;
+          _extraAttachments = 0;
+        });
+      }
+    } catch (e) {
+      print('Error loading active token: $e');
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    debugPrint('[ChatRoomPage] _sendMessage: text = "$text", activeTokenId = $_activeTokenId, remaining = $_remainingCharacters');
+    if (text.isEmpty) {
+      debugPrint('[ChatRoomPage] Message text is empty, aborting.');
+      return;
+    }
+
+    final isAstrologer = _isUserAstrologer;
+
+    debugPrint('[ChatRoomPage] User isAstrologer = $isAstrologer');
 
     if (isAstrologer) {
-      // Astrologers send message directly without billing or wallet deduction
       context.read<ChatBloc>().add(
         SendMessageEvent(
           astrologerId: widget.id,
@@ -165,28 +334,54 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         ),
       );
       _messageController.clear();
-    } else {
-      if (_remainingCharacters >= text.length) {
-        setState(() {
-          _remainingCharacters -= text.length;
-        });
-        context.read<ChatBloc>().add(
-          UpdateRemainingCharactersEvent(
-            astrologerId: widget.id,
-            characters: _remainingCharacters,
-          ),
-        );
-        context.read<ChatBloc>().add(
-          SendMessageEvent(
-            astrologerId: widget.id,
-            astrologerName: widget.name,
-            text: text,
-          ),
-        );
-        _messageController.clear();
-      } else {
-        _showBillingConfirmationDialog(text);
+      return;
+    }
+
+    if (_activeTokenId == null) {
+      debugPrint('[ChatRoomPage] No active token found. Showing billing dialog.');
+      _showBillingConfirmationDialog(text);
+      return;
+    }
+
+    if (_remainingCharacters >= text.length) {
+      final newCharCount = _remainingCharacters - text.length;
+      debugPrint('[ChatRoomPage] Sufficient characters. New remaining count = $newCharCount');
+      setState(() {
+        _remainingCharacters = newCharCount;
+      });
+
+      try {
+        final supabase = Supabase.instance.client;
+        debugPrint('[ChatRoomPage] Updating remaining characters in Supabase token $_activeTokenId to $newCharCount');
+        await supabase.from('chat_tokens').update({
+          'characters_remaining': newCharCount,
+          if (newCharCount == 0) 'status': 'EXHAUSTED',
+        }).eq('id', _activeTokenId!);
+        debugPrint('[ChatRoomPage] Supabase remaining characters update successful.');
+      } catch (e) {
+        debugPrint('[ChatRoomPage] Error updating remaining characters: $e');
       }
+
+      context.read<ChatBloc>().add(
+        SendMessageEvent(
+          astrologerId: widget.id,
+          astrologerName: widget.name,
+          text: text,
+        ),
+      );
+      _messageController.clear();
+
+      if (newCharCount == 0) {
+        debugPrint('[ChatRoomPage] Token exhausted. Clearing active token state.');
+        setState(() {
+          _activeTokenId = null;
+          _freeAttachments = 0;
+          _extraAttachments = 0;
+        });
+      }
+    } else {
+      debugPrint('[ChatRoomPage] Insufficient characters remaining ($_remainingCharacters) for message length (${text.length}). Showing billing dialog.');
+      _showBillingConfirmationDialog(text);
     }
   }
 
@@ -217,7 +412,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   _pendingMessageText = text;
                 });
                 context.read<WalletBloc>().add(
-                  DeductForChat(amount: 5.0, astrologerId: widget.id),
+                  DeductForChat(amount: 5.0, astrologerId: _firebaseUid ?? widget.id, astrologerName: widget.name),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -229,6 +424,212 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         );
       },
     );
+  }
+
+  Future<void> _createNewChatTokenAndSendPending() async {
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    try {
+      final tokenRes = await supabase.from('chat_tokens').insert({
+        'user_id': userId,
+        'astrologer_id': _firebaseUid ?? widget.id,
+        'characters_remaining': 160,
+        'free_attachment_remaining': 2,
+        'status': 'ACTIVE',
+      }).select().single();
+
+      setState(() {
+        _activeTokenId = tokenRes['id'] as String;
+        _remainingCharacters = 160;
+        _freeAttachments = 2;
+        _extraAttachments = 0;
+      });
+
+      if (_pendingMessageText != null) {
+        final textToSend = _pendingMessageText!;
+        _pendingMessageText = null;
+
+        final newCharCount = 160 - textToSend.length;
+        setState(() {
+          _remainingCharacters = newCharCount;
+        });
+
+        await supabase.from('chat_tokens').update({
+          'characters_remaining': newCharCount,
+          if (newCharCount == 0) 'status': 'EXHAUSTED',
+        }).eq('id', _activeTokenId!);
+
+        context.read<ChatBloc>().add(
+          SendMessageEvent(
+            astrologerId: widget.id,
+            astrologerName: widget.name,
+            text: textToSend,
+          ),
+        );
+        _messageController.clear();
+
+        if (newCharCount == 0) {
+          setState(() {
+            _activeTokenId = null;
+            _freeAttachments = 0;
+            _extraAttachments = 0;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error creating token: $e');
+    }
+  }
+
+  Future<void> _pickAndUploadAttachment() async {
+    final authState = context.read<AuthBloc>().state;
+    final isAstrologer =
+        authState is AuthenticatedAsAstrologer ||
+        authState is AstrologerOnboardingRequired;
+
+    if (!isAstrologer) {
+      if (_activeTokenId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please buy a chat token first.')),
+        );
+        return;
+      }
+
+      if (_freeAttachments == 0 && _extraAttachments == 0) {
+        _showBuyAttachmentDialog();
+        return;
+      }
+    }
+
+    final picker = image_picker.ImagePicker();
+    final pickedFile = await picker.pickImage(source: image_picker.ImageSource.gallery);
+    if (pickedFile == null) return;
+
+    final file = File(pickedFile.path);
+    final length = await file.length();
+
+    if (length > 5 * 1024 * 1024) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image exceeds 5 MB limit.')),
+      );
+      return;
+    }
+
+    final fileExt = pickedFile.path.split('.').last.toLowerCase();
+    if (fileExt != 'png' && fileExt != 'jpg' && fileExt != 'jpeg') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Only PNG, JPG, and JPEG images are allowed.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      final fileName = 'attachments/${_activeTokenId ?? "astro"}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final supabase = Supabase.instance.client;
+
+      await supabase.storage.from('chat_attachments').upload(fileName, file);
+      final signedUrl = await supabase.storage.from('chat_attachments').createSignedUrl(fileName, 604800);
+
+      if (!isAstrologer) {
+        if (_freeAttachments > 0) {
+          final newFree = _freeAttachments - 1;
+          setState(() {
+            _freeAttachments = newFree;
+          });
+          await supabase.from('chat_tokens').update({
+            'free_attachment_remaining': newFree,
+          }).eq('id', _activeTokenId!);
+        } else if (_extraAttachments > 0) {
+          final newExtra = _extraAttachments - 1;
+          setState(() {
+            _extraAttachments = newExtra;
+          });
+          await supabase.from('chat_tokens').update({
+            'extra_attachment_purchased': newExtra,
+          }).eq('id', _activeTokenId!);
+        }
+      }
+
+      context.read<ChatBloc>().add(
+        SendMessageEvent(
+          astrologerId: widget.id,
+          astrologerName: widget.name,
+          text: '',
+          imageUrl: signedUrl,
+        ),
+      );
+
+      setState(() {
+        _isUploadingImage = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isUploadingImage = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload image: $e')),
+      );
+    }
+  }
+
+  void _showBuyAttachmentDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Attachments Ended'),
+          content: const Text(
+            'You have used your 2 free attachments. Buy 1 extra attachment for ₹5?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() {
+                  _isPurchasingExtraAttachment = true;
+                });
+                context.read<WalletBloc>().add(
+                  DeductForChat(amount: 5.0, astrologerId: _firebaseUid ?? widget.id, astrologerName: widget.name),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFD4AF37),
+              ),
+              child: const Text('Buy (₹5)'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _buyAttachmentSuccess() async {
+    final supabase = Supabase.instance.client;
+    final newExtra = _extraAttachments + 1;
+    setState(() {
+      _extraAttachments = newExtra;
+    });
+    try {
+      await supabase.from('chat_tokens').update({
+        'extra_attachment_purchased': newExtra,
+      }).eq('id', _activeTokenId!);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Extra attachment purchased successfully! Tap "+" to attach.')),
+      );
+    } catch (e) {
+      debugPrint('Error updating extra attachments: $e');
+    }
   }
 
   void _endConversation() {
@@ -290,10 +691,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       'image': widget.avatarUrl ?? '',
     };
 
-    final authState = context.read<AuthBloc>().state;
-    final isAstrologer =
-        authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+    final isAstrologer = _isUserAstrologer;
 
     if (isAstrologer) {
       // Astrologers can initiate calls without wallet checks
@@ -323,15 +721,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
-                _pendingCallRoute = route;
-                _pendingCallExtra = extra;
-                context.read<WalletBloc>().add(
-                  DeductMoney(
-                    rate,
-                    astrologerId: widget.id,
-                    astrologerName: widget.name,
-                  ),
-                );
+                context.push(route, extra: extra);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFD4AF37),
@@ -358,26 +748,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return BlocListener<WalletBloc, WalletState>(
       listener: (context, state) {
         if (state is WalletDeductionSuccess) {
-          if (_pendingMessageText != null && _pendingMessageText!.isNotEmpty) {
-            setState(() {
-              _remainingCharacters += 160;
-              _remainingCharacters -= _pendingMessageText!.length;
-            });
-            context.read<ChatBloc>().add(
-              UpdateRemainingCharactersEvent(
-                astrologerId: widget.id,
-                characters: _remainingCharacters,
-              ),
-            );
-            context.read<ChatBloc>().add(
-              SendMessageEvent(
-                astrologerId: widget.id,
-                astrologerName: widget.name,
-                text: _pendingMessageText!,
-              ),
-            );
-            _messageController.clear();
-            _pendingMessageText = null;
+          if (_isPurchasingExtraAttachment) {
+            _isPurchasingExtraAttachment = false;
+            _buyAttachmentSuccess();
+          } else if (_pendingMessageText != null && _pendingMessageText!.isNotEmpty) {
+            _createNewChatTokenAndSendPending();
           } else if (_pendingCallRoute != null && _pendingCallExtra != null) {
             final route = _pendingCallRoute!;
             final extra = _pendingCallExtra!;
@@ -387,6 +762,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           }
         } else if (state is WalletInsufficientBalance) {
           _pendingMessageText = null;
+          _isPurchasingExtraAttachment = false;
           _showInsufficientBalanceDialog(
             state.currentBalance,
             requiredAmount: state.requiredAmount,
@@ -452,12 +828,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 14),
                                   child: Text(
-                                    'Tokens: $_remainingCharacters | $_charCount/160',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: _charCount >= 160
-                                          ? Colors.redAccent
-                                          : Colors.grey,
+                                    'Characters Remaining: $_remainingCharacters | Free Photos: $_freeAttachments | Extra Photos: $_extraAttachments',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ),
@@ -484,7 +858,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                           ),
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
-                            return _buildMessageBubble(messages[index]);
+                            return AnimationConfiguration.staggeredList(
+                              position: index,
+                              duration: const Duration(milliseconds: 300),
+                              child: SlideAnimation(
+                                verticalOffset: 20.0,
+                                child: ScaleAnimation(
+                                  scale: 0.95,
+                                  child: FadeInAnimation(
+                                    child: _buildMessageBubble(messages[index]),
+                                  ),
+                                ),
+                              ),
+                            );
                           },
                         );
                       },
@@ -502,15 +888,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   Widget _buildGlassHeader(BuildContext context) {
-    final authState = context.read<AuthBloc>().state;
-    final isAstrologer =
-        authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+    final isAstrologer = _isUserAstrologer;
 
     return BlocBuilder<AstrologersBloc, AstrologersState>(
       builder: (context, astroState) {
         String? avatarUrl = widget.avatarUrl;
-        if ((avatarUrl == null || avatarUrl.isEmpty) &&
+        if (!isAstrologer &&
+            (avatarUrl == null || avatarUrl.isEmpty) &&
             astroState is AstrologersFollowingState) {
           try {
             final astro = astroState.astrologers.firstWhere(
@@ -582,10 +966,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     child: CircleAvatar(
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       backgroundImage:
-                          (avatarUrl != null && avatarUrl.isNotEmpty)
-                          ? NetworkImage(avatarUrl)
+                          (_otherAvatarUrl != null && _otherAvatarUrl!.isNotEmpty)
+                          ? NetworkImage(_otherAvatarUrl!)
                           : null,
-                      child: (avatarUrl == null || avatarUrl.isEmpty)
+                      child: (_otherAvatarUrl == null || _otherAvatarUrl!.isEmpty)
                           ? Text(
                               _getInitials(widget.name),
                               style: const TextStyle(
@@ -774,6 +1158,59 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       );
     }
 
+    if (message.imageUrl != null && message.imageUrl!.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isMe) const SizedBox(width: 4),
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: GestureDetector(
+                  onTap: () => _openFullScreenImage(context, message.imageUrl!),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.network(
+                      message.imageUrl!,
+                      fit: BoxFit.cover,
+                      width: 220,
+                      height: 220,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: 220,
+                          height: 220,
+                          color: Colors.grey[200],
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (isMe) const SizedBox(width: 4),
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -849,10 +1286,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Widget _buildPremiumInputBar() {
     return Container(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 12,
-        bottom: MediaQuery.of(context).padding.bottom + 12,
+        left: 12,
+        right: 12,
+        top: 10,
+        bottom: MediaQuery.of(context).padding.bottom + 10,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -867,17 +1304,32 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          IconButton(
-            icon: const Icon(
-              Icons.add_circle_outline_rounded,
-              color: AppColors.textLight,
-              size: 26,
+          if (_isUploadingImage)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+              ),
+            )
+          else
+            Container(
+              margin: const EdgeInsets.only(bottom: 2, right: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF5F5F5),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const FaIcon(
+                  FontAwesomeIcons.plus,
+                  color: AppColors.textLight,
+                  size: 24,
+                ),
+                onPressed: _pickAndUploadAttachment,
+                constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+              ),
             ),
-            onPressed: () {},
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          ),
-          const SizedBox(width: 4),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
@@ -893,18 +1345,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 textInputAction: TextInputAction.send,
                 style: const TextStyle(fontSize: 15, fontFamily: 'Poppins'),
                 decoration: InputDecoration(
-                  hintText: 'Message...',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
+                  hintText: 'Type a message...',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
                   border: InputBorder.none,
-                  prefixIcon: Icon(
-                    Icons.emoji_emotions_outlined,
-                    color: Colors.grey[400],
-                    size: 22,
-                  ),
                   suffix: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -919,7 +1366,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         ),
                       ),
                       Text(
-                        'Bal: $_remainingCharacters',
+                        'Rem: $_remainingCharacters',
+                        style: const TextStyle(fontSize: 9, color: Colors.grey),
+                      ),
+                      Text(
+                        'Pics: $_freeAttachments + $_extraAttachments',
                         style: const TextStyle(fontSize: 9, color: Colors.grey),
                       ),
                     ],
@@ -928,7 +1379,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: _sendMessage,
             child: Container(
@@ -950,10 +1401,172 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.send_rounded,
-                color: Colors.white,
-                size: 20,
+              child: const Center(
+                child: FaIcon(
+                  FontAwesomeIcons.paperPlane,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+void _openFullScreenImage(BuildContext context, String imageUrl) {
+  Navigator.push(
+    context,
+    PageRouteBuilder(
+      opaque: true,
+      pageBuilder: (context, _, __) => FullScreenImageViewer(imageUrl: imageUrl),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+    ),
+  );
+}
+
+Future<void> _downloadImageDirect(BuildContext context, String url) async {
+  try {
+    if (Platform.isAndroid) {
+      // Request storage permission first
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
+      }
+
+      // On Android 13+ (SDK 33+), Permission.storage always returns denied. 
+      // We must request Permission.photos as well.
+      if (!status.isGranted) {
+        var photosStatus = await Permission.photos.status;
+        if (!photosStatus.isGranted) {
+          photosStatus = await Permission.photos.request();
+        }
+        
+        // If still denied, request manageExternalStorage permission
+        if (!photosStatus.isGranted) {
+          var manageStatus = await Permission.manageExternalStorage.status;
+          if (!manageStatus.isGranted) {
+            await Permission.manageExternalStorage.request();
+          }
+        }
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Downloading attachment...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    final client = HttpClient();
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      throw 'HTTP ${response.statusCode}';
+    }
+    
+    final bytes = await response.fold<List<int>>([], (list, element) => list..addAll(element));
+
+    String savePath = '';
+    if (Platform.isAndroid) {
+      final dir = Directory('/storage/emulated/0/Download');
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+      final name = 'OmAstro_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      savePath = '${dir.path}/$name';
+    } else {
+      // iOS fallback: open in browser
+      final uri = Uri.parse(url);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    final file = File(savePath);
+    await file.writeAsBytes(bytes);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved directly to Downloads: ${savePath.split('/').last}'),
+          backgroundColor: const Color(0xFF10B981),
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('[DirectDownload] Error: $e');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Direct download failed. Opening in browser...')),
+      );
+      try {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      } catch (_) {}
+    }
+  }
+}
+
+class FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const FullScreenImageViewer({super.key, required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Zoomable Image
+          Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
+                },
+              ),
+            ),
+          ),
+          
+          // Action Buttons top bar
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Close Button
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  
+                  // Download Button
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(Icons.download, color: Colors.white),
+                      onPressed: () => _downloadImageDirect(context, imageUrl),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -13,6 +13,8 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
+  final _userFormKey = GlobalKey<FormState>();
+  final _astroFormKey = GlobalKey<FormState>();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -311,12 +313,20 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Phone Number TextField Field
-          TextField(
-            controller: _phoneController,
+      child: Form(
+        key: _userFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Phone Number TextField Field
+            TextFormField(
+              controller: _phoneController,
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Please enter a phone number';
+                }
+                return null;
+              },
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
               hintText: 'Phone, e.g. +919876543210',
@@ -356,13 +366,8 @@ class _SignInPageState extends State<SignInPage> {
             height: 54,
             child: ElevatedButton(
               onPressed: () {
+                if (!_userFormKey.currentState!.validate()) return;
                 String phone = _phoneController.text.trim();
-                if (phone.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a phone number')),
-                  );
-                  return;
-                }
                 if (!phone.startsWith('+')) {
                   phone = '+91$phone'; // Default to Indian country code
                 }
@@ -472,6 +477,7 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ],
       ),
+      ),
     );
   }
 
@@ -490,13 +496,21 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Sign Up: Name field
-          if (_isSignUpMode) ...[
-            TextField(
-              controller: _nameController,
+      child: Form(
+        key: _astroFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Sign Up: Name field
+            if (_isSignUpMode) ...[
+              TextFormField(
+                controller: _nameController,
+                validator: (val) {
+                  if (_isSignUpMode && (val == null || val.trim().isEmpty)) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
               decoration: InputDecoration(
                 hintText: 'Full Name',
                 hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
@@ -516,8 +530,17 @@ class _SignInPageState extends State<SignInPage> {
           ],
 
           // Email field
-          TextField(
+          TextFormField(
             controller: _emailController,
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter an email';
+              }
+              if (!val.contains('@')) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: 'Email (e.g. astro.priya@omastro.app)',
@@ -537,14 +560,21 @@ class _SignInPageState extends State<SignInPage> {
           const SizedBox(height: 14.0),
 
           // Password field
-          TextField(
+          TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter a password';
+              }
+              return null;
+            },
             decoration: InputDecoration(
               hintText: 'Password',
               hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
               prefixIcon: const Icon(Icons.lock_outline, color: Colors.black54, size: 20),
               suffixIcon: IconButton(
+                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                 icon: Icon(
                   _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   color: Colors.grey,
@@ -667,28 +697,18 @@ class _SignInPageState extends State<SignInPage> {
           ),
         ],
       ),
+      ),
     );
   }
 
   void _submitAstrologerForm() {
+    if (!_astroFormKey.currentState!.validate()) return;
+    
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
-      );
-      return;
-    }
-
     if (_isSignUpMode) {
       final name = _nameController.text.trim();
-      if (name.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your name')),
-        );
-        return;
-      }
       globalAuthBloc.add(AstrologerSignUpRequested(name, email, password));
     } else {
       globalAuthBloc.add(AstrologerSignInRequested(email, password));

@@ -23,6 +23,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     on<SendMessageEvent>(_onSendMessage);
     on<UpdateRemainingCharactersEvent>(_onUpdateRemainingCharacters);
 
+    // Eagerly initialize if a user is already logged in at startup
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      add(InitChatSystemEvent(
+        userUid: currentUser.uid,
+        userName: currentUser.displayName ?? 'Guest',
+      ));
+    }
+
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
         add(InitChatSystemEvent(
@@ -124,6 +133,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           text: m.text,
           time: m.time,
           isMe: m.senderId == current.userUid,
+          imageUrl: m.imageUrl,
         )).toList();
         
         add(MessagesUpdatedEvent(roomId: roomId, astrologerId: event.astrologerId, messages: chatMessages));
@@ -157,7 +167,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   Future<void> _onSendMessage(SendMessageEvent event, Emitter<ChatState> emit) async {
-    debugPrint('[ChatBloc] _onSendMessage: text = ${event.text}');
+    debugPrint('[ChatBloc] _onSendMessage: text = ${event.text}, image = ${event.imageUrl}');
     if (state is ChatUpdatedState) {
       final current = state as ChatUpdatedState;
       if (current.activeRoomId != null) {
@@ -166,6 +176,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           roomId: current.activeRoomId!,
           senderId: current.userUid,
           text: event.text,
+          imageUrl: event.imageUrl,
         );
       } else {
         debugPrint('[ChatBloc] Warning: Attempted to send message but activeRoomId is null');

@@ -206,16 +206,42 @@ class WalletBloc extends Bloc<WalletEvent, WalletState> {
           final newPaise = currentPaise - amountPaise;
           final double newBalance = newPaise / 100.0;
 
-          // 1. Insert transaction
+          // 1. Generate unique consultation ID
+          final String consultationId = 'chat_sess_${DateTime.now().millisecondsSinceEpoch}';
+
+          // 2. Insert transaction
+          final astroLabel = event.astrologerName?.trim().isNotEmpty == true ? event.astrologerName : event.astrologerId;
           await _supabase.from('wallet_transactions').insert({
             'user_id': walletUserId,
             'amount_paise': amountPaise,
             'kind': 'debit',
             'status': 'success',
-            'note': 'Chat message to Astro ID: ${event.astrologerId}',
+            'note': 'Chat message with $astroLabel (ID: $consultationId)',
           });
 
-          // 2. Update wallet
+          // 3. Insert consultation record
+          await _supabase.from('consultations').insert({
+            'id': consultationId,
+            'user_id': walletUserId,
+            'astrologer_id': event.astrologerId,
+            'type': 'Chat',
+            'status': 'Completed',
+            'duration_seconds': 0,
+            'started_at': DateTime.now().toIso8601String(),
+            'ended_at': DateTime.now().toIso8601String(),
+          });
+
+          // Insert astrologer earnings with 0% platform commission
+          await _supabase.from('astrologer_earnings').insert({
+            'astrologer_id': event.astrologerId,
+            'consultation_id': consultationId,
+            'gross_amount': event.amount,
+            'commission_rate': 0.00,
+            'net_amount': event.amount,
+            'status': 'UNPAID',
+          });
+
+          // 4. Update wallet
           await _supabase.from('wallets').upsert({
             'user_id': walletUserId,
             'balance_paise': newPaise,

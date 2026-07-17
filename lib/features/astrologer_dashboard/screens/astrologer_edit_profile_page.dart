@@ -402,7 +402,7 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
       debugPrint('[EditProfile] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: ${e.toString()}')),
+          SnackBar(content: Text('Failed to update profile. Please try again.')),
         );
       }
     } finally {

@@ -34,8 +34,13 @@ class DeductMoney extends WalletEvent {
 class DeductForChat extends WalletEvent {
   final double amount;
   final String astrologerId;
-  const DeductForChat({required this.amount, required this.astrologerId});
+  final String? astrologerName;
+  const DeductForChat({required this.amount, required this.astrologerId, this.astrologerName});
 
   @override
-  List<Object> get props => [amount, astrologerId];
+  List<Object> get props => [
+    amount,
+    astrologerId,
+    if (astrologerName != null) astrologerName!,
+  ];
 }

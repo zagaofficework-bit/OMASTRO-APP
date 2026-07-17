@@ -10,6 +10,40 @@ import '../bloc/wallet_state.dart';
 class TransactionHistoryPage extends StatelessWidget {
   const TransactionHistoryPage({super.key});
 
+  String _formatTransactionNote(String note) {
+    String cleaned = note;
+    if (cleaned.contains(' (ID:')) {
+      cleaned = cleaned.split(' (ID:').first;
+    }
+    
+    final map = {
+      'DRBaphzzYdYVcLnPfPAhYHynQn93': 'Astro Priya',
+      '4QByl2hM3HZPj2cb0W4mYhXooMo2': 'Yogini Meera',
+      'bD5luP4IfnbCU1s0EbRCjSGKWWf1': 'Pandit Ramesh',
+      '7ddb004c-46ae-4714-87f3-81042c4a3e79': 'Pandit Ramesh',
+      '28e48fff-bc76-43c3-b4fc-53e058bb2c6c': 'Yogini Meera',
+      'astro-DRBaphzzYdYVcLnPfPAhYHynQn93': 'Astro Priya',
+      'astro-4QByl2hM3HZPj2cb0W4mYhXooMo2': 'Yogini Meera',
+      'astro-bD5luP4IfnbCU1s0EbRCjSGKWWf1': 'Pandit Ramesh',
+      'astro-7ddb004c-46ae-4714-87f3-81042c4a3e79': 'Pandit Ramesh',
+      'astro-28e48fff-bc76-43c3-b4fc-53e058bb2c6c': 'Yogini Meera',
+    };
+
+    for (final entry in map.entries) {
+      if (cleaned.contains(entry.key)) {
+        cleaned = cleaned.replaceAll(entry.key, entry.value);
+      }
+    }
+    
+    cleaned = cleaned.replaceAll('Chat message to Astro ID:', 'Chat with');
+    cleaned = cleaned.replaceAll('Chat message with', 'Chat with');
+    cleaned = cleaned.replaceAll('Call with Astro ID:', 'Call with');
+    cleaned = cleaned.replaceAll('Call with Astrologer ID:', 'Call with');
+    cleaned = cleaned.replaceAll('Consultation with Astrologer ID:', 'Call with');
+
+    return cleaned;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,7 +155,7 @@ class TransactionHistoryPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            tx['note'] ?? (isCredit ? 'Deposit' : 'Payment'),
+                            _formatTransactionNote(tx['note'] ?? (isCredit ? 'Deposit' : 'Payment')),
                             style: AppTextStyles.bodyMedium.copyWith(
                               fontWeight: FontWeight.w600,
                             ),

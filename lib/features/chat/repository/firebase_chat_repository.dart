@@ -140,7 +140,10 @@ class FirebaseChatRepository {
         final astrologerId = data['astrologerId'] as String? ?? doc.id;
         
         final unreadMap = data['unread'] as Map<String, dynamic>? ?? {};
-        final unreadCount = (unreadMap[userUid] as num?)?.toInt() ?? 0;
+        final isAstro = userUid == data['astrologerFirebaseUid'];
+        final unreadCount = isAstro
+            ? ((unreadMap[userUid] ?? unreadMap[astrologerId]) as num?)?.toInt() ?? 0
+            : (unreadMap[userUid] as num?)?.toInt() ?? 0;
 
         return ChatConversation(
           id: astrologerId, // Astrologer's Supabase ID
@@ -188,6 +191,7 @@ class FirebaseChatRepository {
           senderId: data['senderId'] as String? ?? '',
           time: timeStr,
           createdAt: createdAt,
+          imageUrl: data['imageUrl'] as String?,
         );
       }).toList();
     });
@@ -198,11 +202,12 @@ class FirebaseChatRepository {
     required String roomId,
     required String senderId,
     required String text,
+    String? imageUrl,
   }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
+    if (trimmed.isEmpty && imageUrl == null) return;
     
-    debugPrint('[FirebaseChatRepository] Sending message to room $roomId: $trimmed');
+    debugPrint('[FirebaseChatRepository] Sending message to room $roomId: $trimmed, image: $imageUrl');
 
     try {
       final batch = _firestore.batch();
@@ -213,6 +218,7 @@ class FirebaseChatRepository {
         'text': trimmed,
         'senderId': senderId,
         'createdAt': FieldValue.serverTimestamp(),
+        if (imageUrl != null) 'imageUrl': imageUrl,
       });
 
       // 2. Update chat room
@@ -267,6 +273,7 @@ class ChatMessageModel {
   final String senderId;
   final String time;
   final Timestamp? createdAt;
+  final String? imageUrl;
 
   ChatMessageModel({
     required this.id,
@@ -274,5 +281,6 @@ class ChatMessageModel {
     required this.senderId,
     required this.time,
     this.createdAt,
+    this.imageUrl,
   });
 }
