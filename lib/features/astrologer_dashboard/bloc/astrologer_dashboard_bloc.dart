@@ -19,15 +19,31 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
   Future<void> _onLoad(LoadAstrologerDashboard event, Emitter<AstrologerDashboardState> emit) async {
     emit(AstrologerDashboardLoading());
     try {
-      final row = await _supabase
+      final isUuid = event.astrologerId.length == 36 && event.astrologerId.contains('-');
+      final queryCol = isUuid ? 'id' : 'firebase_uid';
+
+      var row = await _supabase
           .from('astrologers')
           .select()
-          .eq('id', event.astrologerId)
-          .single();
+          .eq(queryCol, event.astrologerId)
+          .maybeSingle();
+
+      if (row == null && event.firebaseUid.isNotEmpty) {
+        row = await _supabase
+            .from('astrologers')
+            .select()
+            .eq('firebase_uid', event.firebaseUid)
+            .maybeSingle();
+      }
+
+      if (row == null) {
+        emit(const AstrologerDashboardError('Astrologer record not found.'));
+        return;
+      }
 
       emit(AstrologerDashboardLoaded(
-        astrologerId: event.astrologerId,
-        firebaseUid: event.firebaseUid,
+        astrologerId: row['id']?.toString() ?? event.astrologerId,
+        firebaseUid: row['firebase_uid']?.toString() ?? event.firebaseUid,
         name: row['name'] ?? '',
         bio: row['bio'] ?? '',
         experienceYears: row['experience_years'] ?? 0,
@@ -64,19 +80,42 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
         isOnline: newStatus,
       );
 
-      // Also update in Supabase astrologers table
-      await _supabase
-          .from('astrologers')
-          .update({'is_online': newStatus})
-          .eq('id', current.astrologerId);
+      final isAstroUuid = current.astrologerId.length == 36 && current.astrologerId.contains('-');
+      final queryCol = isAstroUuid ? 'id' : 'firebase_uid';
+
+      try {
+        await _supabase
+            .from('astrologers')
+            .update({
+              'is_online': newStatus,
+            })
+            .eq(queryCol, current.astrologerId);
+      } catch (e) {
+        debugPrint('[AstrologerDashboardBloc] Error updating by $queryCol: $e');
+      }
+
+      if (current.firebaseUid.isNotEmpty) {
+        try {
+          await _supabase
+              .from('astrologers')
+              .update({
+                'is_online': newStatus,
+              })
+              .eq('firebase_uid', current.firebaseUid);
+        } catch (e) {
+          debugPrint('[AstrologerDashboardBloc] Error updating by firebase_uid: $e');
+        }
+      }
 
       // If coming online, trigger notifications for waiting users
       if (newStatus == true) {
-        await _supabase
-            .from('notify_requests')
-            .update({'notified': true})
-            .eq('astrologer_id', current.astrologerId)
-            .eq('notified', false);
+        try {
+          await _supabase
+              .from('notify_requests')
+              .update({'notified': true})
+              .eq('astrologer_id', current.astrologerId)
+              .eq('notified', false);
+        } catch (_) {}
       }
 
       debugPrint('[AstrologerDashboardBloc] Online status toggled to $newStatus in both Firestore & Supabase.');
@@ -93,21 +132,68 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
 
     try {
       // 1. Update Supabase
-      await _supabase
-          .from('astrologers')
-          .update(event.updates)
-          .eq('id', current.astrologerId);
+      if (current.astrologerId.isNotEmpty) {
+        await _supabase
+            .from('astrologers')
+            .update(event.updates)
+            .eq('id', current.astrologerId);
+      }
 
-      // 2. Update Firestore
       if (current.firebaseUid.isNotEmpty) {
-        // Map any snake_case keys from event.updates to whatever Firestore expects, 
-        // though typically they can just match. Wait, Firestore may use camelCase or the same.
-        // The user's prompt says "using the exact same verified payload".
+        try {
+          await _supabase
+              .from('astrologers')
+              .update(event.updates)
+              .eq('firebase_uid', current.firebaseUid);
+        } catch (_) {}
+      }
+
+      // 2. Prepare comprehensive Firestore payload
+      final firestorePayload = <String, dynamic>{
+        ...event.updates,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // Add camelCase aliases for rates and experience
+      if (event.updates.containsKey('chat_rate')) {
+        firestorePayload['chatRate'] = event.updates['chat_rate'];
+      }
+      if (event.updates.containsKey('call_rate')) {
+        firestorePayload['callRate'] = event.updates['call_rate'];
+      }
+      if (event.updates.containsKey('video_rate')) {
+        firestorePayload['videoRate'] = event.updates['video_rate'];
+      }
+      if (event.updates.containsKey('experience_years')) {
+        firestorePayload['experienceYears'] = event.updates['experience_years'];
+      }
+
+      // 3. Update Firestore astrologers collection
+      if (current.firebaseUid.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('astrologers')
             .doc(current.firebaseUid)
-            .set(event.updates, SetOptions(merge: true));
+            .set(firestorePayload, SetOptions(merge: true));
       }
+      if (current.astrologerId.isNotEmpty && current.astrologerId != current.firebaseUid) {
+        await FirebaseFirestore.instance
+            .collection('astrologers')
+            .doc(current.astrologerId)
+            .set(firestorePayload, SetOptions(merge: true));
+      }
+
+      // 4. Update Firestore presence collection (name update)
+      if (event.updates.containsKey('name')) {
+        final nameUpdate = {'name': event.updates['name']};
+        if (current.firebaseUid.isNotEmpty) {
+          await FirebaseFirestore.instance
+              .collection('presence')
+              .doc(current.firebaseUid)
+              .set(nameUpdate, SetOptions(merge: true));
+        }
+      }
+
+      debugPrint('[AstrologerDashboardBloc] Updated profile in both Supabase & Firestore successfully.');
 
       // Reload
       add(LoadAstrologerDashboard(

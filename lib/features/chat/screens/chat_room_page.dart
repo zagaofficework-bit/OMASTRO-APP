@@ -55,12 +55,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     return authState is AuthenticatedAsAstrologer ||
         authState is AstrologerOnboardingRequired;
   }
+
   String? _pendingMessageText;
   String? _firebaseUid;
   String? _pendingCallRoute;
   String? _otherAvatarUrl;
   Map<String, dynamic>? _pendingCallExtra;
-  double _callRate = 10.0;
+  double _callRate = 10;
   double _videoRate = 15.0;
 
   // New Chat Token state variables
@@ -96,8 +97,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _videoRate = _readRateFromAstrologerState('video_rate', 15.0);
 
     // Initialize chat room listening
-    final isAstrologer = _isUserAstrologer;
-
     _loadActiveToken();
 
     _otherAvatarUrl = widget.avatarUrl;
@@ -108,111 +107,60 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     String? userAv = currentUserAvatar;
     String? astroAv = widget.avatarUrl;
 
-    if (!isAstrologer) {
-      // If we are the client, the other member is the astrologer. Query astrologer's avatar if missing.
-      if (_otherAvatarUrl == null || _otherAvatarUrl!.isEmpty) {
-        Supabase.instance.client
-            .from('astrologers')
-            .select('avatar_url')
-            .eq('id', widget.id)
-            .maybeSingle()
-            .then((res) {
-              if (res != null && res['avatar_url'] != null) {
-                setState(() {
-                  _otherAvatarUrl = res['avatar_url']?.toString();
-                });
-              }
-            });
-      }
+    if (_otherAvatarUrl == null || _otherAvatarUrl!.isEmpty) {
+      final queryField = (widget.id.contains('-') && widget.id.length == 36)
+          ? 'id'
+          : 'firebase_uid';
 
-      Supabase.instance.client
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', currentUser?.uid ?? '')
-          .maybeSingle()
-          .then((profileRes) {
-            if (profileRes != null && profileRes['avatar_url'] != null) {
-              userAv = profileRes['avatar_url']?.toString();
-            }
-            _chatBloc.add(
-              OpenChatRoomEvent(
-                astrologerId: widget.id,
-                astrologerName: widget.name,
-                astrologerFirebaseUid: _firebaseUid,
-                userAvatar: userAv,
-                astrologerAvatar: astroAv,
-              ),
-            );
-          }).catchError((e) {
-            _chatBloc.add(
-              OpenChatRoomEvent(
-                astrologerId: widget.id,
-                astrologerName: widget.name,
-                astrologerFirebaseUid: _firebaseUid,
-                userAvatar: userAv,
-                astrologerAvatar: astroAv,
-              ),
-            );
-          });
-    } else {
-      // If we are the astrologer, the other member is the client. Always query client's avatar from Supabase profiles to override any incorrect pre-populated value.
-      if (widget.otherUid != null) {
-        Supabase.instance.client
-            .from('profiles')
-            .select('avatar_url')
-            .eq('id', widget.otherUid!)
-            .maybeSingle()
-            .then((res) {
-              if (res != null && res['avatar_url'] != null) {
-                setState(() {
-                  _otherAvatarUrl = res['avatar_url']?.toString();
-                  // Also reload userAv to the latest
-                  userAv = res['avatar_url']?.toString();
-                  _chatBloc.add(
-                    OpenChatRoomEvent(
-                      astrologerId: widget.id,
-                      astrologerName: widget.name,
-                      astrologerFirebaseUid: _firebaseUid,
-                      userAvatar: userAv,
-                      astrologerAvatar: astroAv,
-                    ),
-                  );
-                });
-              }
-            });
-      }
-
-      userAv = widget.avatarUrl;
       Supabase.instance.client
           .from('astrologers')
           .select('avatar_url')
-          .eq('firebase_uid', currentUser?.uid ?? '')
+          .eq(queryField, _firebaseUid ?? widget.id)
           .maybeSingle()
-          .then((astroRes) {
-            if (astroRes != null && astroRes['avatar_url'] != null) {
-              astroAv = astroRes['avatar_url']?.toString();
+          .then((res) {
+            if (!mounted) return;
+            if (res != null && res['avatar_url'] != null) {
+              setState(() {
+                _otherAvatarUrl = res['avatar_url']?.toString();
+              });
             }
-            _chatBloc.add(
-              OpenChatRoomEvent(
-                astrologerId: widget.id,
-                astrologerName: widget.name,
-                astrologerFirebaseUid: _firebaseUid,
-                userAvatar: userAv,
-                astrologerAvatar: astroAv,
-              ),
-            );
-          }).catchError((e) {
-            _chatBloc.add(
-              OpenChatRoomEvent(
-                astrologerId: widget.id,
-                astrologerName: widget.name,
-                astrologerFirebaseUid: _firebaseUid,
-                userAvatar: userAv,
-                astrologerAvatar: astroAv,
-              ),
-            );
+          })
+          .catchError((e) {
+            debugPrint('Error fetching astrologer avatar: $e');
           });
     }
+
+    Supabase.instance.client
+        .from('profiles')
+        .select('avatar_url')
+        .eq('id', currentUser?.uid ?? '')
+        .maybeSingle()
+        .then((profileRes) {
+          if (!mounted) return;
+          if (profileRes != null && profileRes['avatar_url'] != null) {
+            userAv = profileRes['avatar_url']?.toString();
+          }
+          _chatBloc.add(
+            OpenChatRoomEvent(
+              astrologerId: widget.id,
+              astrologerName: widget.name,
+              astrologerFirebaseUid: _firebaseUid,
+              userAvatar: userAv,
+              astrologerAvatar: astroAv ?? _otherAvatarUrl,
+            ),
+          );
+        })
+        .catchError((e) {
+          _chatBloc.add(
+            OpenChatRoomEvent(
+              astrologerId: widget.id,
+              astrologerName: widget.name,
+              astrologerFirebaseUid: _firebaseUid,
+              userAvatar: userAv,
+              astrologerAvatar: astroAv ?? _otherAvatarUrl,
+            ),
+          );
+        });
 
     final currentState = _chatBloc.state;
     if (currentState is ChatUpdatedState) {
@@ -269,17 +217,23 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       // Ensure _firebaseUid is resolved via Supabase if null or empty
       if (_firebaseUid == null || _firebaseUid!.isEmpty) {
         try {
+          final isUuid = widget.id.length == 36 && widget.id.contains('-');
+          final col = isUuid ? 'id' : 'firebase_uid';
           final astroRes = await supabase
               .from('astrologers')
               .select('firebase_uid')
-              .eq('id', widget.id)
+              .eq(col, widget.id)
               .maybeSingle();
           if (astroRes != null && astroRes['firebase_uid'] != null) {
             _firebaseUid = astroRes['firebase_uid']?.toString();
-            debugPrint('[ChatRoomPage] Resolved _firebaseUid from database: $_firebaseUid');
+            debugPrint(
+              '[ChatRoomPage] Resolved _firebaseUid from database: $_firebaseUid',
+            );
           }
         } catch (e) {
-          debugPrint('[ChatRoomPage] Failed to resolve _firebaseUid from database: $e');
+          debugPrint(
+            '[ChatRoomPage] Failed to resolve _firebaseUid from database: $e',
+          );
         }
       }
 
@@ -315,7 +269,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    debugPrint('[ChatRoomPage] _sendMessage: text = "$text", activeTokenId = $_activeTokenId, remaining = $_remainingCharacters');
+    debugPrint(
+      '[ChatRoomPage] _sendMessage: text = "$text", activeTokenId = $_activeTokenId, remaining = $_remainingCharacters',
+    );
     if (text.isEmpty) {
       debugPrint('[ChatRoomPage] Message text is empty, aborting.');
       return;
@@ -338,26 +294,37 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     }
 
     if (_activeTokenId == null) {
-      debugPrint('[ChatRoomPage] No active token found. Showing billing dialog.');
+      debugPrint(
+        '[ChatRoomPage] No active token found. Showing billing dialog.',
+      );
       _showBillingConfirmationDialog(text);
       return;
     }
 
     if (_remainingCharacters >= text.length) {
       final newCharCount = _remainingCharacters - text.length;
-      debugPrint('[ChatRoomPage] Sufficient characters. New remaining count = $newCharCount');
+      debugPrint(
+        '[ChatRoomPage] Sufficient characters. New remaining count = $newCharCount',
+      );
       setState(() {
         _remainingCharacters = newCharCount;
       });
 
       try {
         final supabase = Supabase.instance.client;
-        debugPrint('[ChatRoomPage] Updating remaining characters in Supabase token $_activeTokenId to $newCharCount');
-        await supabase.from('chat_tokens').update({
-          'characters_remaining': newCharCount,
-          if (newCharCount == 0) 'status': 'EXHAUSTED',
-        }).eq('id', _activeTokenId!);
-        debugPrint('[ChatRoomPage] Supabase remaining characters update successful.');
+        debugPrint(
+          '[ChatRoomPage] Updating remaining characters in Supabase token $_activeTokenId to $newCharCount',
+        );
+        await supabase
+            .from('chat_tokens')
+            .update({
+              'characters_remaining': newCharCount,
+              if (newCharCount == 0) 'status': 'EXHAUSTED',
+            })
+            .eq('id', _activeTokenId!);
+        debugPrint(
+          '[ChatRoomPage] Supabase remaining characters update successful.',
+        );
       } catch (e) {
         debugPrint('[ChatRoomPage] Error updating remaining characters: $e');
       }
@@ -372,7 +339,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       _messageController.clear();
 
       if (newCharCount == 0) {
-        debugPrint('[ChatRoomPage] Token exhausted. Clearing active token state.');
+        debugPrint(
+          '[ChatRoomPage] Token exhausted. Clearing active token state.',
+        );
         setState(() {
           _activeTokenId = null;
           _freeAttachments = 0;
@@ -380,7 +349,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         });
       }
     } else {
-      debugPrint('[ChatRoomPage] Insufficient characters remaining ($_remainingCharacters) for message length (${text.length}). Showing billing dialog.');
+      debugPrint(
+        '[ChatRoomPage] Insufficient characters remaining ($_remainingCharacters) for message length (${text.length}). Showing billing dialog.',
+      );
       _showBillingConfirmationDialog(text);
     }
   }
@@ -412,7 +383,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   _pendingMessageText = text;
                 });
                 context.read<WalletBloc>().add(
-                  DeductForChat(amount: 5.0, astrologerId: _firebaseUid ?? widget.id, astrologerName: widget.name),
+                  DeductForChat(
+                    amount: 5.0,
+                    astrologerId: _firebaseUid ?? widget.id,
+                    astrologerName: widget.name,
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -432,13 +407,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     if (userId == null) return;
 
     try {
-      final tokenRes = await supabase.from('chat_tokens').insert({
-        'user_id': userId,
-        'astrologer_id': _firebaseUid ?? widget.id,
-        'characters_remaining': 160,
-        'free_attachment_remaining': 2,
-        'status': 'ACTIVE',
-      }).select().single();
+      final tokenRes = await supabase
+          .from('chat_tokens')
+          .insert({
+            'user_id': userId,
+            'astrologer_id': _firebaseUid ?? widget.id,
+            'characters_remaining': 160,
+            'free_attachment_remaining': 2,
+            'status': 'ACTIVE',
+          })
+          .select()
+          .single();
 
       setState(() {
         _activeTokenId = tokenRes['id'] as String;
@@ -456,10 +435,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           _remainingCharacters = newCharCount;
         });
 
-        await supabase.from('chat_tokens').update({
-          'characters_remaining': newCharCount,
-          if (newCharCount == 0) 'status': 'EXHAUSTED',
-        }).eq('id', _activeTokenId!);
+        await supabase
+            .from('chat_tokens')
+            .update({
+              'characters_remaining': newCharCount,
+              if (newCharCount == 0) 'status': 'EXHAUSTED',
+            })
+            .eq('id', _activeTokenId!);
 
         context.read<ChatBloc>().add(
           SendMessageEvent(
@@ -504,7 +486,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     }
 
     final picker = image_picker.ImagePicker();
-    final pickedFile = await picker.pickImage(source: image_picker.ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+      source: image_picker.ImageSource.gallery,
+    );
     if (pickedFile == null) return;
 
     final file = File(pickedFile.path);
@@ -520,7 +504,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     final fileExt = pickedFile.path.split('.').last.toLowerCase();
     if (fileExt != 'png' && fileExt != 'jpg' && fileExt != 'jpeg') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Only PNG, JPG, and JPEG images are allowed.')),
+        const SnackBar(
+          content: Text('Only PNG, JPG, and JPEG images are allowed.'),
+        ),
       );
       return;
     }
@@ -530,11 +516,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     });
 
     try {
-      final fileName = 'attachments/${_activeTokenId ?? "astro"}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+      final fileName =
+          'attachments/${_activeTokenId ?? "astro"}/${DateTime.now().millisecondsSinceEpoch}.$fileExt';
       final supabase = Supabase.instance.client;
 
       await supabase.storage.from('chat_attachments').upload(fileName, file);
-      final signedUrl = await supabase.storage.from('chat_attachments').createSignedUrl(fileName, 604800);
+      final signedUrl = await supabase.storage
+          .from('chat_attachments')
+          .createSignedUrl(fileName, 604800);
 
       if (!isAstrologer) {
         if (_freeAttachments > 0) {
@@ -542,17 +531,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           setState(() {
             _freeAttachments = newFree;
           });
-          await supabase.from('chat_tokens').update({
-            'free_attachment_remaining': newFree,
-          }).eq('id', _activeTokenId!);
+          await supabase
+              .from('chat_tokens')
+              .update({'free_attachment_remaining': newFree})
+              .eq('id', _activeTokenId!);
         } else if (_extraAttachments > 0) {
           final newExtra = _extraAttachments - 1;
           setState(() {
             _extraAttachments = newExtra;
           });
-          await supabase.from('chat_tokens').update({
-            'extra_attachment_purchased': newExtra,
-          }).eq('id', _activeTokenId!);
+          await supabase
+              .from('chat_tokens')
+              .update({'extra_attachment_purchased': newExtra})
+              .eq('id', _activeTokenId!);
         }
       }
 
@@ -572,9 +563,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       setState(() {
         _isUploadingImage = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
     }
   }
 
@@ -599,7 +590,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   _isPurchasingExtraAttachment = true;
                 });
                 context.read<WalletBloc>().add(
-                  DeductForChat(amount: 5.0, astrologerId: _firebaseUid ?? widget.id, astrologerName: widget.name),
+                  DeductForChat(
+                    amount: 5.0,
+                    astrologerId: _firebaseUid ?? widget.id,
+                    astrologerName: widget.name,
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
@@ -620,12 +615,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       _extraAttachments = newExtra;
     });
     try {
-      await supabase.from('chat_tokens').update({
-        'extra_attachment_purchased': newExtra,
-      }).eq('id', _activeTokenId!);
+      await supabase
+          .from('chat_tokens')
+          .update({'extra_attachment_purchased': newExtra})
+          .eq('id', _activeTokenId!);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Extra attachment purchased successfully! Tap "+" to attach.')),
+        const SnackBar(
+          content: Text(
+            'Extra attachment purchased successfully! Tap "+" to attach.',
+          ),
+        ),
       );
     } catch (e) {
       debugPrint('Error updating extra attachments: $e');
@@ -751,7 +751,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           if (_isPurchasingExtraAttachment) {
             _isPurchasingExtraAttachment = false;
             _buyAttachmentSuccess();
-          } else if (_pendingMessageText != null && _pendingMessageText!.isNotEmpty) {
+          } else if (_pendingMessageText != null &&
+              _pendingMessageText!.isNotEmpty) {
             _createNewChatTokenAndSendPending();
           } else if (_pendingCallRoute != null && _pendingCallExtra != null) {
             final route = _pendingCallRoute!;
@@ -796,7 +797,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       builder: (context, state) {
                         List<ChatMessage> messages = [];
                         if (state is ChatUpdatedState) {
-                          messages = state.messages[widget.id] ?? [];
+                          final activeRoomId = state.activeRoomId;
+                          if (activeRoomId != null &&
+                              state.messages.containsKey(activeRoomId)) {
+                            messages = state.messages[activeRoomId]!;
+                          } else {
+                            messages = state.messages[widget.id] ??
+                                (_firebaseUid != null
+                                    ? state.messages[_firebaseUid!]
+                                    : null) ??
+                                [];
+                          }
                         }
 
                         if (messages.isEmpty) {
@@ -825,17 +836,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                     color: AppColors.primary,
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 14),
-                                  child: Text(
-                                    'Characters Remaining: $_remainingCharacters | Free Photos: $_freeAttachments | Extra Photos: $_extraAttachments',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 16),
+                                const SizedBox(height: 16),
                                 Text(
                                   'Start a conversation with\n${widget.name}',
                                   textAlign: TextAlign.center,
@@ -888,21 +889,41 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   }
 
   Widget _buildGlassHeader(BuildContext context) {
-    final isAstrologer = _isUserAstrologer;
-
     return BlocBuilder<AstrologersBloc, AstrologersState>(
       builder: (context, astroState) {
-        String? avatarUrl = widget.avatarUrl;
-        if (!isAstrologer &&
-            (avatarUrl == null || avatarUrl.isEmpty) &&
-            astroState is AstrologersFollowingState) {
+        String? avatarUrl;
+        bool isOnline = false;
+
+        // 1. Try finding astrologer's details from AstrologersBloc state
+        if (astroState is AstrologersFollowingState) {
           try {
             final astro = astroState.astrologers.firstWhere(
-              (a) => a['id'] == widget.id,
+              (a) =>
+                  a['id']?.toString() == widget.id.toString() ||
+                  a['firebase_uid']?.toString() == widget.id.toString() ||
+                  (_firebaseUid != null &&
+                      a['firebase_uid']?.toString() == _firebaseUid),
             );
-            avatarUrl = astro['avatar_url'];
+            if (astro['avatar_url'] != null &&
+                astro['avatar_url'].toString().isNotEmpty) {
+              avatarUrl = astro['avatar_url']?.toString();
+            }
+            if (astro['is_online'] != null) {
+              isOnline = astro['is_online'] == true ||
+                  astro['is_online'].toString() == 'true';
+            }
           } catch (_) {}
         }
+
+        // 2. Cascade fallback -> _otherAvatarUrl -> widget.avatarUrl
+        final displayAvatar = (avatarUrl != null && avatarUrl.isNotEmpty)
+            ? avatarUrl
+            : ((_otherAvatarUrl != null && _otherAvatarUrl!.isNotEmpty)
+                ? _otherAvatarUrl
+                : widget.avatarUrl);
+
+        final hasValidAvatar =
+            displayAvatar != null && displayAvatar.isNotEmpty;
 
         return ClipRRect(
           child: BackdropFilter(
@@ -965,11 +986,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                     child: CircleAvatar(
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                      backgroundImage:
-                          (_otherAvatarUrl != null && _otherAvatarUrl!.isNotEmpty)
-                          ? NetworkImage(_otherAvatarUrl!)
+                      backgroundImage: hasValidAvatar
+                          ? NetworkImage(displayAvatar!)
                           : null,
-                      child: (_otherAvatarUrl == null || _otherAvatarUrl!.isEmpty)
+                      child: !hasValidAvatar
                           ? Text(
                               _getInitials(widget.name),
                               style: const TextStyle(
@@ -998,16 +1018,20 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF4CAF50),
+                              decoration: BoxDecoration(
+                                color: isOnline
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.grey,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              isAstrologer ? 'Online' : 'Online · ₹5/msg',
+                              isOnline ? 'Online · ₹5/msg' : 'Offline · ₹5/msg',
                               style: AppTextStyles.caption.copyWith(
-                                color: const Color(0xFF4CAF50),
+                                color: isOnline
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.grey[600],
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1162,7 +1186,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: Row(
-          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          mainAxisAlignment: isMe
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (!isMe) const SizedBox(width: 4),
@@ -1288,127 +1314,181 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       padding: EdgeInsets.only(
         left: 12,
         right: 12,
-        top: 10,
-        bottom: MediaQuery.of(context).padding.bottom + 10,
+        top: 8,
+        bottom: MediaQuery.of(context).padding.bottom + 8,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (_isUploadingImage)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-              ),
-            )
-          else
-            Container(
-              margin: const EdgeInsets.only(bottom: 2, right: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF5F5F5),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const FaIcon(
-                  FontAwesomeIcons.plus,
-                  color: AppColors.textLight,
-                  size: 24,
-                ),
-                onPressed: _pickAndUploadAttachment,
-                constraints: const BoxConstraints(minWidth: 42, minHeight: 42),
+          // Sleek capsule counter bar placed right above the chat input
+          Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFBF2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
               ),
             ),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5F5),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.transparent),
-              ),
-              child: TextField(
-                controller: _messageController,
-                onSubmitted: (_) => _sendMessage(),
-                maxLines: 4,
-                minLines: 1,
-                textInputAction: TextInputAction.send,
-                style: const TextStyle(fontSize: 15, fontFamily: 'Poppins'),
-                decoration: InputDecoration(
-                  hintText: 'Type a message...',
-                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.spellcheck_rounded,
+                  size: 14,
+                  color: Color(0xFFD4AF37),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Remaining: $_remainingCharacters chars',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
                   ),
-                  border: InputBorder.none,
-                  suffix: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '$_charCount/160',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: _charCount >= 160
-                              ? Colors.redAccent
-                              : Colors.grey,
+                ),
+                const SizedBox(width: 10),
+                Container(width: 1, height: 10, color: Colors.grey.shade300),
+                const SizedBox(width: 10),
+                const Icon(
+                  Icons.photo_library_rounded,
+                  size: 14,
+                  color: Color(0xFFD4AF37),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Photos: $_freeAttachments Free + $_extraAttachments Paid',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (_isUploadingImage)
+                const SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  margin: const EdgeInsets.only(bottom: 2, right: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF5F5F5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const FaIcon(
+                      FontAwesomeIcons.plus,
+                      color: AppColors.textLight,
+                      size: 24,
+                    ),
+                    onPressed: _pickAndUploadAttachment,
+                    constraints: const BoxConstraints(
+                      minWidth: 42,
+                      minHeight: 42,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Colors.transparent),
+                  ),
+                  child: TextField(
+                    controller: _messageController,
+                    onSubmitted: (_) => _sendMessage(),
+                    maxLines: 4,
+                    minLines: 1,
+                    textInputAction: TextInputAction.send,
+                    style: const TextStyle(fontSize: 15, fontFamily: 'Poppins'),
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 14,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: InputBorder.none,
+                      suffixIcon: Padding(
+                        padding: const EdgeInsets.only(right: 12),
+                        child: Text(
+                          '$_charCount/160',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _charCount >= 160
+                                ? Colors.redAccent
+                                : Colors.grey,
+                          ),
                         ),
                       ),
-                      Text(
-                        'Rem: $_remainingCharacters',
-                        style: const TextStyle(fontSize: 9, color: Colors.grey),
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 0,
+                        minHeight: 0,
                       ),
-                      Text(
-                        'Pics: $_freeAttachments + $_extraAttachments',
-                        style: const TextStyle(fontSize: 9, color: Colors.grey),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  margin: const EdgeInsets.only(bottom: 2),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFE4A834), Color(0xFFC79527)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              width: 46,
-              height: 46,
-              margin: const EdgeInsets.only(bottom: 2),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFE4A834), Color(0xFFC79527)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.paperPlane,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
-                ],
-              ),
-              child: const Center(
-                child: FaIcon(
-                  FontAwesomeIcons.paperPlane,
-                  color: Colors.white,
-                  size: 20,
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -1421,7 +1501,8 @@ void _openFullScreenImage(BuildContext context, String imageUrl) {
     context,
     PageRouteBuilder(
       opaque: true,
-      pageBuilder: (context, _, __) => FullScreenImageViewer(imageUrl: imageUrl),
+      pageBuilder: (context, _, __) =>
+          FullScreenImageViewer(imageUrl: imageUrl),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);
       },
@@ -1438,14 +1519,14 @@ Future<void> _downloadImageDirect(BuildContext context, String url) async {
         status = await Permission.storage.request();
       }
 
-      // On Android 13+ (SDK 33+), Permission.storage always returns denied. 
+      // On Android 13+ (SDK 33+), Permission.storage always returns denied.
       // We must request Permission.photos as well.
       if (!status.isGranted) {
         var photosStatus = await Permission.photos.status;
         if (!photosStatus.isGranted) {
           photosStatus = await Permission.photos.request();
         }
-        
+
         // If still denied, request manageExternalStorage permission
         if (!photosStatus.isGranted) {
           var manageStatus = await Permission.manageExternalStorage.status;
@@ -1469,8 +1550,11 @@ Future<void> _downloadImageDirect(BuildContext context, String url) async {
     if (response.statusCode != 200) {
       throw 'HTTP ${response.statusCode}';
     }
-    
-    final bytes = await response.fold<List<int>>([], (list, element) => list..addAll(element));
+
+    final bytes = await response.fold<List<int>>(
+      [],
+      (list, element) => list..addAll(element),
+    );
 
     String savePath = '';
     if (Platform.isAndroid) {
@@ -1493,7 +1577,9 @@ Future<void> _downloadImageDirect(BuildContext context, String url) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Saved directly to Downloads: ${savePath.split('/').last}'),
+          content: Text(
+            'Saved directly to Downloads: ${savePath.split('/').last}',
+          ),
           backgroundColor: const Color(0xFF10B981),
         ),
       );
@@ -1502,7 +1588,9 @@ Future<void> _downloadImageDirect(BuildContext context, String url) async {
     debugPrint('[DirectDownload] Error: $e');
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Direct download failed. Opening in browser...')),
+        SnackBar(
+          content: Text('Direct download failed. Opening in browser...'),
+        ),
       );
       try {
         await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -1541,11 +1629,14 @@ class FullScreenImageViewer extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Action Buttons top bar
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1557,7 +1648,7 @@ class FullScreenImageViewer extends StatelessWidget {
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  
+
                   // Download Button
                   CircleAvatar(
                     backgroundColor: Colors.black54,

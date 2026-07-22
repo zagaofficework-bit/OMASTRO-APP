@@ -23,6 +23,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart' as google_sign_in;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 
@@ -43,6 +44,9 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Register FCM background message handler (works when app is background/terminated)
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
   // Initialize Google Sign-In with Web Client ID for Supabase validation
   await google_sign_in.GoogleSignIn.instance.initialize(
     clientId: dotenv.env['GOOGLE_WEB_CLIENT_ID']!,
@@ -52,7 +56,7 @@ Future<void> main() async {
   // Initialize the global BlocObserver for tracking state changes
   Bloc.observer = AppBlocObserver();
 
-  // Initialize Local Notifications
+  // Initialize Notifications & FCM
   await NotificationService().init();
 
   // Request all necessary permissions for the app

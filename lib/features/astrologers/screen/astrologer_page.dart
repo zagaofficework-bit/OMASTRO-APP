@@ -32,15 +32,35 @@ class _AstrologerPageState extends State<AstrologerPage> {
     context.read<AstrologersBloc>().add(LoadAstrologers());
   }
 
+  @override
+  void didUpdateWidget(AstrologerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialCategory != oldWidget.initialCategory && widget.initialCategory != null) {
+      setState(() {
+        _selectedCategory = widget.initialCategory!;
+      });
+    }
+    if (widget.initialSearchQuery != oldWidget.initialSearchQuery && widget.initialSearchQuery != null) {
+      setState(() {
+        _searchQuery = widget.initialSearchQuery!;
+      });
+    }
+  }
+
+  List<String> _extractList(dynamic input) {
+    if (input == null) return [];
+    if (input is List) return input.map((e) => e.toString()).toList();
+    if (input is String) return [input];
+    return [];
+  }
+
   List<Map<String, dynamic>> _getFilteredAstrologers(
     List<Map<String, dynamic>> allAstrologers,
   ) {
     List<Map<String, dynamic>> filtered = allAstrologers;
     if (_selectedCategory != 'All') {
       filtered = filtered.where((astrologer) {
-        final List<String> specialties = List<String>.from(
-          astrologer['categories'] ?? [],
-        );
+        final List<String> specialties = _extractList(astrologer['categories']);
         return specialties.any(
           (s) => s.toLowerCase() == _selectedCategory.toLowerCase(),
         );
@@ -51,10 +71,18 @@ class _AstrologerPageState extends State<AstrologerPage> {
       final query = _searchQuery.trim().toLowerCase();
       filtered = filtered.where((astrologer) {
         final name = (astrologer['name'] ?? '').toString().toLowerCase();
-        final List<String> specialties = List<String>.from(
-          astrologer['categories'] ?? [],
-        );
-        return name.contains(query) || specialties.any((s) => s.toLowerCase().contains(query));
+        final bio = (astrologer['bio'] ?? astrologer['about'] ?? '').toString().toLowerCase();
+        final categories = _extractList(astrologer['categories']);
+        final skills = _extractList(astrologer['skills']);
+        final languages = _extractList(astrologer['languages']);
+
+        final matchesName = name.contains(query);
+        final matchesBio = bio.contains(query);
+        final matchesCategory = categories.any((c) => c.toLowerCase().contains(query));
+        final matchesSkill = skills.any((s) => s.toLowerCase().contains(query));
+        final matchesLang = languages.any((l) => l.toLowerCase().contains(query));
+
+        return matchesName || matchesBio || matchesCategory || matchesSkill || matchesLang;
       }).toList();
     }
     

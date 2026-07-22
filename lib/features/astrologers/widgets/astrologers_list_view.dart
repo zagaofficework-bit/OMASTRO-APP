@@ -92,6 +92,7 @@ class AstrologersListView extends StatelessWidget {
                   '/chat-room',
                   extra: {
                     'id': currentItem['id']?.toString() ?? '',
+                    'firebase_uid': currentItem['firebase_uid']?.toString() ?? '',
                     'name': currentItem['name'],
                     'avatarUrl': currentItem['avatar_url'] ?? '',
                   },

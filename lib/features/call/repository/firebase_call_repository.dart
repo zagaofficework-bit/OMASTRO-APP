@@ -1,15 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class FirebaseCallRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  // Hardcoded fallback map for development in case Supabase has the wrong firebase_uid
-  final Map<String, String> _devFirebaseUidMap = {
-    'Astro Priya': 'DRBaphzzYdYVcLnPfPAhYHynQn93',
-    'Yogini Meera': '4QByl2hM3HZPj2cb0W4mYhXooMo2',
-    'Pandit Ramesh': 'bD5luP4IfnbCU1s0EbRCjSGKWWf1',
-  };
 
   String _astroUid(String id) => 'astro-$id';
 
@@ -17,6 +11,68 @@ class FirebaseCallRepository {
     final list = [uidA, uidB];
     list.sort();
     return list.join('__');
+  }
+
+  /// Resolve the astrologer's real Firebase UID dynamically
+  Future<String> _resolveTargetFirebaseUid(
+      String astrologerId, String? calleeFirebaseUid) async {
+    bool isUuid(String str) => str.length == 36 && str.contains('-');
+
+    // 1. If calleeFirebaseUid is already a valid Firebase UID (not a UUID), return it!
+    if (calleeFirebaseUid != null &&
+        calleeFirebaseUid.isNotEmpty &&
+        !isUuid(calleeFirebaseUid)) {
+      return calleeFirebaseUid;
+    }
+
+    // 2. If astrologerId is a Firebase UID (not a UUID), return it!
+    if (astrologerId.isNotEmpty && !isUuid(astrologerId)) {
+      return astrologerId;
+    }
+
+    final lookupId = isUuid(astrologerId)
+        ? astrologerId
+        : ((calleeFirebaseUid != null && isUuid(calleeFirebaseUid))
+            ? calleeFirebaseUid
+            : '');
+
+    // 3. Query Supabase for firebase_uid by astrologer id (UUID)
+    if (lookupId.isNotEmpty) {
+      try {
+        final res = await Supabase.instance.client
+            .from('astrologers')
+            .select('firebase_uid')
+            .eq('id', lookupId)
+            .maybeSingle();
+
+        final fetchedUid = res?['firebase_uid']?.toString();
+        if (fetchedUid != null && fetchedUid.isNotEmpty) {
+          debugPrint(
+              '[FirebaseCallRepository] Resolved target firebase_uid from Supabase: $fetchedUid');
+          return fetchedUid;
+        }
+      } catch (e) {
+        debugPrint(
+            '[FirebaseCallRepository] Supabase target uid lookup error: $e');
+      }
+    }
+
+    // 4. Query Firestore presence collection for astrologer_id matching lookupId
+    if (lookupId.isNotEmpty) {
+      try {
+        final snap = await _firestore.collection('presence').get();
+        for (final doc in snap.docs) {
+          final data = doc.data();
+          if (data['astrologer_id'] == lookupId || doc.id == lookupId) {
+            return doc.id;
+          }
+        }
+      } catch (_) {}
+    }
+
+    return (calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty)
+        ? calleeFirebaseUid
+        : (astrologerId.isNotEmpty ? astrologerId : _astroUid(astrologerId));
   }
 
   /// Start a call to the astrologer.
@@ -29,12 +85,10 @@ class FirebaseCallRepository {
     String? calleeFirebaseUid,
     required String mode, // 'audio' or 'video'
   }) async {
-    // If Supabase didn't provide a firebase_uid, check our hardcoded map, else fallback
+    final String targetUid =
+        await _resolveTargetFirebaseUid(astrologerId, calleeFirebaseUid);
     final String otherUid =
-        _devFirebaseUidMap[calleeName] ??
-        ((calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty)
-            ? calleeFirebaseUid
-            : _astroUid(astrologerId));
+        targetUid.isNotEmpty ? targetUid : _astroUid(astrologerId);
 
     debugPrint('=== START CALL DEBUG ===');
     debugPrint('calleeName: $calleeName');

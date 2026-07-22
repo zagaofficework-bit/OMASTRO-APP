@@ -142,7 +142,7 @@ class AstrologerListCard extends StatelessWidget {
 
     if (result != null && context.mounted) {
       if (result == 'chat') {
-        context.push('/chat-room', extra: {'id': astrologerId, 'name': name});
+        onChatTap();
       } else if (result == 'call') {
         onCallTap();
       } else if (result == 'video') {

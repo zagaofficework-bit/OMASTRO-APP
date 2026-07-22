@@ -116,6 +116,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         astrologerFirebaseUid: event.astrologerFirebaseUid,
         userAvatar: event.userAvatar,
         astrologerAvatar: event.astrologerAvatar,
+        targetOtherUid: event.targetOtherUid,
       );
 
       debugPrint('[ChatBloc] roomId established: $roomId');

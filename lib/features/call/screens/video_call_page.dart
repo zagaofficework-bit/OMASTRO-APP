@@ -42,9 +42,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   void _startTimer() {
     final authState = context.read<AuthBloc>().state;
+    final currentFirebaseUid = FirebaseAuth.instance.currentUser?.uid;
     final isAstrologer =
         authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+        authState is AstrologerOnboardingRequired ||
+        (widget.astrologer['firebase_uid'] != null &&
+            widget.astrologer['firebase_uid'].toString() == currentFirebaseUid);
 
     double balance = 500.0;
     final walletState = context.read<WalletBloc>().state;

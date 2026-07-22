@@ -29,17 +29,43 @@ class FirebaseChatRepository {
     String? astrologerFirebaseUid,
     String? userAvatar,
     String? astrologerAvatar,
+    String? targetOtherUid,
   }) async {
-    // 1. Use the firebase_uid from Supabase if available
-    // 2. Otherwise fallback to the hardcoded map or the raw astrologerId
-    final otherUid = _devFirebaseUidMap[astrologerName] ??
-        ((astrologerFirebaseUid != null && astrologerFirebaseUid.isNotEmpty)
-            ? astrologerFirebaseUid
-            : _astroUid(astrologerId));
-            
-    final roomId = _roomIdFor(userUid, otherUid);
-    debugPrint('[FirebaseChatRepository] Ensuring chat room exists: $roomId (userUid: $userUid, otherUid: $otherUid)');
-    
+    String clientUid;
+    String astroUid;
+    String clientName;
+    String astroName;
+    String clientAvatar;
+    String astroAvatar;
+
+    if (targetOtherUid != null &&
+        targetOtherUid.isNotEmpty &&
+        targetOtherUid != userUid) {
+      // Called from AstrologerChatRoomPage: userUid is Astrologer, targetOtherUid is Client
+      astroUid = userUid;
+      clientUid = targetOtherUid;
+      astroName = userName;
+      clientName = astrologerName;
+      astroAvatar = astrologerAvatar ?? '';
+      clientAvatar = userAvatar ?? '';
+    } else {
+      // Called from ChatRoomPage: userUid is Client, otherUid is Astrologer
+      clientUid = userUid;
+      astroUid = _devFirebaseUidMap[astrologerName] ??
+          ((astrologerFirebaseUid != null &&
+                  astrologerFirebaseUid.isNotEmpty &&
+                  astrologerFirebaseUid != userUid)
+              ? astrologerFirebaseUid
+              : _astroUid(astrologerId));
+      clientName = userName;
+      astroName = astrologerName;
+      clientAvatar = userAvatar ?? '';
+      astroAvatar = astrologerAvatar ?? '';
+    }
+
+    final roomId = _roomIdFor(clientUid, astroUid);
+    debugPrint('[FirebaseChatRepository] Ensuring chat room exists: $roomId (clientUid: $clientUid, astroUid: $astroUid)');
+
     final ref = _firestore.collection('chats').doc(roomId);
 
     try {
@@ -47,43 +73,44 @@ class FirebaseChatRepository {
       if (!snap.exists) {
         debugPrint('[FirebaseChatRepository] Chat room does not exist, creating new room...');
         await ref.set({
-          'members': [userUid, otherUid],
+          'members': [clientUid, astroUid],
           'memberNames': {
-            userUid: userName,
-            otherUid: astrologerName,
+            clientUid: clientName,
+            astroUid: astroName,
           },
           'memberAvatars': {
-            userUid: userAvatar ?? '',
-            otherUid: astrologerAvatar ?? '',
+            clientUid: clientAvatar,
+            astroUid: astroAvatar,
           },
           'astrologerId': astrologerId,
-          'astrologerFirebaseUid': otherUid,
+          'astrologerFirebaseUid': astroUid,
           'createdAt': FieldValue.serverTimestamp(),
           'lastMessageAt': FieldValue.serverTimestamp(),
           'unread': {
-            userUid: 0,
-            otherUid: 0,
+            clientUid: 0,
+            astroUid: 0,
           },
         });
         debugPrint('[FirebaseChatRepository] Chat room created successfully.');
       } else {
-        debugPrint('[FirebaseChatRepository] Chat room exists, updating names...');
-        // Update names in case they changed
-        await ref.set({
+        debugPrint('[FirebaseChatRepository] Chat room exists, updating names & avatars...');
+        final updates = <String, dynamic>{
           'memberNames': {
-            userUid: userName,
-            otherUid: astrologerName,
+            clientUid: clientName,
+            astroUid: astroName,
           },
-          'memberAvatars': {
-            userUid: userAvatar ?? '',
-            otherUid: astrologerAvatar ?? '',
-          },
-        }, SetOptions(merge: true));
+        };
+
+        final Map<String, dynamic> avatars = {};
+        if (clientAvatar.isNotEmpty) avatars[clientUid] = clientAvatar;
+        if (astroAvatar.isNotEmpty) avatars[astroUid] = astroAvatar;
+        if (avatars.isNotEmpty) updates['memberAvatars'] = avatars;
+
+        await ref.set(updates, SetOptions(merge: true));
 
         final data = snap.data();
-        if (data != null && data['astrologerFirebaseUid'] == null && otherUid.isNotEmpty) {
-          debugPrint('[FirebaseChatRepository] Updating missing astrologerFirebaseUid to $otherUid');
-          await ref.update({'astrologerFirebaseUid': otherUid});
+        if (data != null && data['astrologerFirebaseUid'] == null && astroUid.isNotEmpty) {
+          await ref.update({'astrologerFirebaseUid': astroUid});
         }
       }
     } catch (e) {
@@ -236,8 +263,12 @@ class FirebaseChatRepository {
         currentUnread = (unreadMap[otherUid] as num?)?.toInt() ?? 0;
       }
 
+      final displayLastMessage = trimmed.isNotEmpty
+          ? trimmed
+          : (imageUrl != null ? '📷 Image' : '');
+
       final updateData = <String, dynamic>{
-        'lastMessage': trimmed,
+        'lastMessage': displayLastMessage,
         'lastMessageAt': FieldValue.serverTimestamp(),
         'lastSenderId': senderId,
       };

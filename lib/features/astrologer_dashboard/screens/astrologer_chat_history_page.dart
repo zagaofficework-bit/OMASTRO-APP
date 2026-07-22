@@ -106,7 +106,7 @@ class AstrologerChatHistoryPage extends StatelessWidget {
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
                               onTap: () {
-                                context.push('/chat-room', extra: {
+                                context.push('/astrologer-chat-room', extra: {
                                   'id': astrologerId,
                                   'name': userName,
                                   'otherUid': otherUid,

@@ -26,6 +26,11 @@ class _AppSearchBarState extends State<AppSearchBar> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() {});
   }
 
   @override
@@ -38,6 +43,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -48,7 +54,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
       decoration: const BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Color(0x05000000), // Ultra-subtle 2% shadow to lift the card elegantly
+            color: Color(0x05000000), // Ultra-subtle 2% shadow
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -63,7 +69,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
         style: AppTextStyles.bodyMedium,
         cursorColor: AppColors.primary,
         decoration: InputDecoration(
-          hintText: 'Search astrologers',
+          hintText: 'Search astrologers (Name, Skill, Language...)',
           hintStyle: AppTextStyles.bodySecondary.copyWith(
             color: AppColors.textLight,
           ),
@@ -72,10 +78,24 @@ class _AppSearchBarState extends State<AppSearchBar> {
             color: AppColors.textSecondary,
             size: 20,
           ),
+          suffixIcon: _controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    _controller.clear();
+                    if (widget.onChanged != null) {
+                      widget.onChanged!('');
+                    }
+                  },
+                )
+              : null,
           filled: true,
           fillColor: AppColors.surface,
           contentPadding: const EdgeInsets.symmetric(vertical: 14.0),
-          // Clean capsule borders defined inside our centralized tokens
           border: OutlineInputBorder(
             borderRadius: AppRadius.radiusXl,
             borderSide: const BorderSide(color: AppColors.border, width: 1.0),

@@ -40,12 +40,16 @@ class _ChatsPageState extends State<ChatsPage> {
                         padding: EdgeInsets.only(
                           left: AppSpacing.md,
                           right: AppSpacing.md,
-                          top: MediaQuery.of(context).padding.top + 80 + AppSpacing.md, // offset for header
+                          top:
+                              MediaQuery.of(context).padding.top +
+                              80 +
+                              AppSpacing.md, // offset for header
                           bottom: AppSpacing.md,
                         ),
                         itemCount: activeChats.length,
                         physics: const BouncingScrollPhysics(),
-                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final chat = activeChats[index];
                           return ChatTile(
@@ -57,6 +61,8 @@ class _ChatsPageState extends State<ChatsPage> {
                                   'id': chat.id,
                                   'name': chat.astrologerName,
                                   'otherUid': chat.otherUid,
+                                  'avatarUrl': chat
+                                      .profileImageUrl, // Pass avatarUrl to ChatRoomPage
                                 },
                               );
                             },
@@ -81,7 +87,9 @@ class _ChatsPageState extends State<ChatsPage> {
                         bottom: AppSpacing.md,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.7), // Transparent for blur
+                        color: Colors.white.withValues(
+                          alpha: 0.7,
+                        ), // Transparent for blur
                         border: Border(
                           bottom: BorderSide(
                             color: Colors.black.withValues(alpha: 0.05),
@@ -160,9 +168,7 @@ class _ChatsPageState extends State<ChatsPage> {
           const SizedBox(height: 8),
           Text(
             'Chat with an astrologer to seek guidance.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.grey[500],
-            ),
+            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[500]),
           ),
           const SizedBox(height: 32),
           ElevatedButton(

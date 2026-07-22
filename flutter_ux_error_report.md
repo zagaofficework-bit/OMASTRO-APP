@@ -114,3 +114,5 @@ Based on a static analysis of the `OMASTRO-APP` codebase using the UX testing pr
 ✅ **Lists**: `ListView.builder` is used for lists (e.g., `AstrologersListView`, `ChatRoomPage`), ensuring good performance with lazy loading.
 ✅ **Forms**: Appropriate `keyboardType` (like `TextInputType.phone` or `.number`) are mapped correctly to fields.
 ✅ **UI**: `SafeArea` is consistently used across almost all Scaffolds.
+
+

@@ -22,6 +22,7 @@ import '../features/wallet/screen/transaction_history_page.dart';
 import '../features/profile/screen/consultation_history_page.dart';
 import '../features/profile/screen/support_page.dart';
 import '../features/chat/screens/chat_room_page.dart';
+import '../features/chat/screens/astrologer_chat_room_page.dart';
 import '../features/call/screens/video_call_page.dart';
 import '../features/profile/screen/edit_profile_page.dart';
 import '../features/profile/screen/my_details_page.dart';
@@ -101,8 +102,16 @@ final appRouter = GoRouter(
       return '/astrologer-onboarding';
     }
 
+    if (isAstrologer && location == '/chat-room') {
+      return '/astrologer-chat-room';
+    }
+
+    if (!isAstrologer && location == '/astrologer-chat-room') {
+      return '/chat-room';
+    }
+
     // Authenticated astrologer trying to access user pages → redirect to astrologer home
-    if (isAstrologer && !isAstrologerRoute && !isGoingToLogin && location != '/chat-room' && location != '/live-call' && location != '/video-call') {
+    if (isAstrologer && !isAstrologerRoute && !isGoingToLogin && location != '/astrologer-chat-room' && location != '/live-call' && location != '/video-call') {
       return '/astrologer-home';
     }
 
@@ -137,6 +146,18 @@ final appRouter = GoRouter(
         final params = state.extra as Map<String, dynamic>;
         return ChatRoomPage(
           id: params['id']!, 
+          name: params['name']!,
+          otherUid: params['otherUid'],
+          avatarUrl: params['avatarUrl'],
+        );
+      },
+    ),
+    GoRoute(
+      path: '/astrologer-chat-room',
+      builder: (context, state) {
+        final params = state.extra as Map<String, dynamic>;
+        return AstrologerChatRoomPage(
+          id: params['id']!,
           name: params['name']!,
           otherUid: params['otherUid'],
           avatarUrl: params['avatarUrl'],

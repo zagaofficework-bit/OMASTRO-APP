@@ -32,6 +32,7 @@ class OpenChatRoomEvent extends ChatEvent {
   final String? astrologerFirebaseUid;
   final String? userAvatar;
   final String? astrologerAvatar;
+  final String? targetOtherUid;
   
   const OpenChatRoomEvent({
     required this.astrologerId,
@@ -39,10 +40,18 @@ class OpenChatRoomEvent extends ChatEvent {
     this.astrologerFirebaseUid,
     this.userAvatar,
     this.astrologerAvatar,
+    this.targetOtherUid,
   });
 
   @override
-  List<Object?> get props => [astrologerId, astrologerName, astrologerFirebaseUid, userAvatar, astrologerAvatar];
+  List<Object?> get props => [
+        astrologerId,
+        astrologerName,
+        astrologerFirebaseUid,
+        userAvatar,
+        astrologerAvatar,
+        targetOtherUid,
+      ];
 }
 
 class CloseChatRoomEvent extends ChatEvent {}

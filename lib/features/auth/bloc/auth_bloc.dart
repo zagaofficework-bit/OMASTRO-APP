@@ -56,11 +56,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     try {
       final client = supabase.Supabase.instance.client;
-      final res = await client
+      var res = await client
           .from('astrologers')
-          .select('id, name, chat_rate, call_rate, video_rate, bio')
+          .select('id, name, chat_rate, call_rate, video_rate, bio, firebase_uid')
           .eq('firebase_uid', currentUser.uid)
           .maybeSingle();
+
+      if (res == null && currentUser.email != null && currentUser.email!.isNotEmpty) {
+        res = await client
+            .from('astrologers')
+            .select('id, name, chat_rate, call_rate, video_rate, bio, firebase_uid')
+            .eq('email', currentUser.email!)
+            .maybeSingle();
+
+        if (res != null) {
+          try {
+            await client
+                .from('astrologers')
+                .update({'firebase_uid': currentUser.uid})
+                .eq('id', res['id']);
+          } catch (_) {}
+        }
+      }
 
       if (res != null) {
         final chatRate = (res['chat_rate'] as num?)?.toDouble() ?? 0;
@@ -347,21 +364,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       debugPrint('[AuthBloc] Astrologer Firebase sign-in success: ${firebaseUser.uid}');
 
-      // 2. Sign in with Supabase (mirror account)
+      // 2. Sign in with Supabase (mirror account) - wrapped in try/catch to avoid 500 trigger blocking
       try {
         await supabase.Supabase.instance.client.auth.signInWithPassword(
           email: event.email,
           password: event.password,
         );
-      } on supabase.AuthException catch (e) {
-        if (e.message.contains('Invalid login credentials') || e.statusCode == 400) {
-          // First time: create Supabase auth account
+      } catch (e) {
+        debugPrint('[AuthBloc] Supabase Auth sign-in warning (proceeding with Firebase): $e');
+        try {
           await supabase.Supabase.instance.client.auth.signUp(
             email: event.email,
             password: event.password,
           );
-        } else {
-          rethrow;
+        } catch (signUpErr) {
+          debugPrint('[AuthBloc] Supabase Auth sign-up warning: $signUpErr');
         }
       }
 
@@ -369,6 +386,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final astrologerRow = await _findOrCreateAstrologerRow(
         firebaseUid: firebaseUser.uid,
         name: firebaseUser.displayName ?? event.email.split('@').first,
+        email: event.email,
       );
 
       _initZego(firebaseUser);
@@ -419,16 +437,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           email: event.email,
           password: event.password,
         );
-      } on supabase.AuthException catch (e) {
-        // If account already exists, just sign in
-        if (e.statusCode == 400) {
-          await supabase.Supabase.instance.client.auth.signInWithPassword(
-            email: event.email,
-            password: event.password,
-          );
-        } else {
-          rethrow;
-        }
+      } catch (e) {
+        debugPrint('[AuthBloc] Supabase Auth sign-up warning: $e');
       }
 
       // 3. Insert astrologer row
@@ -463,15 +473,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  /// Find astrologer row by firebase_uid, or create one if missing
+  /// Find astrologer row by firebase_uid or email, or create one if missing
   Future<Map<String, dynamic>> _findOrCreateAstrologerRow({
     required String firebaseUid,
     required String name,
+    String? email,
   }) async {
     final client = supabase.Supabase.instance.client;
 
-    // Try to find existing row
-    final existing = await client
+    // 1. Try to find existing row by firebase_uid
+    var existing = await client
         .from('astrologers')
         .select()
         .eq('firebase_uid', firebaseUid)
@@ -479,7 +490,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     if (existing != null) return existing;
 
-    // Not found — create a new row
+    // 2. Try to find existing row by email
+    if (email != null && email.isNotEmpty) {
+      try {
+        existing = await client
+            .from('astrologers')
+            .select()
+            .eq('email', email)
+            .maybeSingle();
+
+        if (existing != null) {
+          try {
+            await client
+                .from('astrologers')
+                .update({'firebase_uid': firebaseUid})
+                .eq('id', existing['id']);
+            existing['firebase_uid'] = firebaseUid;
+          } catch (_) {}
+          return existing;
+        }
+      } catch (_) {}
+    }
+
+    // 3. Not found — create a new row
     debugPrint('[AuthBloc] No astrologer row found for firebase_uid=$firebaseUid, creating...');
     final inserted = await client
         .from('astrologers')

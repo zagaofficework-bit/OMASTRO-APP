@@ -47,9 +47,12 @@ class _LiveCallPageState extends State<LiveCallPage> {
 
   void _startTimer() {
     final authState = context.read<AuthBloc>().state;
+    final currentFirebaseUid = FirebaseAuth.instance.currentUser?.uid;
     final isAstrologer =
         authState is AuthenticatedAsAstrologer ||
-        authState is AstrologerOnboardingRequired;
+        authState is AstrologerOnboardingRequired ||
+        (widget.astrologer['firebase_uid'] != null &&
+            widget.astrologer['firebase_uid'].toString() == currentFirebaseUid);
 
     double balance = 500.0; // fallback
     final walletState = context.read<WalletBloc>().state;
