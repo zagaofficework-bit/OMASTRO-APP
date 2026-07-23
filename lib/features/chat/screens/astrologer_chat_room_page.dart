@@ -65,6 +65,10 @@ class _AstrologerChatRoomPageState extends State<AstrologerChatRoomPage> {
     final clientUid = widget.otherUid;
     if (clientUid == null || clientUid.isEmpty) return;
 
+    // Check if clientUid is a valid UUID format before querying profiles table
+    final isUuid = clientUid.length == 36 && clientUid.contains('-');
+    if (!isUuid) return;
+
     try {
       final res = await Supabase.instance.client
           .from('profiles')

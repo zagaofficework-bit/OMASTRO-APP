@@ -71,7 +71,9 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   void _stopTimer() {
-    _billingEngine.add(StopBillingEvent());
+    if (!_billingEngine.isClosed) {
+      _billingEngine.add(StopBillingEvent());
+    }
   }
 
   Future<bool> _showAntiGravityDialog() async {
@@ -189,7 +191,6 @@ class _LiveCallPageState extends State<LiveCallPage> {
   @override
   void dispose() {
     _stopTimer();
-    _billingEngine.close();
     super.dispose();
   }
 
@@ -240,7 +241,13 @@ class _LiveCallPageState extends State<LiveCallPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            LiveCallBackButton(onTap: _safeExit),
+            LiveCallBackButton(onTap: () async {
+              final shouldEnd = await _showAntiGravityDialog();
+              if (shouldEnd) {
+                if (_callId != null) await _callRepo.endCall(_callId!);
+                _safeExit();
+              }
+            }),
             const SizedBox(width: 68), // Spacer
           ],
         ),
@@ -297,10 +304,11 @@ class _LiveCallPageState extends State<LiveCallPage> {
               const SizedBox(width: 20),
               LiveCallDisconnectButton(
                 onTap: () async {
-                  if (_callId != null) {
-                    await _callRepo.endCall(_callId!);
+                  final shouldEnd = await _showAntiGravityDialog();
+                  if (shouldEnd) {
+                    if (_callId != null) await _callRepo.endCall(_callId!);
+                    _safeExit();
                   }
-                  _safeExit();
                 },
               ),
             ],
@@ -398,40 +406,37 @@ class _LiveCallPageState extends State<LiveCallPage> {
             });
           }
         }
-
         return Scaffold(
-          body: Stack(
-            children: [
-              if (!isConnecting) zegoCall,
-              if (isConnecting)
-                LiveCallBackground(
-                  child: SafeArea(
+            body: Stack(
+              children: [
+                if (!isConnecting) zegoCall,
+                if (isConnecting)
+                  LiveCallBackground(
+                    child: SafeArea(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          buildTopBar(),
+                          buildCenter(true),
+                          buildBottom(),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  SafeArea(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         buildTopBar(),
-                        buildCenter(true),
-                        buildBottom(),
+                        IgnorePointer(child: buildCenter(false)),
+                        const Spacer(),
                       ],
                     ),
                   ),
-                )
-              else
-                SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      buildTopBar(),
-                      // For audio calls, let's also keep our center avatar so it doesn't look empty!
-                      // Zego's audio UI is just dark anyway. We can pass IgnorePointer so we can still tap Zego buttons if needed
-                      IgnorePointer(child: buildCenter(false)),
-                      const Spacer(),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        );
+              ],
+            ),
+          );
       },
     ),
     );

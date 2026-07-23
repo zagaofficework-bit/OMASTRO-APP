@@ -19,6 +19,9 @@ import 'features/astrologer_dashboard/bloc/astrologer_dashboard_bloc.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'features/call/widgets/incoming_call_listener.dart';
 
+import 'package:omastro/core/utils/firestore_sync_helper.dart';
+import 'package:omastro/core/services/background_notification_service.dart';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -43,6 +46,12 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Sync astrologers from Supabase to Firestore asynchronously
+  FirestoreSyncHelper.syncAstrologersToFirestore();
+
+  // Initialize background notification service
+  await initBackgroundNotificationService();
 
   // Register FCM background message handler (works when app is background/terminated)
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

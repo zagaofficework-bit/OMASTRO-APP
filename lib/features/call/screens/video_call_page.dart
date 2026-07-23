@@ -160,7 +160,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
   @override
   void dispose() {
     _stopTimer();
-    _billingEngine.close();
     super.dispose();
   }
 
@@ -186,6 +185,30 @@ class _VideoCallPageState extends State<VideoCallPage> {
     final String astrologerId =
         widget.astrologer['id']?.toString() ?? 'unknown';
     final String? firebaseUid = widget.astrologer['firebase_uid']?.toString();
+
+    final authState = context.read<AuthBloc>().state;
+    final isAstrologer = authState is AuthenticatedAsAstrologer ||
+        authState is AstrologerOnboardingRequired;
+
+    // Real-time online status check on the presence collection (only if caller is client)
+    if (!isAstrologer && firebaseUid != null && firebaseUid.isNotEmpty) {
+      try {
+        final presenceDoc = await FirebaseFirestore.instance
+            .collection('presence')
+            .doc(firebaseUid)
+            .get();
+        final isOnline = presenceDoc.data()?['is_online'] == true;
+        if (!isOnline) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$astrologerName is currently offline.')),
+            );
+            Navigator.of(context).pop();
+          }
+          return;
+        }
+      } catch (_) {}
+    }
 
     try {
       final callId = await _callRepo.startCall(
@@ -243,7 +266,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
     final user = FirebaseAuth.instance.currentUser;
     final String userID =
-        '${user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}'}_flutter';
+        user?.uid ?? 'guest_${DateTime.now().millisecondsSinceEpoch}';
     final String userName = user?.displayName ?? 'Guest';
 
     Widget buildTopBar(bool isConnecting) {
@@ -255,7 +278,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               GestureDetector(
-                onTap: _safeExit,
+                onTap: () async {
+                  final shouldEnd = await _showAntiGravityDialog();
+                  if (shouldEnd) {
+                    if (_callId != null) await _callRepo.endCall(_callId!);
+                    _safeExit();
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -422,10 +451,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
               const SizedBox(width: 14),
               GestureDetector(
                 onTap: () async {
-                  if (_callId != null) {
-                    await _callRepo.endCall(_callId!);
+                  final shouldEnd = await _showAntiGravityDialog();
+                  if (shouldEnd) {
+                    if (_callId != null) await _callRepo.endCall(_callId!);
+                    _safeExit();
                   }
-                  _safeExit();
                 },
                 child: Container(
                   width: 56,
@@ -549,33 +579,33 @@ class _VideoCallPageState extends State<VideoCallPage> {
         }
 
         return Scaffold(
-          backgroundColor: isConnecting
-              ? AppColors.darkBackground
-              : Colors.black,
-          body: SafeArea(
-            child: Stack(
-              children: [
-                if (!isConnecting) zegoCall, // Zego renders below our Top Bar
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  right: 16,
-                  child: buildTopBar(isConnecting),
-                ),
-
-                if (isConnecting) ...[
-                  buildConnectingCenter(),
+            backgroundColor: isConnecting
+                ? AppColors.darkBackground
+                : Colors.black,
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  if (!isConnecting) zegoCall, // Zego renders below our Top Bar
                   Positioned(
-                    bottom: 24,
+                    top: 16,
                     left: 16,
                     right: 16,
-                    child: buildConnectingBottom(),
+                    child: buildTopBar(isConnecting),
                   ),
+
+                  if (isConnecting) ...[
+                    buildConnectingCenter(),
+                    Positioned(
+                      bottom: 24,
+                      left: 16,
+                      right: 16,
+                      child: buildConnectingBottom(),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        );
+          );
       },
     ),
     );

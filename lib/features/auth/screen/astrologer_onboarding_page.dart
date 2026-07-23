@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:omastro/core/utils/firestore_sync_helper.dart';
+import 'package:omastro/core/services/presence_service.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_state.dart';
 import '../bloc/auth_event.dart';
@@ -97,16 +99,16 @@ class _AstrologerOnboardingPageState extends State<AstrologerOnboardingPage> {
               // ── Personal Details Section ──
               _sectionHeader('Personal Details', Icons.person_outline),
               const SizedBox(height: 12),
-              _buildTextField(_nameController, 'Full Name', Icons.badge_outlined, required: true),
+              _buildTextField(_nameController, 'Full Name', Icons.badge_outlined, isRequired: true),
               const SizedBox(height: 14),
-              _buildTextField(_bioController, 'Bio / About You', Icons.description_outlined, maxLines: 3, required: true),
+              _buildTextField(_bioController, 'Bio / About You', Icons.description_outlined, maxLines: 3, isRequired: true),
               const SizedBox(height: 14),
               _buildTextField(
                 _experienceController,
                 'Experience (Years)',
                 Icons.work_history_outlined,
                 keyboardType: TextInputType.number,
-                required: true,
+                isRequired: true,
               ),
               const SizedBox(height: 24),
 
@@ -219,13 +221,13 @@ class _AstrologerOnboardingPageState extends State<AstrologerOnboardingPage> {
     IconData icon, {
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
-    bool required = false,
+    bool isRequired = false,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      validator: required
+      validator: isRequired
           ? (val) => (val == null || val.trim().isEmpty) ? 'Required' : null
           : null,
       decoration: InputDecoration(
@@ -391,8 +393,26 @@ class _AstrologerOnboardingPageState extends State<AstrologerOnboardingPage> {
             'call_rate': callRate,
             'video_rate': videoRate,
             'price_per_minute': callRate, // Legacy field, use call_rate
+            'is_online': true, // Go online immediately!
           })
           .eq('id', astrologerId);
+
+      // Set online presence in Firestore as well
+      final firebaseUid = authState is AstrologerOnboardingRequired ? authState.firebaseUid : '';
+      if (firebaseUid.isNotEmpty) {
+        try {
+          await PresenceService().setPresence(
+            firebaseUid: firebaseUid,
+            astrologerId: astrologerId,
+            isOnline: true,
+          );
+        } catch (e) {
+          debugPrint('[Onboarding] Error setting presence: $e');
+        }
+      }
+
+      // Synchronize this newly onboarded astrologer to Firestore immediately
+      FirestoreSyncHelper.syncAstrologersToFirestore();
 
       // Transition to authenticated astrologer state
       globalAuthBloc.add(AstrologerSignInRequested(

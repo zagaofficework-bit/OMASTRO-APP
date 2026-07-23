@@ -16,6 +16,22 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
+    val configureProject = { proj: Project ->
+        if (proj.hasProperty("android")) {
+            proj.extensions.configure<com.android.build.gradle.BaseExtension>("android") {
+                compileSdkVersion(36)
+            }
+        }
+    }
+    if (state.executed) {
+        configureProject(this)
+    } else {
+        afterEvaluate {
+            configureProject(this)
+        }
+    }
+}
+subprojects {
     project.evaluationDependsOn(":app")
 }
 

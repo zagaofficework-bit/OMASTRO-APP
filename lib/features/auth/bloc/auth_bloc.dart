@@ -12,7 +12,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit_signaling_plugin/zego_uikit_signaling_plugin.dart';
 import 'package:omastro/app/route.dart';
-import 'package:omastro/core/services/notify_service.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc() : super(AuthLoading()) {
@@ -102,13 +101,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       } else {
         _initZego(currentUser);
-        NotifyService.listenForNotifications();
         emit(Authenticated());
       }
     } catch (e) {
       debugPrint('[AuthBloc] CheckAuthStatus error: $e');
       _initZego(currentUser);
-      NotifyService.listenForNotifications();
       emit(Authenticated());
     }
   }
@@ -222,20 +219,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _initZego(firebase.FirebaseAuth.instance.currentUser!);
       emit(Authenticated());
     } catch (e) {
-      String errorMessage = 'Authentication failed. Please try again.';
-      final errorStr = e.toString();
-      
-      if (errorStr.contains('SocketException') || errorStr.contains('Network') || errorStr.contains('Connection timed out') || errorStr.contains('host-lookup')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (errorStr.contains('canceled') || errorStr.contains('cancelled')) {
-        errorMessage = 'Sign-in was cancelled.';
-      } else if (errorStr.contains('16') || errorStr.contains('reauth failed') || errorStr.contains('DEVELOPER_ERROR')) {
-        errorMessage = 'Google account verification failed. Please verify your internet connection or Google Account settings on this device.';
-      } else if (e is firebase.FirebaseAuthException) {
-        errorMessage = e.message ?? errorMessage;
-      }
-      
-      emit(AuthError(errorMessage));
+      emit(AuthError(_formatAuthError(e)));
     }
   }
 
@@ -273,7 +257,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final state = await completer.future;
       emit(state);
     } catch (e) {
-      emit(AuthError('Failed to send OTP: ${e.toString()}'));
+      emit(AuthError('Failed to send OTP: ${_formatAuthError(e)}'));
     }
   }
 
@@ -344,7 +328,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       _initZego(user);
       emit(Authenticated());
     } catch (e) {
-      emit(AuthError('Verification failed: ${e.toString()}'));
+      emit(AuthError('Verification failed: ${_formatAuthError(e)}'));
     }
   }
 
@@ -412,7 +396,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     } catch (e) {
       debugPrint('[AuthBloc] Astrologer sign-in error: $e');
-      emit(AuthError('Astrologer sign-in failed: ${e.toString()}'));
+      emit(AuthError('Astrologer sign-in failed: ${_formatAuthError(e)}'));
     }
   }
 
@@ -441,10 +425,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         debugPrint('[AuthBloc] Supabase Auth sign-up warning: $e');
       }
 
-      // 3. Insert astrologer row
+      final supabaseUser = supabase.Supabase.instance.client.auth.currentUser;
+      if (supabaseUser == null) {
+        throw Exception('Supabase sign-up returned null user');
+      }
+
+      // Ensure the profile row exists first to satisfy foreign key constraint
+      await supabase.Supabase.instance.client.from('profiles').upsert({
+        'id': supabaseUser.id,
+        'full_name': event.name,
+        'email': event.email,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
+      // 3. Insert astrologer row with matching ID
       final inserted = await supabase.Supabase.instance.client
           .from('astrologers')
           .insert({
+            'id': supabaseUser.id,
             'name': event.name,
             'firebase_uid': firebaseUser.uid,
             'bio': '',
@@ -469,7 +468,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       ));
     } catch (e) {
       debugPrint('[AuthBloc] Astrologer sign-up error: $e');
-      emit(AuthError('Astrologer sign-up failed: ${e.toString()}'));
+      emit(AuthError('Astrologer sign-up failed: ${_formatAuthError(e)}'));
     }
   }
 
@@ -533,6 +532,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         .single();
 
     return inserted;
+  }
+
+  String _formatAuthError(Object error) {
+    final errorStr = error.toString();
+    if (errorStr.contains('invalid-email') || errorStr.contains('badly formatted')) {
+      return 'Invalid email address. Please make sure there are no spaces or invalid characters.';
+    } else if (errorStr.contains('email-already-in-use') || errorStr.contains('23505')) {
+      return 'An account with this email already exists. Please sign in instead.';
+    } else if (errorStr.contains('weak-password')) {
+      return 'Password is too weak. Please use at least 6 characters.';
+    } else if (errorStr.contains('wrong-password') || errorStr.contains('invalid-credential') || errorStr.contains('Invalid login credentials')) {
+      return 'Incorrect email or password. Please try again.';
+    } else if (errorStr.contains('user-not-found')) {
+      return 'No account found with this email. Please sign up.';
+    } else if (errorStr.contains('network-request-failed') || errorStr.contains('SocketException') || errorStr.contains('Network') || errorStr.contains('Connection timed out') || errorStr.contains('host-lookup')) {
+      return 'Network connection error. Please check your internet connection.';
+    } else if (errorStr.contains('16') || errorStr.contains('reauth failed') || errorStr.contains('DEVELOPER_ERROR')) {
+      return 'Account verification failed. Please check your network or account settings.';
+    } else if (errorStr.contains('canceled') || errorStr.contains('cancelled')) {
+      return 'Sign-in was cancelled.';
+    } else if (errorStr.contains('PostgrestException') || errorStr.contains('foreign key constraint')) {
+      return 'Database synchronization error. Please contact support or try again later.';
+    }
+    
+    if (error is firebase.FirebaseAuthException) {
+      return error.message ?? errorStr;
+    }
+    return errorStr.replaceFirst('Exception: ', '').replaceFirst('Exception', '');
   }
 }
 

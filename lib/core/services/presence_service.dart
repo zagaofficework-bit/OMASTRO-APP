@@ -60,15 +60,16 @@ class PresenceService {
       if (astrologerId.isNotEmpty) {
         final col = isUuid ? 'id' : 'firebase_uid';
         try {
-          await _supabase.from('astrologers').update({
-            'is_online': isOnline,
-            'last_seen': nowIso,
-          }).eq(col, astrologerId);
+          await _supabase
+              .from('astrologers')
+              .update({'is_online': isOnline, 'last_seen': nowIso})
+              .eq(col, astrologerId);
         } catch (_) {
           try {
-            await _supabase.from('astrologers').update({
-              'is_online': isOnline,
-            }).eq(col, astrologerId);
+            await _supabase
+                .from('astrologers')
+                .update({'is_online': isOnline})
+                .eq(col, astrologerId);
           } catch (e) {
             debugPrint('[PresenceService] Supabase update error ($col): $e');
           }
@@ -77,22 +78,27 @@ class PresenceService {
 
       if (firebaseUid.isNotEmpty) {
         try {
-          await _supabase.from('astrologers').update({
-            'is_online': isOnline,
-            'last_seen': nowIso,
-          }).eq('firebase_uid', firebaseUid);
+          await _supabase
+              .from('astrologers')
+              .update({'is_online': isOnline, 'last_seen': nowIso})
+              .eq('firebase_uid', firebaseUid);
         } catch (_) {
           try {
-            await _supabase.from('astrologers').update({
-              'is_online': isOnline,
-            }).eq('firebase_uid', firebaseUid);
+            await _supabase
+                .from('astrologers')
+                .update({'is_online': isOnline})
+                .eq('firebase_uid', firebaseUid);
           } catch (e) {
-            debugPrint('[PresenceService] Supabase update error (firebase_uid): $e');
+            debugPrint(
+              '[PresenceService] Supabase update error (firebase_uid): $e',
+            );
           }
         }
       }
 
-      debugPrint('[PresenceService] Synced presence to: $isOnline for astro $astrologerId in Firebase & Supabase');
+      debugPrint(
+        '[PresenceService] Synced presence to: $isOnline for astro $astrologerId in Firebase & Supabase',
+      );
 
       if (isOnline) {
         _startHeartbeat(firebaseUid, astrologerId);
@@ -106,7 +112,9 @@ class PresenceService {
 
   void _startHeartbeat(String firebaseUid, String astrologerId) {
     _stopHeartbeat();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (timer) async {
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (
+      timer,
+    ) async {
       try {
         final nowIso = DateTime.now().toIso8601String();
         final presencePayload = {
@@ -126,22 +134,26 @@ class PresenceService {
         }
 
         if (astrologerId.isNotEmpty) {
-          final isUuid = astrologerId.length == 36 && astrologerId.contains('-');
+          final isUuid =
+              astrologerId.length == 36 && astrologerId.contains('-');
           final col = isUuid ? 'id' : 'firebase_uid';
           try {
-            await _supabase.from('astrologers').update({
-              'is_online': true,
-              'last_seen': nowIso,
-            }).eq(col, astrologerId);
+            await _supabase
+                .from('astrologers')
+                .update({'is_online': true, 'last_seen': nowIso})
+                .eq(col, astrologerId);
           } catch (_) {
             try {
-              await _supabase.from('astrologers').update({
-                'is_online': true,
-              }).eq(col, astrologerId);
+              await _supabase
+                  .from('astrologers')
+                  .update({'is_online': true})
+                  .eq(col, astrologerId);
             } catch (_) {}
           }
         }
-        debugPrint('[PresenceService] Heartbeat ping sent (Firebase & Supabase).');
+        debugPrint(
+          '[PresenceService] Heartbeat ping sent (Firebase & Supabase).',
+        );
       } catch (e) {
         debugPrint('[PresenceService] Heartbeat error: $e');
       }

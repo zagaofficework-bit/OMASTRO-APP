@@ -49,7 +49,12 @@ class AppBottomNavigation extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: AppRadius.radiusRound,
         border: Border.all(
-          color: AppColors.surface.withValues(alpha: 0.40),
+          color: const Color.fromARGB(
+            255,
+            235,
+            226,
+            226,
+          ).withValues(alpha: 0.40),
           width: 1.2,
         ),
         boxShadow: [

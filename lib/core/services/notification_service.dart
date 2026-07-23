@@ -123,7 +123,20 @@ class NotificationService {
     final context = rootNavigatorKey.currentContext;
     if (context == null) return;
 
-    if (data.containsKey('id') && data.containsKey('name')) {
+    if (data['type'] == 'call') {
+      final mode = data['mode'] == 'video' ? 'video' : 'voice';
+      final targetRoute = mode == 'video' ? '/video-call' : '/live-call';
+      
+      final extraPayload = {
+        'astrologer': {
+          'id': data['callerId'] ?? '',
+          'name': data['callerName'] ?? 'Someone',
+        },
+        'incomingCallId': data['callId'],
+      };
+      
+      context.push(targetRoute, extra: extraPayload);
+    } else if (data.containsKey('id') && data.containsKey('name')) {
       final authState = context.read<AuthBloc>().state;
       final isAstrologer = authState is AuthenticatedAsAstrologer ||
           authState is AstrologerOnboardingRequired;

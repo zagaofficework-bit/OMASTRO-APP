@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'connect_modal.dart';
-import '../../../../core/services/notify_service.dart';
 
 import '../../../core/theme/app_colors.dart';
 
@@ -49,76 +48,12 @@ class AstrologerListCard extends StatelessWidget {
         builder: (dialogCtx) => AlertDialog(
           title: const Text('Astrologer Offline'),
           content: Text(
-            '$name is currently offline. Would you like to be notified when they come online?',
+            '$name is currently offline. Please try again later or check other online astrologers.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.pop(dialogCtx);
-                final success = await NotifyService.requestNotification(
-                  astrologerId: astrologerId,
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: success
-                          ? const Color(0xFFFFFBF2)
-                          : const Color(0xFFFFF5F5),
-                      elevation: 6,
-                      margin: const EdgeInsets.only(
-                        bottom: 24,
-                        left: 16,
-                        right: 16,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: success
-                              ? const Color(0xFFD4AF37)
-                              : Colors.redAccent,
-                          width: 1.5,
-                        ),
-                      ),
-                      content: Row(
-                        children: [
-                          Icon(
-                            success
-                                ? Icons.check_circle_rounded
-                                : Icons.error_rounded,
-                            color: success
-                                ? const Color(0xFFD4AF37)
-                                : Colors.redAccent,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              success
-                                  ? 'We will notify you when $name comes online!'
-                                  : 'Failed to register notification request.',
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD4AF37),
-              ),
-              child: const Text('Notify Me'),
+              child: const Text('OK'),
             ),
           ],
         ),

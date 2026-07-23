@@ -167,6 +167,9 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
       if (event.updates.containsKey('experience_years')) {
         firestorePayload['experienceYears'] = event.updates['experience_years'];
       }
+      if (event.updates.containsKey('avatar_url')) {
+        firestorePayload['avatarUrl'] = event.updates['avatar_url'];
+      }
 
       // 3. Update Firestore astrologers collection
       if (current.firebaseUid.isNotEmpty) {
@@ -182,15 +185,21 @@ class AstrologerDashboardBloc extends Bloc<AstrologerDashboardEvent, AstrologerD
             .set(firestorePayload, SetOptions(merge: true));
       }
 
-      // 4. Update Firestore presence collection (name update)
+      // 4. Update Firestore presence collection (name and avatar update)
+      final presenceUpdates = <String, dynamic>{};
       if (event.updates.containsKey('name')) {
-        final nameUpdate = {'name': event.updates['name']};
-        if (current.firebaseUid.isNotEmpty) {
-          await FirebaseFirestore.instance
-              .collection('presence')
-              .doc(current.firebaseUid)
-              .set(nameUpdate, SetOptions(merge: true));
-        }
+        presenceUpdates['name'] = event.updates['name'];
+      }
+      if (event.updates.containsKey('avatar_url')) {
+        presenceUpdates['avatarUrl'] = event.updates['avatar_url'];
+        presenceUpdates['avatar_url'] = event.updates['avatar_url'];
+      }
+
+      if (presenceUpdates.isNotEmpty && current.firebaseUid.isNotEmpty) {
+        await FirebaseFirestore.instance
+            .collection('presence')
+            .doc(current.firebaseUid)
+            .set(presenceUpdates, SetOptions(merge: true));
       }
 
       debugPrint('[AstrologerDashboardBloc] Updated profile in both Supabase & Firestore successfully.');

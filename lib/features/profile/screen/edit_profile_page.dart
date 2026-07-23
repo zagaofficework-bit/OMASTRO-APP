@@ -45,7 +45,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String initialDob = '';
     String initialPhone = '';
     String initialGender = 'Male';
-    
+
     if (state is ProfileLoaded) {
       initialName = state.name;
       initialEmail = state.email;
@@ -54,12 +54,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
       initialGender = state.gender;
       _avatarUrl = state.avatarUrl;
       _isPhoneVerified = _initialPhone.isNotEmpty;
-      _isPhoneLogin = initialEmail.contains('@gmail.com') && initialEmail.startsWith('phone_');
+      _isPhoneLogin =
+          initialEmail.contains('@gmail.com') &&
+          initialEmail.startsWith('phone_');
     }
 
     _nameController = TextEditingController(text: initialName);
     _emailController = TextEditingController(
-      text: (initialEmail.contains('@gmail.com') && initialEmail.startsWith('phone_')) ? '' : initialEmail,
+      text:
+          (initialEmail.contains('@gmail.com') &&
+              initialEmail.startsWith('phone_'))
+          ? ''
+          : initialEmail,
     );
     _dobController = TextEditingController(text: initialDob);
     _phoneController = TextEditingController(
@@ -88,7 +94,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _pickAndUploadImage() async {
     final picker = image_picker.ImagePicker();
-    final pickedFile = await picker.pickImage(source: image_picker.ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+      source: image_picker.ImageSource.gallery,
+    );
 
     if (pickedFile != null) {
       setState(() {
@@ -99,12 +107,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final file = File(pickedFile.path);
         final fileExt = pickedFile.path.split('.').last;
         final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-        
+
         final supabase = Supabase.instance.client;
-        
+
         await supabase.storage.from('avatars').upload(fileName, file);
         final url = supabase.storage.from('avatars').getPublicUrl(fileName);
-        
+
         setState(() {
           _avatarUrl = url;
           _isUploading = false;
@@ -114,9 +122,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _isUploading = false;
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to upload image: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
         }
       }
     }
@@ -173,10 +181,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: Text(
-            'Save changes?',
-            style: AppTextStyles.headingMedium,
-          ),
+          title: Text('Save changes?', style: AppTextStyles.headingMedium),
           content: Text(
             'You have unsaved changes. Do you really want to exit? Save changes first then exit, or discard them.',
             style: AppTextStyles.bodyMedium,
@@ -243,14 +248,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   void _saveChanges() {
-    context.read<ProfileBloc>().add(UpdateProfileEvent(
-      name: _nameController.text,
-      email: _emailController.text,
-      dob: _dobController.text,
-      gender: _selectedGender,
-      phone: _phoneController.text,
-      avatarUrl: _avatarUrl,
-    ));
+    context.read<ProfileBloc>().add(
+      UpdateProfileEvent(
+        name: _nameController.text,
+        email: _emailController.text,
+        dob: _dobController.text,
+        gender: _selectedGender,
+        phone: _phoneController.text,
+        avatarUrl: _avatarUrl,
+      ),
+    );
   }
 
   void _performPop() {
@@ -263,175 +270,191 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    bool needsVerification = !_isPhoneVerified && _phoneController.text.trim().isNotEmpty;
-    bool isEmailEditable = _emailController.text.isEmpty || (_emailController.text.contains('@gmail.com') && _emailController.text.startsWith('phone_'));
+    bool needsVerification =
+        !_isPhoneVerified && _phoneController.text.trim().isNotEmpty;
+    bool isEmailEditable =
+        _emailController.text.isEmpty ||
+        (_emailController.text.contains('@gmail.com') &&
+            _emailController.text.startsWith('phone_'));
 
     return BlocListener<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is ProfileError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
         } else if (state is ProfilePhoneOtpSent) {
           _showOtpDialog(context, state.verificationId);
-        } else if (state is ProfileLoaded && state.phone == _phoneController.text.trim()) {
+        } else if (state is ProfileLoaded &&
+            state.phone == _phoneController.text.trim()) {
           setState(() {
             _initialPhone = state.phone;
             _isPhoneVerified = true;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Phone number verified successfully!')),
+            const SnackBar(
+              content: Text('Phone number verified successfully!'),
+            ),
           );
         }
       },
       child: Scaffold(
-      backgroundColor: AppColors.background, // Premium cream tone base tint
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.sm),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black87),
-            onPressed: _handleBack,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.white,
-              shape: const CircleBorder(),
+        backgroundColor: AppColors.background, // Premium cream tone base tint
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          leading: Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.sm),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black87),
+              onPressed: _handleBack,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                shape: const CircleBorder(),
+              ),
+            ),
+          ),
+          title: Text(
+            'Edit Profile',
+            style: AppTextStyles.displayMedium.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
         ),
-        title: Text(
-          'Edit Profile',
-          style: AppTextStyles.displayMedium.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ),
-      body: PopScope(
-        canPop: false,
-        onPopInvoked: (didPop) async {
-          if (didPop) return;
-          _handleBack();
-        },
-        child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Profile Photo Media Upload Component Node
-              const SizedBox(height: AppSpacing.sm),
-              EditAvatarPicker(
-                name: _nameController.text,
-                avatarUrl: _avatarUrl,
-                isUploading: _isUploading,
-                onTap: _pickAndUploadImage,
+        body: PopScope(
+          canPop: false,
+          onPopInvoked: (didPop) async {
+            if (didPop) return;
+            _handleBack();
+          },
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
               ),
-              const SizedBox(height: AppSpacing.md),
-
-              // 2. Core Profile Form Card Block
-              InfoGroupCard(
-                padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Personal Information',
-                    style: AppTextStyles.headingMedium,
+                  // 1. Profile Photo Media Upload Component Node
+                  const SizedBox(height: AppSpacing.sm),
+                  EditAvatarPicker(
+                    name: _nameController.text,
+                    avatarUrl: _avatarUrl,
+                    isUploading: _isUploading,
+                    onTap: _pickAndUploadImage,
                   ),
                   const SizedBox(height: AppSpacing.md),
 
-                  // Editable Name Parameter Field
-                  EditTextField(
-                    controller: _nameController,
-                    label: 'Full Name',
-                    prefixIcon: Icons.person_outline,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  if (!_isPhoneLogin) ...[
-                    // Protected Read-Only Identity Parameter Field (Wait, email is editable here!)
-                    EditTextField(
-                      controller: _emailController,
-                      label: 'Email Address',
-                      prefixIcon: Icons.mail_outline,
-                      readOnly: !isEmailEditable,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
-
-                  // Interactive Date Context Field Hook
-                  EditTextField(
-                    controller: _dobController,
-                    label: 'Date of Birth',
-                    prefixIcon: Icons.cake_outlined,
-                    readOnly: true, // Forces touch interaction directly to the DatePicker modal
-                    onTap: () => _selectDate(context),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  if (_isPhoneLogin) ...[
-                    // Phone Number Field
-                    EditTextField(
-                      controller: _phoneController,
-                      label: 'Phone Number',
-                      prefixIcon: Icons.phone_outlined,
-                      keyboardType: TextInputType.phone,
-                    ),
-                    if (needsVerification)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: () {
-                            String phone = _phoneController.text.trim();
-                            if (!phone.startsWith('+')) {
-                              phone = '+91$phone'; // Default to Indian country code
-                            }
-                            context.read<ProfileBloc>().add(SendProfilePhoneOtp(phone));
-                          },
-                          icon: const Icon(Icons.verified_user_outlined, size: 16),
-                          label: const Text('Verify Phone Number'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.orange,
-                          ),
-                        ),
-                      )
-                    else
+                  // 2. Core Profile Form Card Block
+                  InfoGroupCard(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    children: [
+                      Text(
+                        'Personal Information',
+                        style: AppTextStyles.headingMedium,
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                  ],
 
-                  // Gender Choice Chips Sub-selection Node
-                  GenderChoiceChips(
-                    selectedGender: _selectedGender,
-                    onGenderSelected: (gender) {
-                      setState(() => _selectedGender = gender);
-                    },
+                      // Editable Name Parameter Field
+                      EditTextField(
+                        controller: _nameController,
+                        label: 'Full Name',
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      if (!_isPhoneLogin) ...[
+                        // Protected Read-Only Identity Parameter Field (Wait, email is editable here!)
+                        EditTextField(
+                          controller: _emailController,
+                          label: 'Email Address',
+                          prefixIcon: Icons.mail_outline,
+                          readOnly: !isEmailEditable,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+
+                      // Interactive Date Context Field Hook
+                      EditTextField(
+                        controller: _dobController,
+                        label: 'Date of Birth',
+                        prefixIcon: Icons.cake_outlined,
+                        readOnly:
+                            true, // Forces touch interaction directly to the DatePicker modal
+                        onTap: () => _selectDate(context),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      if (_isPhoneLogin) ...[
+                        // Phone Number Field
+                        EditTextField(
+                          controller: _phoneController,
+                          label: 'Phone Number',
+                          prefixIcon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                        ),
+                        if (needsVerification)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () {
+                                String phone = _phoneController.text.trim();
+                                if (!phone.startsWith('+')) {
+                                  phone =
+                                      '+91$phone'; // Default to Indian country code
+                                }
+                                context.read<ProfileBloc>().add(
+                                  SendProfilePhoneOtp(phone),
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.verified_user_outlined,
+                                size: 16,
+                              ),
+                              label: const Text('Verify Phone Number'),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.orange,
+                              ),
+                            ),
+                          )
+                        else
+                          const SizedBox(height: AppSpacing.md),
+                      ],
+
+                      // Gender Choice Chips Sub-selection Node
+                      GenderChoiceChips(
+                        selectedGender: _selectedGender,
+                        onGenderSelected: (gender) {
+                          setState(() => _selectedGender = gender);
+                        },
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // 3. Persistent Core Submit Actions Button
+                  PrimarySubmitButton(
+                    label: 'Save Changes',
+                    onPressed: needsVerification
+                        ? null
+                        : () {
+                            _saveChanges();
+                            _performPop();
+                          },
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  const SizedBox(height: AppSpacing.xl),
+                  const SizedBox(
+                    height: AppSpacing.xl,
+                  ), // Extra spacing to ensure bottom navigation bar doesn't overlap content
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-
-              // 3. Persistent Core Submit Actions Button
-              PrimarySubmitButton(
-                label: 'Save Changes',
-                onPressed: needsVerification ? null : () {
-                  _saveChanges();
-                  _performPop();
-                },
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              const SizedBox(height: AppSpacing.xl),
-              const SizedBox(
-                height: AppSpacing.xl,
-              ), // Extra spacing to ensure bottom navigation bar doesn't overlap content
-            ],
+            ),
           ),
         ),
-      ),
-      ),
       ),
     );
   }
@@ -448,9 +471,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             controller: otpController,
             keyboardType: TextInputType.number,
             maxLength: 6,
-            decoration: const InputDecoration(
-              hintText: '6-digit code',
-            ),
+            decoration: const InputDecoration(hintText: '6-digit code'),
           ),
           actions: [
             TextButton(
@@ -462,7 +483,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 final otp = otpController.text.trim();
                 if (otp.length == 6) {
                   Navigator.pop(context);
-                  context.read<ProfileBloc>().add(VerifyProfilePhoneOtp(verificationId, otp));
+                  context.read<ProfileBloc>().add(
+                    VerifyProfilePhoneOtp(verificationId, otp),
+                  );
                 }
               },
               child: const Text('Verify'),

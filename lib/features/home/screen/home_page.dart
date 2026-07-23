@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
     "The divine light within you is brighter than any shadow. Shine without apology.",
     "A quiet moment of meditation today will reveal the cosmic answers you seek.",
     "The universe has your back. Let go of worry and trust the divine flow.",
-    "Your future is written in the stars, but your actions hold the pen."
+    "Your future is written in the stars, but your actions hold the pen.",
   ];
 
   String _currentQuote = '';
@@ -119,225 +119,237 @@ class _HomePageState extends State<HomePage> {
                 constraints: responsive.pageConstraints(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 66),
-                  
-                  // --- Profile Completion Banner ---
-                  _FadeInSlide(
-                    delay: 0,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
-                      ),
-                      child: const ProfileCompletionBanner(),
-                    ),
-                  ),
+                  children: [
+                    const SizedBox(height: 66),
 
-                  // --- 1. Hero Text Layout Block ---
-                  _FadeInSlide(
-                    delay: 1,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF8EE),
-                                  borderRadius: BorderRadius.circular(30),
-                                  border: Border.all(color: const Color(0xFFF1E6D2), width: 1),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.auto_awesome_rounded, size: 10, color: Color(0xFFD97706)),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'WELCOME TO OMASTRO',
-                                      style: TextStyle(
-                                        color: Color(0xFFB45309),
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 9,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Discover Your Path',
-                            style: AppTextStyles.displayLarge02.copyWith(
-                              fontSize: responsive.font(32, min: 28, max: 38),
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'serif',
-                              color: AppColors.textPrimary,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Connect with India\'s finest spiritual guides over secure call or chat.',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: responsive.font(14, min: 12, max: 16),
-                              fontWeight: FontWeight.w500,
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
+                    // --- Profile Completion Banner ---
+                    _FadeInSlide(
+                      delay: 0,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: const ProfileCompletionBanner(),
                       ),
                     ),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 2,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
-                      ),
-                      child: GestureDetector(
-                        onTap: _randomizeQuote,
-                        child: Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFFF8EE), Color(0xFFFDF0D5)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: const Color(0xFFF5E3C3),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFFD97706).withOpacity(0.06),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.auto_awesome_rounded,
-                                          color: Color(0xFFD97706),
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'COSMIC GUIDANCE',
-                                          style: TextStyle(
-                                            color: const Color(0xFFB45309),
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                            letterSpacing: 1.2,
-                                          ),
-                                        ),
-                                      ],
+
+                    // --- 1. Hero Text Layout Block ---
+                    _FadeInSlide(
+                      delay: 1,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF8EE),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: const Color(0xFFF1E6D2),
+                                      width: 1,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      _currentQuote.isNotEmpty ? _currentQuote : 'The stars align to illuminate your path. Seek clarity in career & relationships today.',
-                                      style: const TextStyle(
-                                        color: Color(0xFF451A03),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                        height: 1.4,
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.auto_awesome_rounded,
+                                        size: 10,
+                                        color: Color(0xFFD97706),
                                       ),
-                                    ),
-                                  ],
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'WELCOME TO OMASTRO',
+                                        style: TextStyle(
+                                          color: Color(0xFFB45309),
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 9,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Discover Your Path',
+                              style: AppTextStyles.displayLarge02.copyWith(
+                                fontSize: responsive.font(32, min: 28, max: 38),
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'serif',
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.5,
                               ),
-                              const SizedBox(width: 16),
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFEF3C7),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.dark_mode_rounded,
-                                  color: Color(0xFFD97706),
-                                  size: 28,
-                                ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Connect with India\'s finest spiritual guides over secure call or chat.',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: responsive.font(14, min: 12, max: 16),
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    AppSpacing.heightMd,
+                    _FadeInSlide(
+                      delay: 2,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: GestureDetector(
+                          onTap: _randomizeQuote,
+                          child: Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFF8EE), Color(0xFFFDF0D5)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: const Color(0xFFF5E3C3),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFFD97706,
+                                  ).withOpacity(0.06),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.auto_awesome_rounded,
+                                            color: Color(0xFFD97706),
+                                            size: 16,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'COSMIC GUIDANCE',
+                                            style: TextStyle(
+                                              color: const Color(0xFFB45309),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                              letterSpacing: 1.2,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _currentQuote.isNotEmpty
+                                            ? _currentQuote
+                                            : 'The stars align to illuminate your path. Seek clarity in career & relationships today.',
+                                        style: const TextStyle(
+                                          color: Color(0xFF451A03),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFEF3C7),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.dark_mode_rounded,
+                                    color: Color(0xFFD97706),
+                                    size: 28,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 2,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
+                    AppSpacing.heightMd,
+                    // _FadeInSlide(
+                    //   delay: 2,
+                    //   child: Padding(
+                    //     padding: EdgeInsets.symmetric(
+                    //       horizontal: responsive.horizontalPadding,
+                    //     ),
+                    //     child: const HomeActionButtons(),
+                    //   ),
+                    // ),
+                    AppSpacing.heightMd,
+                    _FadeInSlide(delay: 3, child: const HomeBannerSlider()),
+                    AppSpacing.heightMd,
+                    _FadeInSlide(
+                      delay: 3,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: const HomeCategoryGrid(),
                       ),
-                      child: const HomeActionButtons(),
                     ),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 3,
-                    child: const HomeBannerSlider(),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 3,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
+                    AppSpacing.heightMd,
+                    _FadeInSlide(
+                      delay: 4,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: const OnlineAstrologersSection(),
                       ),
-                      child: const HomeCategoryGrid(),
                     ),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 4,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
+                    AppSpacing.heightMd,
+                    _FadeInSlide(
+                      delay: 4,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: responsive.horizontalPadding,
+                        ),
+                        child: const TopAstrologersSection(),
                       ),
-                      child: const OnlineAstrologersSection(),
                     ),
-                  ),
-                  AppSpacing.heightMd,
-                  _FadeInSlide(
-                    delay: 4,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: responsive.horizontalPadding,
-                      ),
-                      child: const TopAstrologersSection(),
-                    ),
-                  ),
-                  AppSpacing.heightXl,
-                  SizedBox(height: responsive.bottomInset),
-                ],
+                    AppSpacing.heightXl,
+                    SizedBox(height: responsive.bottomInset),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildCategoryChip(BuildContext context, String emoji, String name) {
     return GestureDetector(
@@ -354,7 +366,9 @@ class _HomePageState extends State<HomePage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFD97706).withOpacity(0.03), // Subtle warm amber shadow
+              color: const Color(
+                0xFFD97706,
+              ).withOpacity(0.03), // Subtle warm amber shadow
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -363,10 +377,7 @@ class _HomePageState extends State<HomePage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 14),
-            ),
+            Text(emoji, style: const TextStyle(fontSize: 14)),
             const SizedBox(width: 8),
             Text(
               name,
@@ -387,10 +398,7 @@ class _FadeInSlide extends StatelessWidget {
   final Widget child;
   final int delay;
 
-  const _FadeInSlide({
-    required this.child,
-    this.delay = 0,
-  });
+  const _FadeInSlide({required this.child, this.delay = 0});
 
   @override
   Widget build(BuildContext context) {

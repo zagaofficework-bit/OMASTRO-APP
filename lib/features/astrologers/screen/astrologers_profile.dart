@@ -15,7 +15,6 @@ import '../../reviews/bloc/reviews_event.dart';
 import '../../reviews/bloc/reviews_state.dart';
 import '../../reviews/widgets/write_review_bottom_sheet.dart';
 import '../widgets/connect_modal.dart';
-import '../../../../core/services/notify_service.dart';
 import '../bloc/astrologers_bloc.dart';
 import '../bloc/astrologers_state.dart';
 
@@ -168,6 +167,7 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
             ...widget.astrologerData,
             'name': name,
             'image': widget.astrologerData['imageUrl'] ?? '',
+            'firebase_uid': widget.astrologerData['firebase_uid'] ?? _supabaseAstroData?['firebase_uid'] ?? '',
           },
         );
       } else if (result == 'video') {
@@ -177,6 +177,7 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
             ...widget.astrologerData,
             'name': name,
             'image': widget.astrologerData['imageUrl'] ?? '',
+            'firebase_uid': widget.astrologerData['firebase_uid'] ?? _supabaseAstroData?['firebase_uid'] ?? '',
           },
         );
       }

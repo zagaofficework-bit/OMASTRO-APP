@@ -19,20 +19,39 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
   Future<List<Map<String, dynamic>>>? _historyFuture;
   String? _lastAstroId;
 
-  Future<List<Map<String, dynamic>>> _fetchHistory(String astrologerId) async {
+  Future<List<Map<String, dynamic>>> _fetchHistory(String astrologerId, String firebaseUid) async {
     try {
       final supabase = Supabase.instance.client;
-      // 1. Fetch consultations and earnings
-      final res = await supabase
-          .from('consultations')
-          .select('*, astrologer_earnings(net_amount)')
-          .eq('astrologer_id', astrologerId)
-          .order('created_at', ascending: false);
+      // 1. Fetch consultations using either Supabase ID or Firebase UID to support legacy records
+      var query = supabase.from('consultations').select('*');
+      if (firebaseUid.isNotEmpty && firebaseUid != astrologerId) {
+        query = query.or('astrologer_id.eq.$astrologerId,astrologer_id.eq.$firebaseUid');
+      } else {
+        query = query.eq('astrologer_id', astrologerId);
+      }
       
+      final res = await query.order('created_at', ascending: false);
       final list = List<Map<String, dynamic>>.from(res ?? []);
       if (list.isEmpty) return list;
 
-      // 2. Collect unique user IDs
+      // 2. Fetch earnings separately to avoid PostgREST relationship join issues
+      final consultationIds = list.map((c) => c['id']?.toString()).where((id) => id != null).toList();
+      Map<String, dynamic> earningsMap = {};
+      if (consultationIds.isNotEmpty) {
+        try {
+          final earningsRes = await supabase
+              .from('astrologer_earnings')
+              .select('consultation_id, net_amount')
+              .inFilter('consultation_id', consultationIds);
+          for (var earn in earningsRes ?? []) {
+            earningsMap[earn['consultation_id']?.toString() ?? ''] = earn;
+          }
+        } catch (e) {
+          debugPrint('[AstrologerConsultationHistoryPage] Earnings fetch error: $e');
+        }
+      }
+
+      // 3. Collect unique user IDs
       final userIds = list
           .map((c) => c['user_id']?.toString())
           .where((id) => id != null && id.isNotEmpty)
@@ -40,28 +59,29 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
           .toList();
 
       if (userIds.isNotEmpty) {
-        debugPrint('[AstrologerConsultationHistoryPage] userIds to query: $userIds');
-        
-        final allProfiles = await supabase.from('profiles').select();
-        debugPrint('[AstrologerConsultationHistoryPage] All profiles in DB: $allProfiles');
-
-        // 3. Batch fetch profiles from profiles table
+        // 4. Batch fetch profiles from profiles table
         final profilesRes = await supabase
             .from('profiles')
             .select('id, full_name, avatar_url')
             .inFilter('id', userIds);
-        debugPrint('[AstrologerConsultationHistoryPage] profilesRes response: $profilesRes');
 
         final profileMap = {
           for (var p in profilesRes ?? []) p['id']?.toString(): p
         };
 
-        // 4. Merge profiles into the consultations list
+        // 5. Merge profiles and earnings into the consultations list
         for (var cons in list) {
           final uId = cons['user_id']?.toString();
           if (uId != null) {
             cons['profiles'] = profileMap[uId];
           }
+          final cId = cons['id']?.toString();
+          cons['astrologer_earnings'] = earningsMap[cId];
+        }
+      } else {
+        for (var cons in list) {
+          final cId = cons['id']?.toString();
+          cons['astrologer_earnings'] = earningsMap[cId];
         }
       }
 
@@ -111,9 +131,9 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
           return const Center(child: CircularProgressIndicator(color: accentGold));
         }
 
-        if (_lastAstroId != state.firebaseUid) {
-          _lastAstroId = state.firebaseUid;
-          _historyFuture = _fetchHistory(state.firebaseUid);
+        if (_lastAstroId != state.astrologerId) {
+          _lastAstroId = state.astrologerId;
+          _historyFuture = _fetchHistory(state.astrologerId, state.firebaseUid);
         }
 
         return Column(
@@ -154,7 +174,7 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
                 color: accentGold,
                 onRefresh: () async {
                   setState(() {
-                    _historyFuture = _fetchHistory(state.firebaseUid);
+                    _historyFuture = _fetchHistory(state.astrologerId, state.firebaseUid);
                   });
                 },
                 child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -177,6 +197,12 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
                     final filteredRecords = allRecords.where((cons) {
                       final type = cons['type']?.toString() ?? 'Chat';
                       if (_filter == 'All') return true;
+                      if (_filter == 'Call') {
+                        return type.toLowerCase().contains('call') && !type.toLowerCase().contains('video');
+                      }
+                      if (_filter == 'Video') {
+                        return type.toLowerCase().contains('video');
+                      }
                       return type.toLowerCase() == _filter.toLowerCase();
                     }).toList();
 
@@ -223,12 +249,14 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
 
                           var typeIcon;
                           Color typeColor;
-                          switch (type.toLowerCase()) {
+                           switch (type.toLowerCase()) {
                             case 'call':
+                            case 'audio call':
                               typeIcon = FontAwesomeIcons.phone;
                               typeColor = const Color(0xFF059669);
                               break;
                             case 'video':
+                            case 'video call':
                               typeIcon = FontAwesomeIcons.video;
                               typeColor = const Color(0xFFD97706);
                               break;

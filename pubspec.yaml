@@ -60,6 +60,7 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   animations: ^2.2.0
   font_awesome_flutter: ^11.0.0
+  flutter_background_service: ^5.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

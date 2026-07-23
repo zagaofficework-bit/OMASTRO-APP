@@ -63,6 +63,9 @@ class StopBillingEvent extends BillingEvent {}
 
 // --- Bloc ---
 class BillingEngine extends Bloc<BillingEvent, BillingState> {
+  static final BillingEngine _instance = BillingEngine._internal();
+  factory BillingEngine() => _instance;
+  
   Timer? _timer;
   
   double _perSecondRate = 0.0;
@@ -77,7 +80,7 @@ class BillingEngine extends Bloc<BillingEvent, BillingState> {
   String? _consultationId;
   String _consultationType = 'Call';
 
-  BillingEngine() : super(BillingInitial()) {
+  BillingEngine._internal() : super(BillingInitial()) {
     on<StartBillingEvent>(_onStartBilling);
     on<_TickEvent>(_onTick);
     on<StopBillingEvent>(_onStopBilling);
@@ -200,6 +203,33 @@ class BillingEngine extends Bloc<BillingEvent, BillingState> {
           'net_amount': double.parse(netAmount.toStringAsFixed(2)),
           'status': 'UNPAID',
         });
+
+        // 4. Update astrologer's total_minutes_consulted in the database
+        if (_astrologerId != null && _astrologerId!.isNotEmpty) {
+          try {
+            final isUuid = _astrologerId!.length == 36 && _astrologerId!.contains('-');
+            final col = isUuid ? 'id' : 'firebase_uid';
+            
+            final astroRes = await supabase
+                .from('astrologers')
+                .select('total_minutes_consulted')
+                .eq(col, _astrologerId!)
+                .maybeSingle();
+                
+            if (astroRes != null) {
+              final currentMins = (astroRes['total_minutes_consulted'] as num?)?.toInt() ?? 0;
+              final addedMins = (_durationSeconds / 60.0).ceil();
+              if (addedMins > 0) {
+                await supabase
+                    .from('astrologers')
+                    .update({'total_minutes_consulted': currentMins + addedMins})
+                    .eq(col, _astrologerId!);
+              }
+            }
+          } catch (err) {
+            print('Error updating astrologer consulted minutes: $err');
+          }
+        }
       } catch (e) {
         print('Error saving consultation records: $e');
       }

@@ -40,16 +40,54 @@ class AstrologerDashboardProfilePage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: const Color(0xFFFDF6EC),
-                      backgroundImage: state.avatarUrl != null ? NetworkImage(state.avatarUrl!) : null,
-                      child: state.avatarUrl == null
-                          ? Text(
-                              state.name.isNotEmpty ? state.name[0].toUpperCase() : '?',
-                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: accentGold),
-                            )
-                          : null,
+                    GestureDetector(
+                      onTap: () {
+                        if (state.avatarUrl != null && state.avatarUrl!.isNotEmpty) {
+                          showDialog(
+                            context: context,
+                            builder: (dialogCtx) => Dialog(
+                              backgroundColor: Colors.black,
+                              insetPadding: EdgeInsets.zero,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  InteractiveViewer(
+                                    child: Image.network(state.avatarUrl!, fit: BoxFit.contain),
+                                  ),
+                                  Positioned(
+                                    top: 40,
+                                    left: 20,
+                                    child: Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.close, color: Colors.white, size: 28),
+                                          onPressed: () => Navigator.pop(dialogCtx),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          state.name,
+                                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundColor: const Color(0xFFFDF6EC),
+                        backgroundImage: state.avatarUrl != null ? NetworkImage(state.avatarUrl!) : null,
+                        child: state.avatarUrl == null
+                            ? Text(
+                                state.name.isNotEmpty ? state.name[0].toUpperCase() : '?',
+                                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: accentGold),
+                              )
+                            : null,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Text(

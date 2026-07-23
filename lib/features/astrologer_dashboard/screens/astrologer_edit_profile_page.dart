@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image_picker/image_picker.dart' as image_picker;
 import '../bloc/astrologer_dashboard_bloc.dart';
 import '../bloc/astrologer_dashboard_event.dart';
 import '../bloc/astrologer_dashboard_state.dart';
@@ -10,7 +12,8 @@ class AstrologerEditProfilePage extends StatefulWidget {
   const AstrologerEditProfilePage({super.key});
 
   @override
-  State<AstrologerEditProfilePage> createState() => _AstrologerEditProfilePageState();
+  State<AstrologerEditProfilePage> createState() =>
+      _AstrologerEditProfilePageState();
 }
 
 class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
@@ -27,10 +30,45 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
   List<String> _selectedCategories = [];
   bool _isSubmitting = false;
   bool _isInitialized = false;
+  String? _avatarUrl;
+  bool _isUploading = false;
 
-  static const _allLanguages = ['Hindi', 'English', 'Tamil', 'Telugu', 'Bengali', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi'];
-  static const _allSkills = ['Vedic Astrology', 'Numerology', 'Tarot', 'Palmistry', 'Vastu', 'KP Astrology', 'Prashna Kundali', 'Face Reading', 'Reiki', 'Feng Shui'];
-  static const _allCategories = ['Love', 'Career', 'Finance', 'Health', 'Marriage', 'Family', 'Education', 'Business', 'Legal', 'Spiritual'];
+  static const _allLanguages = [
+    'Hindi',
+    'English',
+    'Tamil',
+    'Telugu',
+    'Bengali',
+    'Marathi',
+    'Gujarati',
+    'Kannada',
+    'Malayalam',
+    'Punjabi',
+  ];
+  static const _allSkills = [
+    'Vedic Astrology',
+    'Numerology',
+    'Tarot',
+    'Palmistry',
+    'Vastu',
+    'KP Astrology',
+    'Prashna Kundali',
+    'Face Reading',
+    'Reiki',
+    'Feng Shui',
+  ];
+  static const _allCategories = [
+    'Love',
+    'Career',
+    'Finance',
+    'Health',
+    'Marriage',
+    'Family',
+    'Education',
+    'Business',
+    'Legal',
+    'Spiritual',
+  ];
 
   @override
   void initState() {
@@ -59,6 +97,7 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
         _selectedLanguages = List<String>.from(state.languages);
         _selectedSkills = List<String>.from(state.skills);
         _selectedCategories = List<String>.from(state.categories);
+        _avatarUrl = state.avatarUrl;
         _isInitialized = true;
       }
     }
@@ -87,7 +126,11 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -106,106 +149,228 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Personal Details ──
-              _sectionHeader('Personal Details', Icons.person_outline),
-              const SizedBox(height: 12),
-              _buildTextField(_nameController, 'Full Name', Icons.badge_outlined, required: true),
-              const SizedBox(height: 14),
-              _buildTextField(_bioController, 'Bio / About You', Icons.description_outlined, maxLines: 3, required: true),
-              const SizedBox(height: 14),
-              _buildTextField(
-                _experienceController,
-                'Experience (Years)',
-                Icons.work_history_outlined,
-                keyboardType: TextInputType.number,
-                required: true,
-              ),
-              const SizedBox(height: 24),
-
-              // ── Languages ──
-              _sectionHeader('Languages You Speak', Icons.language),
-              const SizedBox(height: 12),
-              _buildChipSelector(
-                items: _allLanguages,
-                selected: _selectedLanguages,
-                onChanged: (val) => setState(() => _selectedLanguages = val),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Skills ──
-              _sectionHeader('Your Skills', Icons.psychology_outlined),
-              const SizedBox(height: 12),
-              _buildChipSelector(
-                items: _allSkills,
-                selected: _selectedSkills,
-                onChanged: (val) => setState(() => _selectedSkills = val),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Categories ──
-              _sectionHeader('Consultation Categories', Icons.category_outlined),
-              const SizedBox(height: 12),
-              _buildChipSelector(
-                items: _allCategories,
-                selected: _selectedCategories,
-                onChanged: (val) => setState(() => _selectedCategories = val),
-              ),
-              const SizedBox(height: 28),
-
-              // ── Consulting Rates ──
-              _sectionHeader('Set Your Consulting Rates', Icons.currency_rupee),
-              const SizedBox(height: 6),
-              const Text(
-                'These rates will be updated on your public profile immediately.',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              Row(
+              // Avatar edit section with Full Preview on tap
+              Center(
+              child: Stack(
                 children: [
-                  Expanded(child: _buildRateField(_chatRateController, '💬 Chat', '₹/msg')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildRateField(_callRateController, '📞 Call', '₹/min')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildRateField(_videoRateController, '🎥 Video', '₹/min')),
-                ],
-              ),
-              const SizedBox(height: 36),
-
-              // ── Save Button ──
-              SizedBox(
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _saveProfile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryGold,
-                    disabledBackgroundColor: primaryGold.withValues(alpha: 0.5),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
+                  GestureDetector(
+                    onTap: () {
+                      if (_avatarUrl != null && _avatarUrl!.isNotEmpty) {
+                        showDialog(
+                          context: context,
+                          builder: (dialogCtx) => Dialog(
+                            backgroundColor: Colors.black,
+                            insetPadding: EdgeInsets.zero,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                InteractiveViewer(
+                                  child: Image.network(
+                                    _avatarUrl!,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 40,
+                                  left: 20,
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 28,
+                                    ),
+                                    onPressed: () => Navigator.pop(dialogCtx),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: accentGold.withValues(alpha: 0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 54,
+                        backgroundColor: const Color(0xFFFDF6EC),
+                        backgroundImage: _avatarUrl != null
+                            ? NetworkImage(_avatarUrl!)
+                            : null,
+                        child: _isUploading
+                            ? const CircularProgressIndicator(color: accentGold)
+                            : (_avatarUrl == null
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 54,
+                                      color: accentGold,
+                                    )
+                                  : null),
+                      ),
                     ),
                   ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black54),
-                        )
-                      : const Text(
-                          'Save Changes',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _isUploading ? null : _pickAndUploadImage,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: accentGold,
+                          shape: BoxShape.circle,
                         ),
-                ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Personal Details ──
+            _sectionHeader('Personal Details', Icons.person_outline),
+            const SizedBox(height: 12),
+            _buildTextField(
+              _nameController,
+              'Full Name',
+              Icons.badge_outlined,
+              isRequired: true,
+            ),
+            const SizedBox(height: 14),
+            _buildTextField(
+              _bioController,
+              'Bio / About You',
+              Icons.description_outlined,
+              maxLines: 3,
+              isRequired: true,
+            ),
+            const SizedBox(height: 14),
+            _buildTextField(
+              _experienceController,
+              'Experience (Years)',
+              Icons.work_history_outlined,
+              keyboardType: TextInputType.number,
+              isRequired: true,
+            ),
+            const SizedBox(height: 24),
+
+            // ── Languages ──
+            _sectionHeader('Languages You Speak', Icons.language),
+            const SizedBox(height: 12),
+            _buildChipSelector(
+              items: _allLanguages,
+              selected: _selectedLanguages,
+              onChanged: (val) => setState(() => _selectedLanguages = val),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Skills ──
+            _sectionHeader('Your Skills', Icons.psychology_outlined),
+            const SizedBox(height: 12),
+            _buildChipSelector(
+              items: _allSkills,
+              selected: _selectedSkills,
+              onChanged: (val) => setState(() => _selectedSkills = val),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Categories ──
+            _sectionHeader('Consultation Categories', Icons.category_outlined),
+            const SizedBox(height: 12),
+            _buildChipSelector(
+              items: _allCategories,
+              selected: _selectedCategories,
+              onChanged: (val) => setState(() => _selectedCategories = val),
+            ),
+            const SizedBox(height: 28),
+
+            // ── Consulting Rates ──
+            _sectionHeader('Set Your Consulting Rates', Icons.currency_rupee),
+            const SizedBox(height: 6),
+            const Text(
+              'These rates will be updated on your public profile immediately.',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildRateField(
+                    _chatRateController,
+                    '💬 Chat',
+                    '₹/msg',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildRateField(
+                    _callRateController,
+                    '📞 Call',
+                    '₹/min',
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildRateField(
+                    _videoRateController,
+                    '🎥 Video',
+                    '₹/min',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 36),
+
+            // ── Save Button ──
+            SizedBox(
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _saveProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGold,
+                  disabledBackgroundColor: primaryGold.withValues(alpha: 0.5),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black54,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _sectionHeader(String title, IconData icon) {
@@ -231,13 +396,13 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
     IconData icon, {
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
-    bool required = false,
+    bool isRequired = false,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
-      validator: required
+      validator: isRequired
           ? (val) => (val == null || val.trim().isEmpty) ? 'Required' : null
           : null,
       decoration: InputDecoration(
@@ -246,7 +411,10 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
         prefixIcon: Icon(icon, color: Colors.black54, size: 20),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Color(0xFFEFEFEF), width: 1.5),
@@ -267,10 +435,17 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
     );
   }
 
-  Widget _buildRateField(TextEditingController controller, String label, String suffix) {
+  Widget _buildRateField(
+    TextEditingController controller,
+    String label,
+    String suffix,
+  ) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
@@ -287,14 +462,23 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
             suffixStyle: const TextStyle(fontSize: 12, color: Colors.grey),
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFEFEFEF), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFFEFEFEF),
+                width: 1.5,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: Color(0xFFE5C693), width: 1.5),
+              borderSide: const BorderSide(
+                color: Color(0xFFE5C693),
+                width: 1.5,
+              ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -333,9 +517,13 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
           selectedColor: const Color(0xFFD4AF37),
           backgroundColor: Colors.white,
           side: BorderSide(
-            color: isSelected ? const Color(0xFFD4AF37) : const Color(0xFFEFEFEF),
+            color: isSelected
+                ? const Color(0xFFD4AF37)
+                : const Color(0xFFEFEFEF),
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           checkmarkColor: Colors.white,
           onSelected: (val) {
             final newList = List<String>.from(selected);
@@ -388,9 +576,12 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
         'call_rate': callRate,
         'video_rate': videoRate,
         'price_per_minute': callRate, // Legacy
+        'avatar_url': _avatarUrl,
       };
 
-      context.read<AstrologerDashboardBloc>().add(UpdateAstrologerProfile(updates));
+      context.read<AstrologerDashboardBloc>().add(
+        UpdateAstrologerProfile(updates),
+      );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -402,11 +593,58 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
       debugPrint('[EditProfile] Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile. Please try again.')),
+          SnackBar(
+            content: Text('Failed to update profile. Please try again.'),
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final picker = image_picker.ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: image_picker.ImageSource.gallery,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _isUploading = true;
+      });
+
+      try {
+        final file = File(pickedFile.path);
+        final fileExt = pickedFile.path.split('.').last;
+        final fileName =
+            'astro_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
+
+        final supabase = Supabase.instance.client;
+
+        await supabase.storage.from('avatars').upload(fileName, file);
+        final url = supabase.storage.from('avatars').getPublicUrl(fileName);
+
+        setState(() {
+          _avatarUrl = url;
+          _isUploading = false;
+        });
+
+        if (mounted) {
+          context.read<AstrologerDashboardBloc>().add(
+            UpdateAstrologerProfile({'avatar_url': url}),
+          );
+        }
+      } catch (e) {
+        setState(() {
+          _isUploading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+        }
+      }
     }
   }
 }
