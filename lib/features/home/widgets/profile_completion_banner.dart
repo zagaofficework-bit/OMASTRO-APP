@@ -30,7 +30,7 @@ class ProfileCompletionBanner extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.08),
+                  color: Colors.amber.withValues(alpha: 0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -41,7 +41,7 @@ class ProfileCompletionBanner extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGold.withOpacity(0.15),
+                    color: AppColors.accentGold.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -69,7 +69,7 @@ class ProfileCompletionBanner extends StatelessWidget {
                             ? 'Please complete your profile details (Name, Email, DOB, Gender).'
                             : 'Please add your Date of Birth and Gender to get better predictions.',
                         style: AppTextStyles.bodySecondary.copyWith(
-                          color: AppColors.textPrimary.withOpacity(0.8),
+                          color: AppColors.textPrimary.withValues(alpha: 0.8),
                           fontSize: 12,
                         ),
                       ),

@@ -231,7 +231,7 @@ class _HomePageState extends State<HomePage> {
                                 BoxShadow(
                                   color: const Color(
                                     0xFFD97706,
-                                  ).withOpacity(0.06),
+                                  ).withValues(alpha: 0.06),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -368,7 +368,7 @@ class _HomePageState extends State<HomePage> {
             BoxShadow(
               color: const Color(
                 0xFFD97706,
-              ).withOpacity(0.03), // Subtle warm amber shadow
+              ).withValues(alpha: 0.03), // Subtle warm amber shadow
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

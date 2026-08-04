@@ -46,8 +46,8 @@ class RechargeGrid extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: isSelected 
-                      ? AppColors.primary.withOpacity(0.08) 
-                      : Colors.black.withOpacity(0.02),
+                      ? AppColors.primary.withValues(alpha: 0.08) 
+                      : Colors.black.withValues(alpha: 0.02),
                   blurRadius: isSelected ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),

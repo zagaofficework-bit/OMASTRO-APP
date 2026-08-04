@@ -298,7 +298,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
             style: IconButton.styleFrom(
               backgroundColor: Colors.white,
               shape: const CircleBorder(),
-              shadowColor: Colors.black.withOpacity(0.04),
+              shadowColor: Colors.black.withValues(alpha: 0.04),
               elevation: 4,
             ),
           ),
@@ -324,7 +324,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -391,7 +391,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFD97706).withOpacity(0.04), // Ambient warm amber shadow
+              color: const Color(0xFFD97706).withValues(alpha: 0.04), // Ambient warm amber shadow
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -409,7 +409,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -442,7 +442,7 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
                       border: Border.all(color: Colors.white, width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: typeColor.withOpacity(0.3),
+                          color: typeColor.withValues(alpha: 0.3),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),

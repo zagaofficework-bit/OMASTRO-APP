@@ -26,8 +26,8 @@ class DeductMoney extends WalletEvent {
   @override
   List<Object> get props => [
     amount,
-    if (astrologerId != null) astrologerId!,
-    if (astrologerName != null) astrologerName!,
+    ?astrologerId,
+    ?astrologerName,
   ];
 }
 
@@ -41,6 +41,6 @@ class DeductForChat extends WalletEvent {
   List<Object> get props => [
     amount,
     astrologerId,
-    if (astrologerName != null) astrologerName!,
+    ?astrologerName,
   ];
 }

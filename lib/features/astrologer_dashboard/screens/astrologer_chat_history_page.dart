@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/astrologer_dashboard_bloc.dart';
 import '../bloc/astrologer_dashboard_state.dart';
-import '../../chat/screens/chat_room_page.dart';
 
 class AstrologerChatHistoryPage extends StatelessWidget {
   const AstrologerChatHistoryPage({super.key});

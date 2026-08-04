@@ -76,7 +76,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.lg),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
+                      color: Colors.black.withValues(alpha: 0.02),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -139,7 +139,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -175,7 +175,7 @@ class RecentTransactionsBlock extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: isCredit ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                          color: isCredit ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(

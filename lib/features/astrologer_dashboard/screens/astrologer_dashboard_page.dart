@@ -25,15 +25,13 @@ class AstrologerDashboardPage extends StatelessWidget {
         return RefreshIndicator(
           color: accentGold,
           onRefresh: () async {
-            if (state is AstrologerDashboardLoaded) {
-              final loadedState = state as AstrologerDashboardLoaded;
-              context.read<AstrologerDashboardBloc>().add(
-                LoadAstrologerDashboard(
-                  astrologerId: loadedState.astrologerId,
-                  firebaseUid: loadedState.firebaseUid,
-                ),
-              );
-            }
+            final loadedState = state as AstrologerDashboardLoaded;
+            context.read<AstrologerDashboardBloc>().add(
+              LoadAstrologerDashboard(
+                astrologerId: loadedState.astrologerId,
+                firebaseUid: loadedState.firebaseUid,
+              ),
+            );
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),

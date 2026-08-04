@@ -245,7 +245,7 @@ class FirebaseChatRepository {
         'text': trimmed,
         'senderId': senderId,
         'createdAt': FieldValue.serverTimestamp(),
-        if (imageUrl != null) 'imageUrl': imageUrl,
+        'imageUrl': ?imageUrl,
       });
 
       // 2. Update chat room

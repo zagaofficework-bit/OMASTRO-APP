@@ -138,7 +138,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await google_sign_in.GoogleSignIn.instance.initialize(
         serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
       );
-      final google_sign_in.GoogleSignInAccount? googleUser = await google_sign_in.GoogleSignIn.instance.authenticate();
+      final google_sign_in.GoogleSignInAccount googleUser = await google_sign_in.GoogleSignIn.instance.authenticate();
       
       if (googleUser == null) {
         // User canceled the sign-in flow
@@ -309,7 +309,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
           if (profile == null) {
             final phoneNum = user.phoneNumber ?? '';
-            final displayName = user.displayName ?? (phoneNum.isNotEmpty ? 'User ${phoneNum}' : 'User');
+            final displayName = user.displayName ?? (phoneNum.isNotEmpty ? 'User $phoneNum' : 'User');
             await supabase.Supabase.instance.client.from('profiles').insert({
               'id': supabaseUser.id,
               'full_name': displayName,

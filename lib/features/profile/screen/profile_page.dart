@@ -12,8 +12,6 @@ import '../widgets/info_group_card.dart';
 import '../widgets/profile_menu_tile.dart';
 import '../../wallet/bloc/wallet_bloc.dart';
 import '../../wallet/bloc/wallet_state.dart';
-import '../../astrologers/bloc/astrologers_bloc.dart';
-import '../../astrologers/bloc/astrologers_state.dart';
 
 
 class ProfilePage extends StatelessWidget {

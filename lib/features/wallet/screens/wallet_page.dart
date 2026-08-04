@@ -88,7 +88,7 @@ class _WalletPageState extends State<WalletPage> {
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.white,
                         shape: const CircleBorder(),
-                        shadowColor: Colors.black.withOpacity(0.04),
+                        shadowColor: Colors.black.withValues(alpha: 0.04),
                         elevation: 4,
                       ),
                     ),

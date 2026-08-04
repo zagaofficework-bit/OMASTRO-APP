@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../wallet/bloc/wallet_bloc.dart';
-import '../../wallet/bloc/wallet_event.dart';
 import '../../wallet/bloc/wallet_state.dart';
 
 class ConnectModal extends StatelessWidget {

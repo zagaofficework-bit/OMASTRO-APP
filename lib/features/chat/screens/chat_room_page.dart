@@ -987,7 +987,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     child: CircleAvatar(
                       backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                       backgroundImage: hasValidAvatar
-                          ? NetworkImage(displayAvatar!)
+                          ? NetworkImage(displayAvatar)
                           : null,
                       child: !hasValidAvatar
                           ? Text(
@@ -1501,7 +1501,7 @@ void _openFullScreenImage(BuildContext context, String imageUrl) {
     context,
     PageRouteBuilder(
       opaque: true,
-      pageBuilder: (context, _, __) =>
+      pageBuilder: (context, _, _) =>
           FullScreenImageViewer(imageUrl: imageUrl),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(opacity: animation, child: child);

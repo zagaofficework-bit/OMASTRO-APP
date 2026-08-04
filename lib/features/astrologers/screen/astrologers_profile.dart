@@ -15,8 +15,6 @@ import '../../reviews/bloc/reviews_event.dart';
 import '../../reviews/bloc/reviews_state.dart';
 import '../../reviews/widgets/write_review_bottom_sheet.dart';
 import '../widgets/connect_modal.dart';
-import '../bloc/astrologers_bloc.dart';
-import '../bloc/astrologers_state.dart';
 
 class AstrologerProfilePage extends StatefulWidget {
   final Map<String, String> astrologerData;

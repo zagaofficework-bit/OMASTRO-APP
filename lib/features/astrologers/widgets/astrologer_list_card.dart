@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'connect_modal.dart';
 

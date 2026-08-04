@@ -247,7 +247,7 @@ class _AstrologerConsultationHistoryPageState extends State<AstrologerConsultati
                           final durationSeconds = (cons['duration_seconds'] as num?)?.toInt() ?? 0;
                           final startedAt = cons['started_at']?.toString();
 
-                          var typeIcon;
+                          FaIconData typeIcon;
                           Color typeColor;
                            switch (type.toLowerCase()) {
                             case 'call':

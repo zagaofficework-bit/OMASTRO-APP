@@ -16,8 +16,7 @@ class BillingInProgress extends BillingState {
 }
 
 class BillingLowBalanceWarning extends BillingInProgress {
-  BillingLowBalanceWarning(int durationSeconds, double currentCost, double walletBalance)
-      : super(durationSeconds, currentCost, walletBalance);
+  BillingLowBalanceWarning(super.durationSeconds, super.currentCost, super.walletBalance);
 }
 
 class BillingEndedDueToInsufficientBalance extends BillingState {
