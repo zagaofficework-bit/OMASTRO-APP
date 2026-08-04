@@ -68,29 +68,52 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
-        final isLoggedIn = authState is Authenticated || authState is AuthenticatedAsAstrologer;
+        final isLoggedIn = authState is Authenticated ||
+            authState is AuthenticatedAsAstrologer ||
+            authState is AstrologerOnboardingRequired;
+
         if (isLoggedIn) {
-          final uid = FirebaseAuth.instance.currentUser?.uid;
-          if (uid == null) return widget.child;
+          final String? firebaseAuthUid = FirebaseAuth.instance.currentUser?.uid;
+          String? astroId;
+          String? astroFirebaseUid;
+
+          if (authState is AuthenticatedAsAstrologer) {
+            astroId = authState.astrologerId;
+            astroFirebaseUid = authState.firebaseUid;
+          }
+
+          final Set<String> validUserIds = {
+            if (firebaseAuthUid != null && firebaseAuthUid.isNotEmpty) firebaseAuthUid,
+            if (astroId != null && astroId.isNotEmpty) astroId,
+            if (astroFirebaseUid != null && astroFirebaseUid.isNotEmpty) astroFirebaseUid,
+          };
+
+          if (validUserIds.isEmpty) return widget.child;
 
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('calls')
-                .where('calleeUid', isEqualTo: uid)
                 .where('status', isEqualTo: 'ringing')
                 .snapshots(),
             builder: (context, snapshot) {
-              final docs = snapshot.data?.docs ?? [];
+              final allDocs = snapshot.data?.docs ?? [];
+              final myRingingDocs = allDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final calleeUid = data['calleeUid']?.toString();
+                final astrologerId = data['astrologerId']?.toString();
+                return validUserIds.contains(calleeUid) || validUserIds.contains(astrologerId);
+              }).toList();
+
               // Sort newest first client-side (avoids composite index requirement)
-              docs.sort((a, b) {
+              myRingingDocs.sort((a, b) {
                 final ta = (a.data() as Map)['createdAt'] as Timestamp?;
                 final tb = (b.data() as Map)['createdAt'] as Timestamp?;
                 return (tb?.millisecondsSinceEpoch ?? 0)
                     .compareTo(ta?.millisecondsSinceEpoch ?? 0);
               });
 
-              if (docs.isNotEmpty) {
-                final doc = docs.first;
+              if (myRingingDocs.isNotEmpty) {
+                final doc = myRingingDocs.first;
                 final data = doc.data() as Map<String, dynamic>;
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) _handleIncomingCall(data, doc.id);

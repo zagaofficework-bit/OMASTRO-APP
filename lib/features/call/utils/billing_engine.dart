@@ -137,7 +137,7 @@ class BillingEngine extends Bloc<BillingEvent, BillingState> {
     _saveConsultationRecords();
   }
   
-  void _saveConsultationRecords() {
+  Future<void> _saveConsultationRecords() async {
     if (!_isBillingEnabled) return;
     if (_recordsSaved) return;
     _recordsSaved = true;
@@ -149,90 +149,88 @@ class BillingEngine extends Bloc<BillingEvent, BillingState> {
     final costPaise = (_currentCost * 100).toInt();
     if (costPaise <= 0) return;
     
-    Future.microtask(() async {
-      try {
-        final walletRes = await supabase.from('wallets').select('balance_paise').eq('user_id', userId).maybeSingle();
-        int currentPaise = 0;
-        if (walletRes != null && walletRes['balance_paise'] != null) {
-          currentPaise = walletRes['balance_paise'] as int;
-        }
-        
-        final newPaise = currentPaise - costPaise;
-        
-        await supabase.from('wallets').upsert({
-          'user_id': userId,
-          'balance_paise': newPaise >= 0 ? newPaise : 0,
-        }, onConflict: 'user_id');
-        final consultationIdToUse = _consultationId?.isNotEmpty == true ? _consultationId! : DateTime.now().millisecondsSinceEpoch.toString();
-        
-        final astroLabel = _astrologerName?.trim().isNotEmpty == true ? _astrologerName : _astrologerId;
-        await supabase.from('wallet_transactions').insert({
-          'user_id': userId,
-          'amount_paise': costPaise,
-          'kind': 'debit',
-          'status': 'success',
-          'note': 'Call with $astroLabel (ID: $consultationIdToUse)',
-        });
-        try {
-          await supabase.from('consultations').insert({
-            'id': consultationIdToUse,
-            'user_id': userId,
-            'astrologer_id': _astrologerId ?? '',
-            'type': _consultationType,
-            'status': 'Completed',
-            'duration_seconds': _durationSeconds,
-            'started_at': DateTime.now().subtract(Duration(seconds: _durationSeconds)).toIso8601String(),
-            'ended_at': DateTime.now().toIso8601String(),
-          });
-        } catch (_) {
-          // If inserting throws duplicate PK error, try updating instead
-          await supabase.from('consultations').update({
-            'status': 'Completed',
-            'duration_seconds': _durationSeconds,
-            'ended_at': DateTime.now().toIso8601String(),
-          }).eq('id', consultationIdToUse);
-        }
-        
-        final netAmount = _currentCost;
-        await supabase.from('astrologer_earnings').insert({
-          'astrologer_id': _astrologerId ?? '',
-          'consultation_id': consultationIdToUse,
-          'gross_amount': double.parse(_currentCost.toStringAsFixed(2)),
-          'commission_rate': 0.00,
-          'net_amount': double.parse(netAmount.toStringAsFixed(2)),
-          'status': 'UNPAID',
-        });
-
-        // 4. Update astrologer's total_minutes_consulted in the database
-        if (_astrologerId != null && _astrologerId!.isNotEmpty) {
-          try {
-            final isUuid = _astrologerId!.length == 36 && _astrologerId!.contains('-');
-            final col = isUuid ? 'id' : 'firebase_uid';
-            
-            final astroRes = await supabase
-                .from('astrologers')
-                .select('total_minutes_consulted')
-                .eq(col, _astrologerId!)
-                .maybeSingle();
-                
-            if (astroRes != null) {
-              final currentMins = (astroRes['total_minutes_consulted'] as num?)?.toInt() ?? 0;
-              final addedMins = (_durationSeconds / 60.0).ceil();
-              if (addedMins > 0) {
-                await supabase
-                    .from('astrologers')
-                    .update({'total_minutes_consulted': currentMins + addedMins})
-                    .eq(col, _astrologerId!);
-              }
-            }
-          } catch (err) {
-            print('Error updating astrologer consulted minutes: $err');
-          }
-        }
-      } catch (e) {
-        print('Error saving consultation records: $e');
+    try {
+      final walletRes = await supabase.from('wallets').select('balance_paise').eq('user_id', userId).maybeSingle();
+      int currentPaise = 0;
+      if (walletRes != null && walletRes['balance_paise'] != null) {
+        currentPaise = walletRes['balance_paise'] as int;
       }
-    });
+      
+      final newPaise = currentPaise - costPaise;
+      
+      await supabase.from('wallets').upsert({
+        'user_id': userId,
+        'balance_paise': newPaise >= 0 ? newPaise : 0,
+      }, onConflict: 'user_id');
+      final consultationIdToUse = _consultationId?.isNotEmpty == true ? _consultationId! : DateTime.now().millisecondsSinceEpoch.toString();
+      
+      final astroLabel = _astrologerName?.trim().isNotEmpty == true ? _astrologerName : _astrologerId;
+      await supabase.from('wallet_transactions').insert({
+        'user_id': userId,
+        'amount_paise': costPaise,
+        'kind': 'debit',
+        'status': 'success',
+        'note': 'Call with $astroLabel (ID: $consultationIdToUse)',
+      });
+      try {
+        await supabase.from('consultations').insert({
+          'id': consultationIdToUse,
+          'user_id': userId,
+          'astrologer_id': _astrologerId ?? '',
+          'type': _consultationType,
+          'status': 'Completed',
+          'duration_seconds': _durationSeconds,
+          'started_at': DateTime.now().subtract(Duration(seconds: _durationSeconds)).toIso8601String(),
+          'ended_at': DateTime.now().toIso8601String(),
+        });
+      } catch (_) {
+        // If inserting throws duplicate PK error, try updating instead
+        await supabase.from('consultations').update({
+          'status': 'Completed',
+          'duration_seconds': _durationSeconds,
+          'ended_at': DateTime.now().toIso8601String(),
+        }).eq('id', consultationIdToUse);
+      }
+      
+      final netAmount = _currentCost;
+      await supabase.from('astrologer_earnings').insert({
+        'astrologer_id': _astrologerId ?? '',
+        'consultation_id': consultationIdToUse,
+        'gross_amount': double.parse(_currentCost.toStringAsFixed(2)),
+        'commission_rate': 0.00,
+        'net_amount': double.parse(netAmount.toStringAsFixed(2)),
+        'status': 'UNPAID',
+      });
+
+      // 4. Update astrologer's total_minutes_consulted in the database
+      if (_astrologerId != null && _astrologerId!.isNotEmpty) {
+        try {
+          final isUuid = _astrologerId!.length == 36 && _astrologerId!.contains('-');
+          final col = isUuid ? 'id' : 'firebase_uid';
+          
+          final astroRes = await supabase
+              .from('astrologers')
+              .select('total_minutes_consulted')
+              .eq(col, _astrologerId!)
+              .maybeSingle();
+              
+          if (astroRes != null) {
+            final currentMins = (astroRes['total_minutes_consulted'] as num?)?.toInt() ?? 0;
+            final addedMins = (_durationSeconds / 60.0).ceil();
+            if (addedMins > 0) {
+              await supabase
+                  .from('astrologers')
+                  .update({'total_minutes_consulted': currentMins + addedMins})
+                  .eq(col, _astrologerId!);
+            }
+          }
+        } catch (err) {
+          print('Error updating astrologer consulted minutes: $err');
+        }
+      }
+    } catch (e) {
+      print('Error saving consultation records: $e');
+    }
   }
 
   @override

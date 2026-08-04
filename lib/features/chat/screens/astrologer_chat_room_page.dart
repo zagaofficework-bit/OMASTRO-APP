@@ -204,7 +204,7 @@ class _AstrologerChatRoomPageState extends State<AstrologerChatRoomPage> {
       'call_rate': 0.0,
       'video_rate': 0.0,
       'astrologer': {
-        'id': widget.id,
+        'id': widget.otherUid ?? widget.id,
         'name': clientDisplayName,
         'avatar_url': _clientAvatarUrl ?? widget.avatarUrl ?? '',
         'image': _clientAvatarUrl ?? widget.avatarUrl ?? '',

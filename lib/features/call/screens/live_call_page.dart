@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omastro/features/wallet/bloc/wallet_bloc.dart';
+import 'package:omastro/features/wallet/bloc/wallet_event.dart';
 import 'package:omastro/features/wallet/bloc/wallet_state.dart';
 import 'package:omastro/features/auth/bloc/auth_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_state.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
@@ -45,6 +47,8 @@ class _LiveCallPageState extends State<LiveCallPage> {
   bool _isExiting = false;
   double _callRate = 10.0;
 
+  bool _isBillingStarted = false;
+
   void _startTimer() {
     final authState = context.read<AuthBloc>().state;
     final currentFirebaseUid = FirebaseAuth.instance.currentUser?.uid;
@@ -71,7 +75,7 @@ class _LiveCallPageState extends State<LiveCallPage> {
   }
 
   void _stopTimer() {
-    if (!_billingEngine.isClosed) {
+    if (_isBillingStarted && !_billingEngine.isClosed) {
       _billingEngine.add(StopBillingEvent());
     }
   }
@@ -142,16 +146,20 @@ class _LiveCallPageState extends State<LiveCallPage> {
     if (result == true) {
       return true;
     } else {
-      _startTimer(); // Unfreeze timer
+      if (_isBillingStarted) {
+        _startTimer(); // Unfreeze timer if billing started
+      }
       return false;
     }
   }
 
-  void _safeExit() {
+  void _safeExit() async {
     _stopTimer();
     if (_isExiting) return;
     _isExiting = true;
+    await Future.delayed(const Duration(milliseconds: 400));
     if (mounted) {
+      context.read<WalletBloc>().add(LoadWallet());
       if (context.canPop()) {
         context.pop();
       } else {
@@ -177,6 +185,12 @@ class _LiveCallPageState extends State<LiveCallPage> {
     }
   }
 
+  @override
+  void dispose() {
+    _stopTimer();
+    super.dispose();
+  }
+
   Future<void> _loadRoomId() async {
     if (_callId == null) return;
     final roomId = await _callRepo.getRoomId(_callId!);
@@ -186,12 +200,6 @@ class _LiveCallPageState extends State<LiveCallPage> {
         _isInitializing = false;
       });
     }
-  }
-
-  @override
-  void dispose() {
-    _stopTimer();
-    super.dispose();
   }
 
   Future<void> _initCall() async {
@@ -348,6 +356,15 @@ class _LiveCallPageState extends State<LiveCallPage> {
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
       events: ZegoUIKitPrebuiltCallEvents(
+        user: ZegoCallUserEvents(
+          onEnter: (ZegoUIKitUser user) {
+            debugPrint('[LiveCallPage] Remote user joined: ${user.id}');
+            if (!_isBillingStarted) {
+              _isBillingStarted = true;
+              _startTimer();
+            }
+          },
+        ),
         onHangUpConfirmation: (event, defaultAction) async {
           return await _showAntiGravityDialog();
         },
@@ -391,12 +408,6 @@ class _LiveCallPageState extends State<LiveCallPage> {
                   data['status'] == 'ended' ||
                   data['status'] == 'rejected')) {
             isConnecting = false;
-          }
-          if (data != null &&
-              (data['status'] == 'accepted' || data['status'] == 'connected')) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _startTimer();
-            });
           }
           if (data != null &&
               (data['status'] == 'ended' || data['status'] == 'rejected')) {

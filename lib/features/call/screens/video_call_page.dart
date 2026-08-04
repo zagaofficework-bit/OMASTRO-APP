@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omastro/features/wallet/bloc/wallet_bloc.dart';
+import 'package:omastro/features/wallet/bloc/wallet_event.dart';
 import 'package:omastro/features/wallet/bloc/wallet_state.dart';
 import 'package:omastro/features/auth/bloc/auth_bloc.dart';
 import 'package:omastro/features/auth/bloc/auth_state.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:zego_uikit/zego_uikit.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
@@ -39,6 +41,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
   bool _isFrontCamera = true;
   bool _isExiting = false;
   double _callRate = 10.0;
+  
+  bool _isBillingStarted = false;
 
   void _startTimer() {
     final authState = context.read<AuthBloc>().state;
@@ -66,7 +70,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   void _stopTimer() {
-    _billingEngine.add(StopBillingEvent());
+    if (_isBillingStarted) {
+      _billingEngine.add(StopBillingEvent());
+    }
   }
 
   Future<bool> _showAntiGravityDialog() async {
@@ -124,16 +130,20 @@ class _VideoCallPageState extends State<VideoCallPage> {
     if (result == true) {
       return true;
     } else {
-      _startTimer(); // Unfreeze timer
+      if (_isBillingStarted) {
+        _startTimer(); // Unfreeze timer if billing was started
+      }
       return false;
     }
   }
 
-  void _safeExit() {
+  void _safeExit() async {
     _stopTimer();
     if (_isExiting) return;
     _isExiting = true;
+    await Future.delayed(const Duration(milliseconds: 400));
     if (mounted) {
+      context.read<WalletBloc>().add(LoadWallet());
       if (context.canPop()) {
         context.pop();
       } else {
@@ -520,6 +530,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
         ..topMenuBar.isVisible = false
         ..user.requiredUsers = ZegoCallRequiredUserConfig(enabled: false),
       events: ZegoUIKitPrebuiltCallEvents(
+        user: ZegoCallUserEvents(
+          onEnter: (ZegoUIKitUser user) {
+            debugPrint('[VideoCallPage] Remote user joined: ${user.id}');
+            if (!_isBillingStarted) {
+              _isBillingStarted = true;
+              _startTimer();
+            }
+          },
+        ),
         onHangUpConfirmation: (event, defaultAction) async {
           return await _showAntiGravityDialog();
         },
@@ -563,11 +582,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   data['status'] == 'ended' ||
                   data['status'] == 'rejected')) {
             isConnecting = false;
-          }
-          if (data != null && (data['status'] == 'accepted' || data['status'] == 'connected')) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-               _startTimer();
-            });
           }
           if (data != null &&
               (data['status'] == 'ended' || data['status'] == 'rejected')) {

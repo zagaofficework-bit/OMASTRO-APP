@@ -85,8 +85,14 @@ class FirebaseCallRepository {
     String? calleeFirebaseUid,
     required String mode, // 'audio' or 'video'
   }) async {
-    final String targetUid =
+    String targetUid =
         await _resolveTargetFirebaseUid(astrologerId, calleeFirebaseUid);
+
+    // Self-call prevention: If resolved target equals caller's own UID, override with calleeFirebaseUid
+    if (targetUid == callerUid && calleeFirebaseUid != null && calleeFirebaseUid.isNotEmpty && calleeFirebaseUid != callerUid) {
+      targetUid = calleeFirebaseUid;
+    }
+
     final String otherUid =
         targetUid.isNotEmpty ? targetUid : _astroUid(astrologerId);
 

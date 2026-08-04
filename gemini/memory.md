@@ -39,4 +39,6 @@ This repository contains the `OMASTRO-APP` Flutter application, which connects t
 - Updated the filters and icon layout mapping in `astrologer_consultation_history_page.dart` to support both legacy types ('Call' / 'Video') and new formats ('Audio Call' / 'Video Call') so call/video categories are correctly classified.
 - Created `007_sync_consulted_minutes.sql` containing a PostgreSQL database trigger to automatically increment `total_minutes_consulted` on the backend, bypassing Row Level Security (RLS) limitations.
 - Modified `live_call_page.dart` and `video_call_page.dart` to minimize the call to a floating overlay badge instead of terminating it when tapping the custom back button or using the system back gesture.
-
+- Updated `video_call_page.dart` and `live_call_page.dart` to use `ZegoCallUserEvents.onEnter` so billing (`StartBillingEvent`) only starts when the second user accepts and joins the Zego call room.
+- Modified `_saveConsultationRecords()` in `billing_engine.dart` to save wallet deductions synchronously on call end, and added `context.read<WalletBloc>().add(LoadWallet())` in `_safeExit()` to instantly refresh the wallet balance on the UI when exiting a call.
+- Fixed self-call bug when astrologer dials client from chat room in `astrologer_chat_room_page.dart` and `firebase_call_repository.dart` by targeting `widget.otherUid` (client's UID) and preventing resolved target UID from matching caller UID.
