@@ -214,6 +214,30 @@ class _LiveCallPageState extends State<LiveCallPage> {
         widget.astrologer['id']?.toString() ?? 'unknown';
     final String? firebaseUid = widget.astrologer['firebase_uid']?.toString();
 
+    final authState = context.read<AuthBloc>().state;
+    final isAstrologer = authState is AuthenticatedAsAstrologer ||
+        authState is AstrologerOnboardingRequired;
+
+    // Real-time online status check on the presence collection (only if caller is client)
+    if (!isAstrologer && firebaseUid != null && firebaseUid.isNotEmpty) {
+      try {
+        final presenceDoc = await FirebaseFirestore.instance
+            .collection('presence')
+            .doc(firebaseUid)
+            .get();
+        final isOnline = presenceDoc.data()?['is_online'] == true;
+        if (!isOnline) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('$astrologerName is currently offline.')),
+            );
+            Navigator.of(context).pop();
+          }
+          return;
+        }
+      } catch (_) {}
+    }
+
     try {
       final callId = await _callRepo.startCall(
         callerUid: user.uid,

@@ -35,7 +35,7 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
         barrierDismissible: false,
         pageBuilder: (ctx, _, _) => PopScope(
           canPop: false,
-          child: _IncomingCallOverlay(
+          child: IncomingCallOverlay(
             callId: callId,
             callData: callData,
             onAccept: () {
@@ -143,18 +143,44 @@ class _IncomingCallListenerState extends State<IncomingCallListener> {
 }
 
 
-class _IncomingCallOverlay extends StatelessWidget {
+class IncomingCallOverlay extends StatelessWidget {
   final String callId;
   final Map<String, dynamic> callData;
   final VoidCallback onAccept;
   final VoidCallback onClose;
 
-  const _IncomingCallOverlay({
+  const IncomingCallOverlay({
+    super.key,
     required this.callId,
     required this.callData,
     required this.onAccept,
     required this.onClose,
   });
+
+  static void show(BuildContext context, {required String callId, required Map<String, dynamic> callData}) {
+    FlutterRingtonePlayer().playRingtone(looping: true);
+    rootNavigatorKey.currentState?.push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        barrierDismissible: false,
+        pageBuilder: (ctx, _, _) => PopScope(
+          canPop: false,
+          child: IncomingCallOverlay(
+            callId: callId,
+            callData: callData,
+            onAccept: () {},
+            onClose: () {
+              FlutterRingtonePlayer().stop();
+              if (rootNavigatorKey.currentState?.canPop() == true) {
+                rootNavigatorKey.currentState?.pop();
+              }
+            },
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _acceptCall() async {
     onAccept(); // Mark call as accepted in parent listener BEFORE updating firestore

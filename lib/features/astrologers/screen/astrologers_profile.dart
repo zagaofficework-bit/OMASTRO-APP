@@ -159,6 +159,14 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
           },
         );
       } else if (result == 'call') {
+        final bool isOnline = widget.astrologerData['is_online'] == true ||
+            _supabaseAstroData?['is_online'] == true;
+        if (!isOnline) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$name is currently offline.')),
+          );
+          return;
+        }
         context.push(
           '/live-call',
           extra: {
@@ -169,6 +177,14 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
           },
         );
       } else if (result == 'video') {
+        final bool isOnline = widget.astrologerData['is_online'] == true ||
+            _supabaseAstroData?['is_online'] == true;
+        if (!isOnline) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$name is currently offline.')),
+          );
+          return;
+        }
         context.push(
           '/video-call',
           extra: {

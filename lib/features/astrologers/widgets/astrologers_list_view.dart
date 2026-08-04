@@ -98,20 +98,36 @@ class AstrologersListView extends StatelessWidget {
                   },
                 );
               },
-              onCallTap: () => context.push(
-                '/live-call',
-                extra: {
-                  ...currentItem,
-                  'image': currentItem['avatar_url'] ?? '',
-                },
-              ),
-              onVideoTap: () => context.push(
-                '/video-call',
-                extra: {
-                  ...currentItem,
-                  'image': currentItem['avatar_url'] ?? '',
-                },
-              ),
+              onCallTap: () {
+                if (currentItem['is_online'] != true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${currentItem['name'] ?? 'Astrologer'} is currently offline.')),
+                  );
+                  return;
+                }
+                context.push(
+                  '/live-call',
+                  extra: {
+                    ...currentItem,
+                    'image': currentItem['avatar_url'] ?? '',
+                  },
+                );
+              },
+              onVideoTap: () {
+                if (currentItem['is_online'] != true) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${currentItem['name'] ?? 'Astrologer'} is currently offline.')),
+                  );
+                  return;
+                }
+                context.push(
+                  '/video-call',
+                  extra: {
+                    ...currentItem,
+                    'image': currentItem['avatar_url'] ?? '',
+                  },
+                );
+              },
             ),
           ),
         );

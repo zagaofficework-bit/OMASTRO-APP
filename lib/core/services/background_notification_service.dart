@@ -89,6 +89,8 @@ Future<void> onServiceStart(ServiceInstance service) async {
 // Global subscriptions references to prevent duplicate listeners
 StreamSubscription<QuerySnapshot>? _callSubscription;
 StreamSubscription<QuerySnapshot>? _chatSubscription;
+final Set<String> _processedCallsCache = {};
+final Set<String> _processedMessagesCache = {};
 
 void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin localNotifications) {
   // Cancel previous listeners if they exist
@@ -106,12 +108,18 @@ void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin
       .listen((snapshot) {
     for (final change in snapshot.docChanges) {
       if (change.type != DocumentChangeType.added) continue;
+      // Skip pending local writes (wait for server timestamp confirmation)
+      if (change.doc.metadata.hasPendingWrites) continue;
+
+      if (_processedCallsCache.contains(change.doc.id)) continue;
+      _processedCallsCache.add(change.doc.id);
+
       final data = change.doc.data();
       if (data == null) continue;
 
       // Skip old calls from before service started
       final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
-      if (createdAt != null && createdAt.isBefore(startTime)) continue;
+      if (createdAt == null || createdAt.isBefore(startTime)) continue;
 
       final callerName = data['callerName'] ?? 'Someone';
       final mode = data['mode'] == 'video' ? 'Video' : 'Voice';
@@ -125,17 +133,19 @@ void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin
       });
 
       localNotifications.show(
-        id: change.doc.hashCode,
+        id: change.doc.id.hashCode,
         title: '📞 Incoming $mode Call',
         body: '$callerName is calling you...',
         payload: payload,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'Call alerts',
+            'omastro_call_channel',
+            'Incoming Calls',
+            channelDescription: 'Alerts for incoming audio and video calls.',
             importance: Importance.max,
-            priority: Priority.high,
+            priority: Priority.max,
+            category: AndroidNotificationCategory.call,
+            fullScreenIntent: true,
             playSound: true,
             enableVibration: true,
           ),
@@ -158,6 +168,9 @@ void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin
     for (final change in snapshot.docChanges) {
       // We check modified or added documents to see if a new message was sent
       if (change.type == DocumentChangeType.removed) continue;
+      // Skip pending local writes (wait for server timestamp confirmation)
+      if (change.doc.metadata.hasPendingWrites) continue;
+
       final data = change.doc.data();
       if (data == null) continue;
 
@@ -165,7 +178,11 @@ void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin
       if (lastSenderId == currentUid || lastSenderId.isEmpty) continue;
 
       final lastMessageAt = (data['lastMessageAt'] as Timestamp?)?.toDate();
-      if (lastMessageAt != null && lastMessageAt.isBefore(startTime)) continue;
+      if (lastMessageAt == null || lastMessageAt.isBefore(startTime)) continue;
+
+      final cacheKey = '${change.doc.id}_${lastMessageAt.millisecondsSinceEpoch}';
+      if (_processedMessagesCache.contains(cacheKey)) continue;
+      _processedMessagesCache.add(cacheKey);
 
       final lastMessage = data['lastMessage']?.toString() ?? '';
       if (lastMessage.isEmpty) continue;
@@ -182,17 +199,18 @@ void _setupFirestoreListeners(String currentUid, FlutterLocalNotificationsPlugin
       });
 
       localNotifications.show(
-        id: change.doc.hashCode,
+        id: change.doc.id.hashCode,
         title: '💬 $senderName',
         body: lastMessage,
         payload: payload,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel',
-            'High Importance Notifications',
-            channelDescription: 'New message alerts',
-            importance: Importance.max,
+            'omastro_chat_channel',
+            'Chat Messages',
+            channelDescription: 'Alerts for new chat messages.',
+            importance: Importance.high,
             priority: Priority.high,
+            category: AndroidNotificationCategory.message,
             playSound: true,
             enableVibration: true,
           ),

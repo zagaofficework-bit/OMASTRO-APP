@@ -42,3 +42,5 @@ This repository contains the `OMASTRO-APP` Flutter application, which connects t
 - Updated `video_call_page.dart` and `live_call_page.dart` to use `ZegoCallUserEvents.onEnter` so billing (`StartBillingEvent`) only starts when the second user accepts and joins the Zego call room.
 - Modified `_saveConsultationRecords()` in `billing_engine.dart` to save wallet deductions synchronously on call end, and added `context.read<WalletBloc>().add(LoadWallet())` in `_safeExit()` to instantly refresh the wallet balance on the UI when exiting a call.
 - Fixed self-call bug when astrologer dials client from chat room in `astrologer_chat_room_page.dart` and `firebase_call_repository.dart` by targeting `widget.otherUid` (client's UID) and preventing resolved target UID from matching caller UID.
+- Separated notifications into distinct Android channels: `omastro_call_channel` ('Incoming Calls', Max Priority) and `omastro_chat_channel` ('Chat Messages', High Priority) in `notification_service.dart` and `background_notification_service.dart`.
+- Audited and removed completely unused packages (`cupertino_icons`, `build_runner`, `animations`) from `pubspec.yaml`.

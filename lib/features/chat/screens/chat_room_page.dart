@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -681,7 +682,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     );
   }
 
-  void _confirmAndStartCall({required bool isVideo}) {
+  void _confirmAndStartCall({required bool isVideo}) async {
     final rate = isVideo ? _videoRate : _callRate;
     final route = isVideo ? '/video-call' : '/live-call';
     final extra = {
@@ -697,6 +698,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       // Astrologers can initiate calls without wallet checks
       context.push(route, extra: extra);
       return;
+    }
+
+    // Check if astrologer is online before allowing user to initiate call
+    if (_firebaseUid != null && _firebaseUid!.isNotEmpty) {
+      try {
+        final snap = await FirebaseFirestore.instance
+            .collection('presence')
+            .doc(_firebaseUid)
+            .get();
+        final isOnline = snap.data()?['is_online'] == true;
+        if (!isOnline) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${widget.name} is currently offline.')),
+            );
+          }
+          return;
+        }
+      } catch (_) {}
     }
 
     final walletState = context.read<WalletBloc>().state;
