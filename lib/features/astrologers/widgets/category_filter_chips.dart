@@ -14,11 +14,18 @@ class CategoryFilterChips extends StatelessWidget {
 
   final List<String> _categories = [
     'All',
+    'Vedic',
+    'Face Reading',
+    'Tarot',
+    'Psychic',
+    'Numerology',
+    'Palmist',
+    'Palmistry',
     'Love',
     'Career',
     'Marriage',
-    'Tarot',
     'Kundli',
+    'Life Coach',
   ];
 
   @override

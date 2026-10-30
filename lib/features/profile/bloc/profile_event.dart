@@ -16,6 +16,8 @@ class UpdateProfileEvent extends ProfileEvent {
   final String gender;
   final String phone;
   final String? avatarUrl;
+  final String birthPlace;
+  final String birthTime;
 
   const UpdateProfileEvent({
     required this.name,
@@ -24,10 +26,21 @@ class UpdateProfileEvent extends ProfileEvent {
     required this.gender,
     required this.phone,
     this.avatarUrl,
+    this.birthPlace = '',
+    this.birthTime = '',
   });
 
   @override
-  List<Object?> get props => [name, email, dob, gender, phone, avatarUrl];
+  List<Object?> get props => [
+        name,
+        email,
+        dob,
+        gender,
+        phone,
+        avatarUrl,
+        birthPlace,
+        birthTime,
+      ];
 }
 
 class SendProfilePhoneOtp extends ProfileEvent {

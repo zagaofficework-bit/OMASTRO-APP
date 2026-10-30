@@ -210,6 +210,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
 
                   ProfileMenuTile(
+                    icon: Icons.auto_awesome_outlined,
+                    title: 'Intro & Tour',
+                    subtitle: 'Replay the onboarding introduction',
+                    onTap: () => context.push('/onboarding'),
+                  ),
+                  ProfileMenuTile(
                     icon: Icons.security_rounded,
                     title: 'Account Security',
                     subtitle: 'Manage passwords and verification',

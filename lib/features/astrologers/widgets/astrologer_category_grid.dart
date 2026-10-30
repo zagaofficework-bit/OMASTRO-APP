@@ -11,14 +11,14 @@ class AstrologerCategoryGrid extends StatelessWidget {
     // Exact structural config matching data rows in astrologers_search page.jpg
     final List<Map<String, dynamic>> categoryItems = [
       {
-        'title': 'Numerology',
-        'subtitle': 'Decode your numbers',
-        'icon': Icons.numbers_rounded,
+        'title': 'Vedic',
+        'subtitle': 'Ancient wisdom',
+        'icon': Icons.menu_book_outlined,
       },
       {
-        'title': 'Psychic',
-        'subtitle': 'Intuitive guidance',
-        'icon': Icons.visibility_outlined,
+        'title': 'Face Reading',
+        'subtitle': 'Feature insights',
+        'icon': Icons.face_retouching_natural_outlined,
       },
       {
         'title': 'Tarot',
@@ -26,19 +26,29 @@ class AstrologerCategoryGrid extends StatelessWidget {
         'icon': Icons.local_fire_department_outlined,
       },
       {
-        'title': 'Vedic',
-        'subtitle': 'Ancient wisdom',
-        'icon': Icons.menu_book_outlined,
+        'title': 'Psychic',
+        'subtitle': 'Intuitive guidance',
+        'icon': Icons.visibility_outlined,
+      },
+      {
+        'title': 'Numerology',
+        'subtitle': 'Decode your numbers',
+        'icon': Icons.numbers_rounded,
+      },
+      {
+        'title': 'Palmist',
+        'subtitle': 'Hand analysis',
+        'icon': Icons.front_hand_outlined,
+      },
+      {
+        'title': 'Palmistry',
+        'subtitle': 'Lines of destiny',
+        'icon': Icons.pan_tool_outlined,
       },
       {
         'title': 'Life Coach',
         'subtitle': 'Personal growth',
         'icon': Icons.explore_outlined,
-      },
-      {
-        'title': 'Palmistry',
-        'subtitle': 'Hand analysis',
-        'icon': Icons.front_hand_outlined,
       },
     ];
 

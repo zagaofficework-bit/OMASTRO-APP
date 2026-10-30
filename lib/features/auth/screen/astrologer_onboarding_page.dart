@@ -29,8 +29,40 @@ class _AstrologerOnboardingPageState extends State<AstrologerOnboardingPage> {
   bool _isSubmitting = false;
 
   static const _allLanguages = ['Hindi', 'English', 'Tamil', 'Telugu', 'Bengali', 'Marathi', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi'];
-  static const _allSkills = ['Vedic Astrology', 'Numerology', 'Tarot', 'Palmistry', 'Vastu', 'KP Astrology', 'Prashna Kundali', 'Face Reading', 'Reiki', 'Feng Shui'];
-  static const _allCategories = ['Love', 'Career', 'Finance', 'Health', 'Marriage', 'Family', 'Education', 'Business', 'Legal', 'Spiritual'];
+  static const _allSkills = [
+    'Vedic Astrology',
+    'Face Reading',
+    'Tarot',
+    'Psychic',
+    'Numerology',
+    'Palmist',
+    'Palmistry',
+    'Vastu',
+    'KP Astrology',
+    'Prashna Kundali',
+    'Reiki',
+    'Feng Shui',
+  ];
+  static const _allCategories = [
+    'Vedic',
+    'Face Reading',
+    'Tarot',
+    'Psychic',
+    'Numerology',
+    'Palmist',
+    'Palmistry',
+    'Love',
+    'Career',
+    'Finance',
+    'Health',
+    'Marriage',
+    'Family',
+    'Education',
+    'Business',
+    'Legal',
+    'Spiritual',
+    'Life Coach',
+  ];
 
   @override
   void dispose() {

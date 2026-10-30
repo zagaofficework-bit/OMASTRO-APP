@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,6 +32,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           dob: '',
           gender: '',
           phone: '',
+          birthPlace: '',
+          birthTime: '',
         )) {
     
     on<LoadProfileEvent>((event, emit) async {
@@ -75,6 +78,9 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           final dbName = response['full_name'] ?? '';
           final finalName = (dbName.toString().isEmpty) ? defaultName : dbName;
 
+          final dbBirthPlace = response['birth_place']?.toString() ?? '';
+          final dbBirthTime = response['birth_time']?.toString() ?? '';
+
           emit(ProfileLoaded(
             name: finalName,
             email: finalEmail,
@@ -82,6 +88,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             gender: response['gender'] ?? '',
             phone: finalPhone,
             avatarUrl: response['avatar_url'] ?? authAvatar,
+            birthPlace: dbBirthPlace,
+            birthTime: dbBirthTime,
           ));
         } else {
           try {
@@ -91,11 +99,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
               'email': authEmail,
               'phone': extractedPhone,
               'avatar_url': authAvatar ?? '',
+              'birth_place': '',
+              'birth_time': '',
               'created_at': DateTime.now().toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
             });
           } catch (e) {
-            print("Error auto-creating profile in DB: $e");
+            debugPrint("Error auto-creating profile in DB: $e");
           }
 
           emit(ProfileLoaded(
@@ -105,10 +115,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             gender: '',
             phone: extractedPhone,
             avatarUrl: authAvatar,
+            birthPlace: '',
+            birthTime: '',
           ));
         }
       } catch (e) {
-        print("Error loading profile: $e");
+        debugPrint("Error loading profile: $e");
       }
     });
 
@@ -125,6 +137,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           gender: event.gender,
           phone: event.phone,
           avatarUrl: updatedAvatar,
+          birthPlace: event.birthPlace,
+          birthTime: event.birthTime,
         ));
 
         // Save to Supabase
@@ -132,7 +146,6 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
           final user = _supabase.auth.currentUser;
           if (user == null) return;
           
-          final userId = user.id;
           await Supabase.instance.client
               .from('profiles')
               .update({
@@ -142,10 +155,12 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             'gender': event.gender,
             'phone': event.phone,
             'avatar_url': updatedAvatar,
+            'birth_place': event.birthPlace,
+            'birth_time': event.birthTime,
             'updated_at': DateTime.now().toIso8601String(),
           }).eq('id', user.id);
         } catch (e) {
-          print("Error updating profile: $e");
+          debugPrint("Error updating profile: $e");
         }
       }
     });
@@ -209,4 +224,3 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     add(LoadProfileEvent());
   }
 }
-

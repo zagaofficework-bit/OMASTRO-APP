@@ -12,12 +12,18 @@ class HomeCategoryGrid extends StatelessWidget {
     final responsive = ResponsiveProvider.of(context);
     // Definitive list configuration matching the design items
     final List<Map<String, dynamic>> categories = [
+      {'label': 'Vedic', 'icon': Icons.menu_book_outlined},
+      {'label': 'Face Reading', 'icon': Icons.face_retouching_natural_outlined},
+      {'label': 'Tarot', 'icon': Icons.style_outlined},
+      {'label': 'Psychic', 'icon': Icons.visibility_outlined},
+      {'label': 'Numerology', 'icon': Icons.numbers_rounded},
+      {'label': 'Palmist', 'icon': Icons.front_hand_outlined},
       {'label': 'Love', 'icon': Icons.favorite_border_rounded},
       {'label': 'Career', 'icon': Icons.work_outline_rounded},
       {'label': 'Marriage', 'icon': Icons.people_outline_rounded},
-      {'label': 'Tarot', 'icon': Icons.style_outlined},
-      {'label': 'Kundli', 'icon': Icons.menu_book_rounded},
+      {'label': 'Kundli', 'icon': Icons.auto_stories_outlined},
       {'label': 'Horoscope', 'icon': Icons.wb_twilight_rounded},
+      {'label': 'Life Coach', 'icon': Icons.explore_outlined},
     ];
 
     return Padding(

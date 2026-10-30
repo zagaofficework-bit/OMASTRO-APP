@@ -3,12 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links_linux
   audioplayers_linux
   file_selector_linux
   flutter_volume_controller
-  gtk
   url_launcher_linux
-  zego_express_engine
+  zego_express_engine_for_uikit
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

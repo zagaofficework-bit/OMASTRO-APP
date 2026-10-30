@@ -7,9 +7,10 @@ import 'package:omastro/features/astrologers/screen/astrologers_profile.dart';
 import 'package:omastro/features/auth/screen/sign_in_page.dart';
 import 'package:omastro/features/auth/screen/astrologer_onboarding_page.dart';
 import 'package:omastro/features/call/screens/live_call_page.dart';
-// 🌟 1. FIXED IMPORT PATH
 import 'package:omastro/features/home/screen/home_page.dart';
 import 'package:omastro/features/home/screen/splash_page.dart';
+import 'package:omastro/core/services/onboarding_service.dart';
+import 'package:omastro/features/onboarding/screens/onboarding_page.dart';
 import 'package:omastro/features/wallet/screens/wallet_page.dart';
 import '../core/shell/main_shell.dart';
 import '../core/shell/astrologer_shell.dart';
@@ -62,10 +63,20 @@ CustomTransitionPage _buildPremiumTransitionPage(Widget child, {LocalKey? key}) 
 final appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: '/splash',
-  refreshListenable: GoRouterRefreshStream(globalAuthBloc.stream),
+  refreshListenable: Listenable.merge([
+    GoRouterRefreshStream(globalAuthBloc.stream),
+    splashCompletedNotifier,
+  ]),
   redirect: (context, state) {
-    final authState = globalAuthBloc.state;
     final location = state.matchedLocation;
+
+    // Keep on /splash while splash animation runs on app open
+    if (!splashCompletedNotifier.value) {
+      if (location == '/splash') return null;
+      return '/splash';
+    }
+
+    final authState = globalAuthBloc.state;
 
     final isChecking = authState is AuthInitial || authState is AuthLoading;
     if (isChecking) {
@@ -83,11 +94,25 @@ final appRouter = GoRouter(
     final isGoingToLogin = location == '/login';
     final isGoingToSplash = location == '/splash';
     final isGoingToOnboarding = location == '/astrologer-onboarding';
+    final isGoingToIntro = location == '/onboarding';
     final isAstrologerRoute = location.startsWith('/astrologer-');
 
-    // Not logged in → force login
-    if (!isLoggedIn && !isGoingToLogin) {
-      return '/login';
+    // Allow user on intro onboarding screen
+    if (isGoingToIntro) {
+      if (isLoggedIn) return isAstrologer ? '/astrologer-home' : '/home';
+      return null;
+    }
+
+    // Not logged in:
+    // If first time opening (not completed intro), show onboarding screens
+    if (!isLoggedIn) {
+      if (!OnboardingService.hasSeenOnboarding) {
+        if (!isGoingToIntro) return '/onboarding';
+        return null;
+      }
+      if (!isGoingToLogin) {
+        return '/login';
+      }
     }
 
     // Logged in → don't show login page or splash page
@@ -121,6 +146,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/splash',
       builder: (context, state) => const SplashPage(),
+    ),
+    GoRoute(
+      path: '/onboarding',
+      pageBuilder: (context, state) => _buildPremiumTransitionPage(
+        const OnboardingPage(),
+        key: state.pageKey,
+      ),
     ),
     GoRoute(
       path: '/live-call',

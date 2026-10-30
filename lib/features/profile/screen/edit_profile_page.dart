@@ -27,6 +27,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _dobController;
+  late final TextEditingController _birthTimeController;
+  late final TextEditingController _birthPlaceController;
   late final TextEditingController _phoneController;
   String _selectedGender = 'Male';
   String? _avatarUrl;
@@ -43,13 +45,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
     String initialName = '';
     String initialEmail = '';
     String initialDob = '';
-    String initialPhone = '';
+    String initialBirthTime = '';
+    String initialBirthPlace = '';
     String initialGender = 'Male';
 
     if (state is ProfileLoaded) {
       initialName = state.name;
       initialEmail = state.email;
       initialDob = state.dob;
+      initialBirthTime = state.birthTime;
+      initialBirthPlace = state.birthPlace;
       _initialPhone = state.phone;
       initialGender = state.gender;
       _avatarUrl = state.avatarUrl;
@@ -68,6 +73,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
           : initialEmail,
     );
     _dobController = TextEditingController(text: initialDob);
+    _birthTimeController = TextEditingController(text: initialBirthTime);
+    _birthPlaceController = TextEditingController(text: initialBirthPlace);
     _phoneController = TextEditingController(
       text: _initialPhone.isEmpty ? '+91 ' : _initialPhone,
     );
@@ -88,6 +95,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController.dispose();
     _emailController.dispose();
     _dobController.dispose();
+    _birthTimeController.dispose();
+    _birthPlaceController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -140,9 +149,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary:
-                  AppColors.primary, // Selection accent matching design colors
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
               onPrimary: Colors.white,
               onSurface: Colors.black87,
             ),
@@ -154,9 +162,55 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     if (picked != null) {
       setState(() {
-        // Formats picked parameters elegantly back into the form display layer
         _dobController.text =
             "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
+  }
+
+  /// Launches native themed TimePicker flow for Birth Time selection
+  Future<void> _selectTime(BuildContext context) async {
+    TimeOfDay initialTime = const TimeOfDay(hour: 12, minute: 0);
+    if (_birthTimeController.text.isNotEmpty) {
+      try {
+        final text = _birthTimeController.text.trim();
+        final match = RegExp(r'^(\d{1,2}):(\d{2})\s*(AM|PM)?$', caseSensitive: false).firstMatch(text);
+        if (match != null) {
+          int hour = int.parse(match.group(1)!);
+          final int minute = int.parse(match.group(2)!);
+          final amPm = match.group(3)?.toUpperCase();
+          if (amPm == 'PM' && hour < 12) hour += 12;
+          if (amPm == 'AM' && hour == 12) hour = 0;
+          initialTime = TimeOfDay(hour: hour, minute: minute);
+        }
+      } catch (_) {}
+    }
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black87,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      if (!mounted) return;
+      setState(() {
+        final localizations = MaterialLocalizations.of(context);
+        _birthTimeController.text = localizations.formatTimeOfDay(
+          picked,
+          alwaysUse24HourFormat: false,
+        );
       });
     }
   }
@@ -166,6 +220,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (state is ProfileLoaded) {
       return _nameController.text != state.name ||
           _dobController.text != state.dob ||
+          _birthTimeController.text != state.birthTime ||
+          _birthPlaceController.text != state.birthPlace ||
           _phoneController.text != state.phone ||
           _selectedGender != state.gender;
     }
@@ -256,6 +312,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         gender: _selectedGender,
         phone: _phoneController.text,
         avatarUrl: _avatarUrl,
+        birthPlace: _birthPlaceController.text.trim(),
+        birthTime: _birthTimeController.text.trim(),
       ),
     );
   }
@@ -299,7 +357,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         }
       },
       child: Scaffold(
-        backgroundColor: AppColors.background, // Premium cream tone base tint
+        backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -324,7 +382,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         body: PopScope(
           canPop: false,
-          onPopInvoked: (didPop) async {
+          onPopInvokedWithResult: (didPop, result) async {
             if (didPop) return;
             _handleBack();
           },
@@ -366,7 +424,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       const SizedBox(height: AppSpacing.md),
 
                       if (!_isPhoneLogin) ...[
-                        // Protected Read-Only Identity Parameter Field (Wait, email is editable here!)
+                        // Protected Read-Only Identity Parameter Field
                         EditTextField(
                           controller: _emailController,
                           label: 'Email Address',
@@ -381,9 +439,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         controller: _dobController,
                         label: 'Date of Birth',
                         prefixIcon: Icons.cake_outlined,
-                        readOnly:
-                            true, // Forces touch interaction directly to the DatePicker modal
+                        readOnly: true,
+                        hintText: 'YYYY-MM-DD',
                         onTap: () => _selectDate(context),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Time of Birth Field Hook
+                      EditTextField(
+                        controller: _birthTimeController,
+                        label: 'Time of Birth',
+                        prefixIcon: Icons.access_time_outlined,
+                        readOnly: true,
+                        hintText: 'e.g. 10:30 AM',
+                        onTap: () => _selectTime(context),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+
+                      // Place of Birth Field Hook
+                      EditTextField(
+                        controller: _birthPlaceController,
+                        label: 'Place of Birth',
+                        prefixIcon: Icons.location_on_outlined,
+                        hintText: 'e.g. Mumbai, Maharashtra',
                       ),
                       const SizedBox(height: AppSpacing.md),
 
@@ -402,8 +480,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                               onPressed: () {
                                 String phone = _phoneController.text.trim();
                                 if (!phone.startsWith('+')) {
-                                  phone =
-                                      '+91$phone'; // Default to Indian country code
+                                  phone = '+91$phone';
                                 }
                                 context.read<ProfileBloc>().add(
                                   SendProfilePhoneOtp(phone),
@@ -445,11 +522,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                           },
                   ),
                   const SizedBox(height: AppSpacing.xl),
-
                   const SizedBox(height: AppSpacing.xl),
-                  const SizedBox(
-                    height: AppSpacing.xl,
-                  ), // Extra spacing to ensure bottom navigation bar doesn't overlap content
                 ],
               ),
             ),

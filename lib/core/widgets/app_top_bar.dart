@@ -48,12 +48,15 @@ class AppTopBar extends StatelessWidget {
                       height: logoSize,
                       decoration: BoxDecoration(
                         color: const Color(0xffF8F2E8),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: const Color(0xffE4A834).withValues(alpha: 0.2),
                         ),
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/logo.png'),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Image.asset(
+                          'assets/images/logo.jpeg',
                           fit: BoxFit.cover,
                         ),
                       ),

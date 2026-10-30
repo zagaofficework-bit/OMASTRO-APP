@@ -10,6 +10,8 @@ class EditTextField extends StatelessWidget {
   final bool readOnly;
   final TextInputType keyboardType;
   final VoidCallback? onTap;
+  final Widget? suffixIcon;
+  final String? hintText;
 
   const EditTextField({
     super.key,
@@ -19,6 +21,8 @@ class EditTextField extends StatelessWidget {
     this.readOnly = false,
     this.keyboardType = TextInputType.text,
     this.onTap,
+    this.suffixIcon,
+    this.hintText,
   });
 
   @override
@@ -49,9 +53,15 @@ class EditTextField extends StatelessWidget {
           ),
           decoration: InputDecoration(
             prefixIcon: Icon(prefixIcon, size: 20, color: Colors.grey[500]),
-            suffixIcon: readOnly
-                ? Icon(Icons.lock_outline, size: 18, color: Colors.grey[400])
-                : null,
+            suffixIcon: suffixIcon ??
+                (readOnly && onTap == null
+                    ? Icon(Icons.lock_outline, size: 18, color: Colors.grey[400])
+                    : null),
+            hintText: hintText,
+            hintStyle: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.grey[400],
+              fontWeight: FontWeight.normal,
+            ),
             filled: readOnly,
             fillColor: readOnly ? Colors.grey[50] : Colors.transparent,
             contentPadding: const EdgeInsets.symmetric(

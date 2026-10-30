@@ -15,7 +15,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   screen_brightness_windows
   share_plus
   url_launcher_windows
-  zego_express_engine
+  zego_express_engine_for_uikit
   zego_zim
 )
 

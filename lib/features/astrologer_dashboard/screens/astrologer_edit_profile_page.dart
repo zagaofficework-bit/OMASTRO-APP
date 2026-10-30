@@ -46,17 +46,26 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
   ];
   static const _allSkills = [
     'Vedic Astrology',
-    'Numerology',
+    'Face Reading',
     'Tarot',
+    'Psychic',
+    'Numerology',
+    'Palmist',
     'Palmistry',
     'Vastu',
     'KP Astrology',
     'Prashna Kundali',
-    'Face Reading',
     'Reiki',
     'Feng Shui',
   ];
   static const _allCategories = [
+    'Vedic',
+    'Face Reading',
+    'Tarot',
+    'Psychic',
+    'Numerology',
+    'Palmist',
+    'Palmistry',
     'Love',
     'Career',
     'Finance',
@@ -67,6 +76,7 @@ class _AstrologerEditProfilePageState extends State<AstrologerEditProfilePage> {
     'Business',
     'Legal',
     'Spiritual',
+    'Life Coach',
   ];
 
   @override

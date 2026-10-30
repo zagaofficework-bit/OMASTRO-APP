@@ -272,7 +272,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Widget build(BuildContext context) {
     final String astrologerName = widget.astrologer['name'] ?? 'Astrologer';
     final String imageUrl =
-        widget.astrologer['image'] ?? 'assets/images/logo.png';
+        widget.astrologer['image'] ?? 'assets/images/logo.jpeg';
 
     final user = FirebaseAuth.instance.currentUser;
     final String userID =

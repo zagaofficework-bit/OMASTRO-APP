@@ -59,11 +59,19 @@ class _AstrologerPageState extends State<AstrologerPage> {
   ) {
     List<Map<String, dynamic>> filtered = allAstrologers;
     if (_selectedCategory != 'All') {
+      final selected = _selectedCategory.toLowerCase();
       filtered = filtered.where((astrologer) {
-        final List<String> specialties = _extractList(astrologer['categories']);
-        return specialties.any(
-          (s) => s.toLowerCase() == _selectedCategory.toLowerCase(),
-        );
+        final List<String> categories = _extractList(astrologer['categories']);
+        final List<String> skills = _extractList(astrologer['skills']);
+        final combined = [...categories, ...skills];
+        return combined.any((s) {
+          final item = s.toLowerCase();
+          if (item == selected) return true;
+          if (item.contains(selected) || selected.contains(item)) return true;
+          if ((selected == 'palmist' || selected == 'palmistry') && item.contains('palm')) return true;
+          if (selected == 'face reading' && item.contains('face')) return true;
+          return false;
+        });
       }).toList();
     }
     

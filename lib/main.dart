@@ -6,6 +6,7 @@ import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_theme.dart';
 import 'package:omastro/core/services/notification_service.dart';
 import 'package:omastro/core/services/permission_service.dart';
+import 'package:omastro/core/services/onboarding_service.dart';
 import 'app/route.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 import 'features/wallet/bloc/wallet_bloc.dart';
@@ -39,7 +40,7 @@ Future<void> main() async {
   await dotenv.load(fileName: ".env");
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
+    publishableKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
   );
 
   // Initialize Firebase
@@ -68,6 +69,9 @@ Future<void> main() async {
   // Initialize Notifications & FCM
   await NotificationService().init();
 
+  // Initialize Onboarding status cache
+  await OnboardingService.init();
+
   // Request all necessary permissions for the app
   await PermissionService.requestAppPermissions();
 
@@ -90,8 +94,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void removeSplash() async {
-    // A tiny delay gives the UI thread a breathing room frame to complete setup
-    await Future.delayed(Duration.zero);
+    // Keep splash on screen for 2 full seconds so the user sees it cleanly
+    await Future.delayed(const Duration(milliseconds: 2000));
     FlutterNativeSplash.remove();
   }
 

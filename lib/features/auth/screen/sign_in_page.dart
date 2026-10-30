@@ -74,7 +74,7 @@ class _SignInPageState extends State<SignInPage> {
                       height: 100,
                       decoration: BoxDecoration(
                         color: const Color(0xffF8F2E8),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: const Color(0xFFD4AF37).withAlpha(76),
                           width: 2.0,
@@ -86,8 +86,11 @@ class _SignInPageState extends State<SignInPage> {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/logo.png'),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.asset(
+                          'assets/images/logo.jpeg',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -124,7 +127,7 @@ class _SignInPageState extends State<SignInPage> {
                       height: 84,
                       decoration: BoxDecoration(
                         color: const Color(0xffF8F2E8),
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
                           color: const Color(0xFFD4AF37).withValues(alpha: 0.3),
                           width: 2.0,
@@ -136,8 +139,11 @@ class _SignInPageState extends State<SignInPage> {
                             offset: const Offset(0, 4),
                           ),
                         ],
-                        image: const DecorationImage(
-                          image: AssetImage('assets/images/logo.png'),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/logo.jpeg',
                           fit: BoxFit.cover,
                         ),
                       ),

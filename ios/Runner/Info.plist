@@ -67,7 +67,7 @@
 			<string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UIStatusBarHidden</key>
-		<false/>
+		<true/>
 		<key>NSCameraUsageDescription</key>
 		<string>Omastro needs access to your camera for video calls with astrologers.</string>
 		<key>NSMicrophoneUsageDescription</key>
@@ -78,5 +78,7 @@
 		<string>Omastro needs bluetooth access to connect your wireless headphones during calls.</string>
 		<key>NSBluetoothAlwaysUsageDescription</key>
 		<string>Omastro needs bluetooth access to connect your wireless headphones during calls.</string>
+		<key>UIViewControllerBasedStatusBarAppearance</key>
+		<false/>
 	</dict>
 </plist>

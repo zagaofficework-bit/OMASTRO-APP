@@ -14,6 +14,8 @@ class ProfileLoaded extends ProfileState {
   final String gender;
   final String phone;
   final String? avatarUrl;
+  final String birthPlace;
+  final String birthTime;
 
   const ProfileLoaded({
     required this.name,
@@ -22,6 +24,8 @@ class ProfileLoaded extends ProfileState {
     required this.gender,
     required this.phone,
     this.avatarUrl,
+    this.birthPlace = '',
+    this.birthTime = '',
   });
 
   bool get isProfileIncomplete {
@@ -34,8 +38,18 @@ class ProfileLoaded extends ProfileState {
   }
 
   @override
-  List<Object?> get props => [name, email, dob, gender, phone, avatarUrl];
+  List<Object?> get props => [
+        name,
+        email,
+        dob,
+        gender,
+        phone,
+        avatarUrl,
+        birthPlace,
+        birthTime,
+      ];
 }
+
 class ProfileLoading extends ProfileState {}
 
 class ProfileError extends ProfileState {

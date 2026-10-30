@@ -56,6 +56,7 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   font_awesome_flutter: ^11.0.0
   flutter_background_service: ^5.1.0
+  shared_preferences: ^2.3.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -81,6 +82,10 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/logo.jpeg
+    - assets/images/splashcreen_logo.jpeg
+    - assets/images/splash_cropped.png
+    - assets/images/onboarding_img/
     - assets/icons/
 
   #   - images/a_dot_ham.jpeg
@@ -111,19 +116,27 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 flutter_native_splash:
-  color: "#FFFFFF"
-  image: assets/images/logo.png
+  color: "#000000"
+  color_dark: "#000000"
+  image: assets/images/splash_native.png
+  image_dark: assets/images/splash_native.png
 
   android: true
   ios: true
   web: false
+  fullscreen: true
 
   android_12:
-    color: "#FFFFFF"
-    image: assets/images/logo.png
+    color: "#000000"
+    color_dark: "#000000"
+    icon_background_color: "#000000"
+    icon_background_color_dark: "#000000"
+    image: assets/images/splash_android12.png
+    image_dark: assets/images/splash_android12.png
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/logo.png"
-  adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/logo.png"
+  remove_alpha_ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/app_icon.png"

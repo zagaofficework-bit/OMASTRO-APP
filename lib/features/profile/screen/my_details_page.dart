@@ -21,6 +21,8 @@ class MyDetailsPage extends StatelessWidget {
         String gender = '';
         String phone = '';
         String avatarUrl = '';
+        String birthPlace = '';
+        String birthTime = '';
 
         if (state is ProfileLoaded) {
           name = state.name;
@@ -29,6 +31,8 @@ class MyDetailsPage extends StatelessWidget {
           gender = state.gender;
           phone = state.phone;
           avatarUrl = state.avatarUrl ?? '';
+          birthPlace = state.birthPlace;
+          birthTime = state.birthTime;
         }
         
         final bool isPhoneLogin = email.contains('@gmail.com') && email.startsWith('phone_');
@@ -143,6 +147,10 @@ class MyDetailsPage extends StatelessWidget {
                         const Divider(),
                       ],
                       _buildDetailRow('Date of Birth', dob.isEmpty ? 'Add your date of birth' : dob, Icons.cake_outlined),
+                      const Divider(),
+                      _buildDetailRow('Time of Birth', birthTime.isEmpty ? 'Add your time of birth' : birthTime, Icons.access_time_outlined),
+                      const Divider(),
+                      _buildDetailRow('Place of Birth', birthPlace.isEmpty ? 'Add your birth place' : birthPlace, Icons.location_on_outlined),
                       const Divider(),
                       _buildDetailRow('Gender', gender.isEmpty ? 'Add your gender' : gender, Icons.wc_outlined),
                       if (isPhoneLogin) ...[
