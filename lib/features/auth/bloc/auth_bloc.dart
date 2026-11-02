@@ -62,20 +62,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           .maybeSingle();
 
       if (res == null && currentUser.email != null && currentUser.email!.isNotEmpty) {
-        res = await client
-            .from('astrologers')
-            .select('id, name, chat_rate, call_rate, video_rate, bio, firebase_uid')
-            .eq('email', currentUser.email!)
-            .maybeSingle();
+        try {
+          final profile = await client
+              .from('profiles')
+              .select('id')
+              .eq('email', currentUser.email!)
+              .maybeSingle();
 
-        if (res != null) {
-          try {
-            await client
+          if (profile != null) {
+            res = await client
                 .from('astrologers')
-                .update({'firebase_uid': currentUser.uid})
-                .eq('id', res['id']);
-          } catch (_) {}
-        }
+                .select('id, name, chat_rate, call_rate, video_rate, bio, firebase_uid')
+                .eq('id', profile['id'])
+                .maybeSingle();
+
+            if (res != null) {
+              try {
+                await client
+                    .from('astrologers')
+                    .update({'firebase_uid': currentUser.uid})
+                    .eq('id', res['id']);
+              } catch (_) {}
+            }
+          }
+        } catch (_) {}
       }
 
       if (res != null) {
@@ -489,33 +499,60 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     if (existing != null) return existing;
 
-    // 2. Try to find existing row by email
+    // 2. Try to find existing row by email (lookup profiles table first, since astrologers has no email column)
     if (email != null && email.isNotEmpty) {
       try {
-        existing = await client
-            .from('astrologers')
-            .select()
+        final profile = await client
+            .from('profiles')
+            .select('id')
             .eq('email', email)
             .maybeSingle();
 
-        if (existing != null) {
-          try {
-            await client
-                .from('astrologers')
-                .update({'firebase_uid': firebaseUid})
-                .eq('id', existing['id']);
-            existing['firebase_uid'] = firebaseUid;
-          } catch (_) {}
-          return existing;
+        if (profile != null) {
+          existing = await client
+              .from('astrologers')
+              .select()
+              .eq('id', profile['id'])
+              .maybeSingle();
+
+          if (existing != null) {
+            try {
+              await client
+                  .from('astrologers')
+                  .update({'firebase_uid': firebaseUid})
+                  .eq('id', existing['id']);
+              existing['firebase_uid'] = firebaseUid;
+            } catch (_) {}
+            return existing;
+          }
         }
-      } catch (_) {}
+      } catch (err) {
+        debugPrint('[AuthBloc] Warning looking up astrologer by email: $err');
+      }
     }
 
-    // 3. Not found — create a new row
+    // 3. Not found - create a new row
     debugPrint('[AuthBloc] No astrologer row found for firebase_uid=$firebaseUid, creating...');
+    final currentSupaUser = client.auth.currentUser;
+    final rowId = currentSupaUser?.id ?? firebaseUid;
+
+    // Ensure profiles entry exists to satisfy foreign key fk_astrologers_profile_id
+    try {
+      await client.from('profiles').upsert({
+        'id': rowId,
+        'full_name': name,
+        if (email != null && email.isNotEmpty) 'email': email,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (profileErr) {
+      debugPrint('[AuthBloc] Error upserting profile for new astrologer: $profileErr');
+    }
+
     final inserted = await client
         .from('astrologers')
         .insert({
+          'id': rowId,
           'name': name,
           'firebase_uid': firebaseUid,
           'bio': '',

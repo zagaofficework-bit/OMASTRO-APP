@@ -78,7 +78,7 @@ final appRouter = GoRouter(
 
     final authState = globalAuthBloc.state;
 
-    final isChecking = authState is AuthInitial || authState is AuthLoading;
+    final isChecking = authState is AuthInitial || (authState is AuthLoading && location == '/splash');
     if (isChecking) {
       if (location == '/splash') return null;
       return '/splash';
