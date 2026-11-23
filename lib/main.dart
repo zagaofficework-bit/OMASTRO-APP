@@ -37,43 +37,73 @@ Future<void> main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   // Initialize dotenv and Supabase
-  await dotenv.load(fileName: ".env");
-  await Supabase.initialize(
-    url: dotenv.env['SUPABASE_URL']!,
-    publishableKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY']!,
-  );
+  try {
+    await dotenv.load(fileName: ".env");
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL'] ?? '',
+      publishableKey: dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ?? '',
+    );
+  } catch (e) {
+    debugPrint('[main] Supabase / dotenv init error: $e');
+  }
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('[main] Firebase init error: $e');
+  }
 
   // Sync astrologers from Supabase to Firestore asynchronously
-  FirestoreSyncHelper.syncAstrologersToFirestore();
+  try {
+    FirestoreSyncHelper.syncAstrologersToFirestore();
+  } catch (e) {
+    debugPrint('[main] FirestoreSyncHelper error: $e');
+  }
 
   // Initialize background notification service
-  await initBackgroundNotificationService();
+  try {
+    await initBackgroundNotificationService();
+  } catch (e) {
+    debugPrint('[main] initBackgroundNotificationService error: $e');
+  }
 
   // Register FCM background message handler (works when app is background/terminated)
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  try {
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('[main] FirebaseMessaging background handler error: $e');
+  }
 
   // Initialize Google Sign-In with Web Client ID for Supabase validation
-  await google_sign_in.GoogleSignIn.instance.initialize(
-    clientId: dotenv.env['GOOGLE_WEB_CLIENT_ID']!,
-    serverClientId: kIsWeb ? null : dotenv.env['GOOGLE_WEB_CLIENT_ID']!,
-  );
+  try {
+    final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
+    await google_sign_in.GoogleSignIn.instance.initialize(
+      clientId: kIsWeb ? webClientId : null,
+      serverClientId: webClientId,
+    );
+  } catch (e) {
+    debugPrint('[main] GoogleSignIn init error: $e');
+  }
 
   // Initialize the global BlocObserver for tracking state changes
   Bloc.observer = AppBlocObserver();
 
   // Initialize Notifications & FCM
-  await NotificationService().init();
+  try {
+    await NotificationService().init();
+  } catch (e) {
+    debugPrint('[main] NotificationService init error: $e');
+  }
 
   // Initialize Onboarding status cache
-  await OnboardingService.init();
-
-  // Request all necessary permissions for the app
-  await PermissionService.requestAppPermissions();
+  try {
+    await OnboardingService.init();
+  } catch (e) {
+    debugPrint('[main] OnboardingService init error: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -91,6 +121,10 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     // 2. Safely release the splash screen on the next frame loop cycle
     removeSplash();
+    // Request app permissions after the first frame has rendered safely
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PermissionService.requestAppPermissions();
+    });
   }
 
   void removeSplash() async {

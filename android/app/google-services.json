@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:24968482924:android:ed18a3ec6fd16423d3c849",
         "android_client_info": {
-          "package_name": "com.example.omastro"
+          "package_name": "com.rudra.cosmos"
         }
       },
       "oauth_client": [
@@ -18,7 +18,7 @@
           "client_id": "24968482924-vsp6cm525vuv7vknm2vidn4dic7aflou.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.omastro",
+            "package_name": "com.rudra.cosmos",
             "certificate_hash": "6f24869b4f18780c5fa8a25dd8b30fd68c16e06b"
           }
         },
@@ -43,7 +43,7 @@
               "client_id": "24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.omastro"
+                "bundle_id": "com.rudra.cosmos"
               }
             }
           ]

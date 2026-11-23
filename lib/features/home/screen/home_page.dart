@@ -5,10 +5,8 @@ import 'package:omastro/core/responsive/responsive_provider.dart';
 import 'package:omastro/core/theme/app_colors.dart';
 import 'package:omastro/core/theme/app_spacing.dart';
 import 'package:omastro/core/theme/app_text_styles.dart';
-import 'package:omastro/core/widgets/search_bar.dart';
 import 'package:omastro/features/home/widgets/categories_grid.dart';
 import 'package:omastro/features/home/widgets/home_banner.dart';
-import 'package:omastro/features/home/widgets/home_page_buttons.dart';
 import 'package:omastro/features/home/widgets/online_astrologer_card.dart';
 import 'package:omastro/features/home/widgets/top_astrologer_card.dart';
 import 'package:omastro/features/home/widgets/profile_completion_banner.dart';
@@ -346,48 +344,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(BuildContext context, String emoji, String name) {
-    return GestureDetector(
-      onTap: () => context.go('/astrologers?search=$name'),
-      child: Container(
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: const Color(0xFFF1E6D2), // Sleek warm gold border
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(
-                0xFFD97706,
-              ).withValues(alpha: 0.03), // Subtle warm amber shadow
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: 8),
-            Text(
-              name,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-          ],
         ),
       ),
     );

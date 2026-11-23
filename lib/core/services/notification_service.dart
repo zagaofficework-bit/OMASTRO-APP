@@ -14,7 +14,12 @@ import '../../app/route.dart';
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('[FCM] Firebase background init error: $e');
+  }
   debugPrint('[FCM] Background/terminated message received: ${message.notification?.title}');
   // System automatically displays notification banner from FCM payload using high_importance_channel.
 }

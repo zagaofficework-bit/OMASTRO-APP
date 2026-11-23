@@ -44,7 +44,7 @@ class DynamicGreetingHeader extends StatelessWidget {
     final String displayName =
         (explicitName != null && explicitName!.isNotEmpty)
         ? explicitName!
-        : 'User';
+        : _extractNameFromEmail(email);
 
     // Dynamic initial letter extractor
     final String initialLetter = displayName.isNotEmpty

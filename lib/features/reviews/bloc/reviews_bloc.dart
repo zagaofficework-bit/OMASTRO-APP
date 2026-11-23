@@ -20,9 +20,9 @@ class ReviewsBloc extends Bloc<ReviewsEvent, ReviewsState> {
         final reviewsList = (res as List)
             .map((j) => ReviewModel.fromSupabase(Map<String, dynamic>.from(j as Map)))
             .toList();
-        final currentMap = state is ReviewsUpdatedState 
-            ? Map<String, List<ReviewModel>>.from((state as ReviewsUpdatedState).reviews) 
-            : <String, List<ReviewModel>>{};
+        final currentMap = Map<String, List<ReviewModel>>.from(
+          (state as ReviewsUpdatedState).reviews,
+        );
 
         currentMap[event.astrologerId] = reviewsList;
         emit(ReviewsUpdatedState(reviews: currentMap));

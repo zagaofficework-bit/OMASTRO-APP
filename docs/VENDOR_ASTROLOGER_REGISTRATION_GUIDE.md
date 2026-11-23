@@ -1,3 +1,4 @@
+
 # OmAstro: Vendor Portal Astrologer Registration Guide
 
 > **Audience**: Backend & Full-Stack Developers building the Vendor / Admin Web Portal.  

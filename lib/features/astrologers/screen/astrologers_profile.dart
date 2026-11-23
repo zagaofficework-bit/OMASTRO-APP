@@ -28,7 +28,6 @@ class AstrologerProfilePage extends StatefulWidget {
 class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
   late final String astrologerId;
   Map<String, dynamic>? _supabaseAstroData;
-  bool _isLoadingSupabaseData = true;
   StreamSubscription? _presenceSubscription;
   bool _isOnlineFromPresence = false;
 
@@ -80,15 +79,11 @@ class _AstrologerProfilePageState extends State<AstrologerProfilePage> {
       if (res != null) {
         setState(() {
           _supabaseAstroData = res;
-          _isLoadingSupabaseData = false;
         });
         _listenPresence();
-      } else {
-        setState(() => _isLoadingSupabaseData = false);
       }
     } catch (e) {
       print('Error loading astrologer details from Supabase: $e');
-      setState(() => _isLoadingSupabaseData = false);
     }
   }
 

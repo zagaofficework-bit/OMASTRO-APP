@@ -67,8 +67,9 @@ class DefaultFirebaseOptions {
     projectId: 'omastro-42ea9',
     databaseURL: 'https://omastro-42ea9-default-rtdb.firebaseio.com',
     storageBucket: 'omastro-42ea9.firebasestorage.app',
-    iosClientId: '24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com',
-    iosBundleId: 'com.example.omastro',
+    iosClientId:
+        '24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com',
+    iosBundleId: 'com.rudra.cosmos',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -78,8 +79,9 @@ class DefaultFirebaseOptions {
     projectId: 'omastro-42ea9',
     databaseURL: 'https://omastro-42ea9-default-rtdb.firebaseio.com',
     storageBucket: 'omastro-42ea9.firebasestorage.app',
-    iosClientId: '24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com',
-    iosBundleId: 'com.example.omastro',
+    iosClientId:
+        '24968482924-o5nbvf6ig2438a65q8vc91e4q2fas2ae.apps.googleusercontent.com',
+    iosBundleId: 'com.rudra.cosmos',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

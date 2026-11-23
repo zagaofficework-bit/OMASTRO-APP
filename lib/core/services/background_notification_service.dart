@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../../firebase_options.dart';
 
 // Initialize the persistent background service (called once at app startup in main)
@@ -47,43 +48,53 @@ Future<void> initBackgroundNotificationService() async {
 // Runs in a separate isolate (even when app is terminated)
 @pragma('vm:entry-point')
 Future<void> onServiceStart(ServiceInstance service) async {
-  // Initialize Firebase inside the background isolate
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  WidgetsFlutterBinding.ensureInitialized();
 
-  final localNotifications = FlutterLocalNotificationsPlugin();
-  await localNotifications.initialize(
-    settings: const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/launcher_icon'),
-      iOS: DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      ),
-    ),
-  );
-
-  final String? currentUid = FirebaseAuth.instance.currentUser?.uid;
-  if (currentUid == null || currentUid.isEmpty) {
-    debugPrint('[BackgroundService] No active user logged in. Standing by...');
-  } else {
-    debugPrint('[BackgroundService] Logged in user: $currentUid. Initializing Firestore listeners...');
-    _setupFirestoreListeners(currentUid, localNotifications);
+  try {
+    // Initialize Firebase inside the background isolate
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint('[BackgroundService] Firebase init error: $e');
   }
 
-  // Also listen for auth changes dynamically in case the user logs in/out in the main thread
-  FirebaseAuth.instance.authStateChanges().listen((user) {
-    if (user != null) {
-      debugPrint('[BackgroundService] Auth state updated: User logged in: ${user.uid}');
-      _setupFirestoreListeners(user.uid, localNotifications);
-    } else {
-      debugPrint('[BackgroundService] Auth state updated: User logged out.');
-    }
-  });
+  try {
+    final localNotifications = FlutterLocalNotificationsPlugin();
+    await localNotifications.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/launcher_icon'),
+        iOS: DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        ),
+      ),
+    );
 
-  // Keep the service alive with a periodic ping
-  Timer.periodic(const Duration(seconds: 30), (_) {
-    service.invoke('ping');
-  });
+    final String? currentUid = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUid == null || currentUid.isEmpty) {
+      debugPrint('[BackgroundService] No active user logged in. Standing by...');
+    } else {
+      debugPrint('[BackgroundService] Logged in user: $currentUid. Initializing Firestore listeners...');
+      _setupFirestoreListeners(currentUid, localNotifications);
+    }
+
+    // Also listen for auth changes dynamically in case the user logs in/out in the main thread
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        debugPrint('[BackgroundService] Auth state updated: User logged in: ${user.uid}');
+        _setupFirestoreListeners(user.uid, localNotifications);
+      } else {
+        debugPrint('[BackgroundService] Auth state updated: User logged out.');
+      }
+    });
+
+    // Keep the service alive with a periodic ping
+    Timer.periodic(const Duration(seconds: 30), (_) {
+      service.invoke('ping');
+    });
+  } catch (e) {
+    debugPrint('[BackgroundService] onServiceStart initialization error: $e');
+  }
 }
 
 // Global subscriptions references to prevent duplicate listeners

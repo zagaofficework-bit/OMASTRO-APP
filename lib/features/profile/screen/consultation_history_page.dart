@@ -351,7 +351,6 @@ class _ConsultationHistoryPageState extends State<ConsultationHistoryPage> {
   Widget _buildHistoryCard(Map<String, dynamic> item) {
     final isChat = item['type'] == 'Chat';
     final isVideo = item['type'] == 'Video';
-    final isCall = !isChat && !isVideo;
 
     final typeIcon = isChat
         ? Icons.chat_bubble_rounded
