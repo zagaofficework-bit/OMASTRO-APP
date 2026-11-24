@@ -11,6 +11,7 @@ import 'auth_state.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:zego_uikit_prebuilt_call/zego_uikit_prebuilt_call.dart';
 import 'package:zego_uikit_signaling_plugin/zego_uikit_signaling_plugin.dart';
+import 'package:uuid/uuid.dart';
 import 'package:omastro/app/route.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -296,7 +297,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           password: password,
         );
       } on supabase.AuthException catch (e) {
-        if (e.message.contains('Invalid login credentials') || e.statusCode == 400) {
+        if (e.message.contains('Invalid login credentials') ||
+            e.statusCode == '400' ||
+            e.message.toLowerCase().contains('invalid')) {
           // User doesn't exist, sign them up
           await supabase.Supabase.instance.client.auth.signUp(
             email: dummyEmail,
@@ -534,7 +537,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // 3. Not found - create a new row
     debugPrint('[AuthBloc] No astrologer row found for firebase_uid=$firebaseUid, creating...');
     final currentSupaUser = client.auth.currentUser;
-    final rowId = currentSupaUser?.id ?? firebaseUid;
+    final rowId = currentSupaUser?.id ?? const Uuid().v4();
 
     // Ensure profiles entry exists to satisfy foreign key fk_astrologers_profile_id
     try {
@@ -573,7 +576,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   String _formatAuthError(Object error) {
     final errorStr = error.toString();
-    if (errorStr.contains('invalid-email') || errorStr.contains('badly formatted')) {
+    if (errorStr.contains('10') && (errorStr.contains('ApiException') || errorStr.contains('sign_in_failed') || errorStr.contains('DEVELOPER_ERROR'))) {
+      return 'Google Sign-In configuration error (ApiException 10): The Android package name (com.rudra.cosmos) or debug/release SHA-1 certificate fingerprint is not registered in Firebase / Google Cloud Console.';
+    } else if (errorStr.contains('app-not-authorized') || errorStr.contains('App validation failed')) {
+      return 'Firebase Auth verification failed: Package name or SHA-1/SHA-256 is not registered in Firebase Console.';
+    } else if (errorStr.contains('invalid-email') || errorStr.contains('badly formatted')) {
       return 'Invalid email address. Please make sure there are no spaces or invalid characters.';
     } else if (errorStr.contains('email-already-in-use') || errorStr.contains('23505')) {
       return 'An account with this email already exists. Please sign in instead.';
